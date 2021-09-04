@@ -1,31 +1,23 @@
-import React, { useEffect, useRef } from 'react';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import mapboxgl from 'mapbox-gl';
-import MainMenu from './MainMenu';
+import React, { useState } from 'react';
+import Map from './Map';
+import MainMenu, { Actions } from './MainMenu';
 import GithubCorner from './GithubCorner';
-
-mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
+import Import from './Import';
 
 function App() {
-
-  const mapContainer = useRef<HTMLDivElement | null>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-
-  useEffect(() => {
-    if (map.current) return;
-    if (!mapContainer.current) return;
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v11',
-    });
-    map.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
-  });
+  let [importDialog, setImportDialog] = useState(false);
 
   return (
     <div>
+      <Import isOpen={importDialog} setIsOpen={setImportDialog} />
       <GithubCorner />
-      <MainMenu />
-      <div ref={mapContainer} className="h-screen z-20" />
+      <MainMenu onAction={(action: Actions) => {
+        if (action === Actions.Import) {
+          setImportDialog(true)
+        }
+      }
+      } />
+      <Map />
     </div>
   );
 }
