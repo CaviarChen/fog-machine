@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
+import { MapRenderer } from './utils/MapRenderer'
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
 
@@ -8,18 +9,25 @@ function Map() {
 
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const mapRenderer = MapRenderer.get();
 
   useEffect(() => {
     if (map.current) return;
     if (!mapContainer.current) return;
-    map.current = new mapboxgl.Map({
+    const mapboxMap = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v11',
+      style: 'mapbox://styles/mapbox/streets-v10',
     });
-    map.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+    mapboxMap.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+    mapRenderer.registerMap(mapboxMap);
+    map.current = mapboxMap;
+
+    return function cleanup() {
+      mapRenderer.unregisterMap(mapboxMap);
+    }
   });
 
-  return (<div ref={mapContainer} className="h-screen z-20" />);
+  return (<div ref={mapContainer} className="h-screen z-21" />);
 }
 
 export default Map;
