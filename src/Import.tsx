@@ -14,7 +14,17 @@ export default function MyModal(props: Props) {
 
     function fileInputOnChange(e: ChangeEvent<HTMLInputElement>) {
         closeModal();
-        // TODO: loading
+        // TODO: progress bar, error handling
+        for (let i=0; i < (e.target.files?.length || 0); i++) {
+            let file = e.target.files?.item(i)!;
+            let reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.onload = (e) => {
+                console.log(reader.result);
+            }
+
+        }
+
         console.log(e.target.files);
     }
 
@@ -78,6 +88,7 @@ export default function MyModal(props: Props) {
                                             ref={fileInput}
                                             style={{ display: 'none' }}
                                             onChange={fileInputOnChange}
+                                            multiple
                                         />
                                         <div className="mb-4 whitespace-nowrap">
                                             TODO: drag and drop a folder
