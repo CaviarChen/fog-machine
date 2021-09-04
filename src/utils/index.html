@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Fork my world</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet' />
+
+    <script src="filedrop-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .map-overlay-container {
+            position: absolute;
+            width: 25%;
+            top: 0;
+            left: 0;
+            padding: 10px;
+            z-index: 1;
+        }
+
+        .map-overlay {
+            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            background-color: #fff;
+            border-radius: 3px;
+            padding: 10px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .map-overlay h2,
+        .map-overlay p {
+            margin: 0 0 10px;
+        }
+
+        #zdir {
+            /* border: 5px solid grey; */
+            width: 100%;
+            height: 100%;
+            /* background-color: grey; */
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id='map'></div>
+
+    <div class="map-overlay-container">
+        <div class="map-overlay">
+            <h2>Fork my world</h2>
+            <div id="zdir">
+                <p>Please drag your "Sync" folder here, or click to choose every files inside it.</p>
+            </div>
+            <!-- <small> -->
+            <!-- Text credit: -->
+            <!-- <a target="_blank" href="http://www.nycgo.com/neighborhoods">nycgo.com</a></small> -->
+        </div>
+    </div>
+
+
+
+    <script>
+        const FILENAME_MASK1 = "olhwjsktri";
+        const FILENAME_MASK2 = "eizxdwknmo";
+        var FILENAME_ENCODING = {};
+        for (var i = 0; i < FILENAME_MASK1.length; i++) {
+            FILENAME_ENCODING[FILENAME_MASK1.charAt(i)] = i
+        }
+        const MAP_WIDTH = 512
+        const TILE_WIDTH = 128
+        const TILE_HEADER_LEN = TILE_WIDTH ** 2;
+        const TILE_HEADER_SIZE = TILE_HEADER_LEN * 2;
+        const BLOCK_BITMAP_SIZE = 512;
+        const BLOCK_EXTRA_DATA = 3
+        const BLOCK_SIZE = BLOCK_BITMAP_SIZE + BLOCK_EXTRA_DATA
+        const BITMAP_WIDTH = 64
+
+        const ZOOM_LEVEL = 12
+
+        class Block {
+            constructor(tile, x, y, data, map) {
+                this.parentTile = tile;
+                this.x = x;
+                this.y = y;
+                this.bitmap = data.slice(0, BLOCK_BITMAP_SIZE);
+                this.extraData = data.slice(BLOCK_BITMAP_SIZE, BLOCK_SIZE);
+                this.map = map;
+
+                this.name = `tile-${this.parentTile.id}-block-${this.x}-${this.y}`;
+
+                this.renderEnabled = false;
+                this.renderForFirstTime = false;
+            }
+
+            get region() {
+                let regionChar0 = String.fromCharCode((this.extraData[0] >> 3) + "?".charCodeAt(0));
+                let regionChar1 = String.fromCharCode((((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xC0) >> 6)) + "?".charCodeAt(0));
+                return regionChar0 + regionChar1;
+            }
+
+            get count() {
+                return (new DataView(this.extraData.buffer, 1, 2).getInt16(0, false) & 0x3FFF) >> 1;
+            }
+
+            get bounds() {
+                return this.parentTile.get_block_bounds(this.x, this.y);
+            }
+
+            is_visited(x, y) {
+                var bit_offset = 7 - x % 8;
+                var i = Math.floor(x / 8);
+                var j = y;
+                return this.bitmap[i + j * 8] & (1 << bit_offset);
+            }
+
+            get renderEnabled() {
+                return this.map.getLayer(this.name)
+            }
+
+            set renderEnabled(enabled) {
+                if (enabled) {
+                    if (!this.canvas) {
+                        this.canvas = document.createElement("canvas");
+                        this.renderForFirstTime = true;
+                    }
+                    if (!this.map.getSource(this.name)) {
+                        this.map.addSource(this.name, {
+                            type: 'canvas',
+                            canvas: this.canvas,
+                            coordinates: this.bounds
+                        });
+                    }
+                    if (!this.map.getLayer(this.name)) {
+                        this.map.addLayer({
+                            id: this.name,
+                            type: 'raster',
+                            source: this.name,
+                            paint: {
+                                'raster-resampling': 'nearest'
+                            }
+                        });
+                    }
+                } else {
+                    if (this.map.getLayer(this.name)) this.map.removeLayer(this.name);
+                    if (this.map.getSource(this.name)) this.map.removeSource(this.name);
+                    this.canvas = undefined;
+                }
+            }
+
+
+            render() {
+                this.renderEnabled = true;
+                let zoom = this.parentTile.zoom;
+
+                // https://github.com/mapbox/mapbox-gl-js/issues/9873              
+                if (((zoom & (zoom - 1)) == 0) && this.renderForFirstTime) {
+                    // console.log("render for first time!")
+                    if (zoom == 1) {
+                        zoom = 3;
+                    } else {
+                        zoom = zoom + 1;
+                    }
+                    this.renderForFirstTime = false;
+                }
+
+                const canvas = this.canvas;
+
+                const size = Math.floor(BITMAP_WIDTH / zoom)
+                // console.log(`set size to ... ${size} zoom ${zoom}`);
+
+                // Set actual size in memory (scaled to account for extra pixel density).
+                const scale = window.devicePixelRatio; // Change to 1 on retina screens to see blurry canvas.
+                canvas.width = Math.floor(size * scale);
+                canvas.height = Math.floor(size * scale);
+                const ctx = this.canvas.getContext("2d");
+                ctx.scale(scale, scale);
+                ctx.fillStyle = "#000000";
+
+                // ctx.strokeRect(0, 0, size, size);
+
+                if (zoom >= BITMAP_WIDTH) {
+                    // no need to draw points
+                    ctx.fillRect(0, 0, 1, 1);
+                } else {
+                    // debugger;
+                    for (var j = 0; j < BITMAP_WIDTH; j++) {
+                        for (var k = 0; k < BITMAP_WIDTH; k++) {
+                            let x = Math.floor(j / zoom);
+                            let y = Math.floor(k / zoom);
+                            if (this.is_visited(j, k)) {
+                                ctx.fillRect(x, y, 1, 1);
+                            }
+                        }
+                    }
+                }
+                // console.log(`block [${this.x}, ${this.y}] done`);
+            }
+        }
+
+        function tile_x_y_to_lng_lat(x, y) {
+            lng = x / 512 * 360 - 180;
+            lat = Math.atan(Math.sinh(Math.PI - 2 * Math.PI * y / 512)) * 180 / Math.PI;
+            return [lng, lat];
+        }
+
+        function tile_lng_lat_to_x_y(lng, lat) {
+            x = (lng + 180) / 360 * 512;
+            y = (Math.PI - Math.asinh(Math.tan(lat / 180 * Math.PI))) * 512 / (2 * Math.PI);
+            return [x, y];
+        }
+
+        class Tile {
+            constructor(fogmap, filename, data, map) {
+
+                // TODO: try catch
+                this.filename = filename;
+                this.id = filename.slice(4, -2).split("").map(idMasked => FILENAME_ENCODING[idMasked]).join("");
+                this.x = this.id % MAP_WIDTH;
+                this.y = Math.floor(this.id / MAP_WIDTH);
+                // console.log()
+                console.log(`Loading tile. id: ${this.id}, x: ${this.x}, y: ${this.y}`);
+
+                // TODO: try catch
+                this.data = pako.inflate(data);
+
+                this.map = map;
+                this.parentFogMap = fogmap;
+
+                var header = new Uint16Array(this.data.slice(0, TILE_HEADER_SIZE).buffer);
+                this.blocks = {};
+                this.regionCount = {};
+
+                this.renderForFirstTime = true;
+                for (var i = 0; i < header.length; i++) {
+                    var block_idx = header[i];
+                    if (block_idx > 0) {
+                        let block_x = i % TILE_WIDTH;
+                        let block_y = Math.floor(i / TILE_WIDTH)
+                        let start_offset = TILE_HEADER_SIZE + (block_idx - 1) * BLOCK_SIZE
+                        let end_offset = start_offset + BLOCK_SIZE
+                        var block_data = this.data.slice(start_offset, end_offset);
+                        // TODO: is it okay to use this in constructor?
+                        let block = new Block(this, block_x, block_y, block_data, map)
+                        // console.log(`${block.region}: ${block.count}`);
+                        this.blocks[[block_x, block_y]] = block;
+                        this.regionCount[block.region] = (this.regionCount[block.region] || 0) + block.count
+                    }
+                }
+
+                this.canvas = document.createElement("canvas");
+
+                this.render();
+
+                // load tile to map
+                map.addSource(`tile${this.id}`, {
+                    type: 'canvas',
+                    canvas: this.canvas,
+                    coordinates: this.bounds()
+                });
+
+                map.addLayer({
+                    id: `tile${this.id}`,
+                    type: 'raster',
+                    source: `tile${this.id}`,
+                    paint: {
+                        'raster-resampling': 'nearest'
+                    }
+                });
+            }
+
+            renderBlockCanvas() {
+                for (const block of Object.values(this.blocks)) {
+                    block.render();
+                    // this.regionCount[region] = (this.regionCount[region] || 0) + count;
+                }
+            }
+
+            clearCanvas() {
+                const canvas = this.canvas;
+                const size = 3;
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = this.canvas.getContext("2d");
+                // ctx.fillStyle = "#000000";
+                // draw grid for tile
+                ctx.clearRect(0, 0, size, size);
+            }
+
+            renderCanvas() {
+                // console.log(`this zoom is ${this.zoom}, outer zoom is ${this.parentFogMap.fogZoom}`);
+                // this.zoom = this.parentFogMap.fogZoom;
+                // if (this.zoom == this.parentFogMap.fogZoom) {
+                //     console.log(`zoom consistent`);
+                //     this.zoom = this.parentFogMap.fogZoom;
+                // } else {
+                //     // this.zoom = this.parentFogMap.fogZoom;
+                // }
+
+                let zoom = this.zoom;
+                // https://github.com/mapbox/mapbox-gl-js/issues/9873              
+                if (((zoom & (zoom - 1)) == 0) && this.renderForFirstTime) {
+                    // console.log("render for first time!")
+                    if (zoom == 1) {
+                        zoom = 3;
+                    } else {
+                        zoom = zoom + 1;
+                    }
+                    this.renderForFirstTime = false;
+                }
+
+                const canvas = this.canvas;
+
+                const size = Math.floor(TILE_WIDTH * BITMAP_WIDTH / zoom);
+
+                canvas.width = size;
+                canvas.height = size;
+
+                // Set actual size in memory (scaled to account for extra pixel density).
+                const scale = window.devicePixelRatio; // Change to 1 on retina screens to see blurry canvas.
+                // console.log(`the dpi scale is ${scale}`);
+                // scale = 1; // FIXME: recheck whether to enable this
+                canvas.width = Math.floor(size * scale);
+                canvas.height = Math.floor(size * scale);
+                const ctx = this.canvas.getContext("2d");
+
+                ctx.scale(scale, scale);
+                // console.log(`CANVAS SIZE IS ${size}`);
+                // ctx.clearRect(0,0,50,50);
+                ctx.fillStyle = "#000000";
+                // draw grid for tile
+                // ctx.strokeRect(0, 0, size, size);
+                // ctx.strokeRect(0, 0, size/2, size/2);
+
+                // // draw id/filename of tile
+                // ctx.fillStyle = "#FFFFFF";
+                // ctx.fillRect(10, 10, 350, 50);
+                // ctx.fillStyle = "#000000";
+                // ctx.font = "24px serif";
+                // ctx.fillText(`${this.id}/${this.filename}`, 15, 40);
+
+                var blocks = Object.values(this.blocks);
+                for (let i = 0; i < blocks.length; i++) {
+                    let block = blocks[i];
+
+                    if (zoom >= BITMAP_WIDTH) {
+                        // no need to draw points
+                        let x = block.x * BITMAP_WIDTH;
+                        let y = block.y * BITMAP_WIDTH;
+                        x = Math.floor(x / zoom);
+                        y = Math.floor(y / zoom);
+                        ctx.fillRect(x, y, 1, 1);
+                    } else {
+                        // draw grid for block
+                        // ctx.strokeRect(Math.floor(block.x * BITMAP_WIDTH / zoom),
+                        //     Math.floor(block.y * BITMAP_WIDTH / zoom),
+                        //     Math.floor(BITMAP_WIDTH / zoom),
+                        //     Math.floor(BITMAP_WIDTH / zoom)
+                        // );
+                        for (let j = 0; j < BITMAP_WIDTH; j++) {
+                            for (let k = 0; k < BITMAP_WIDTH; k++) {
+                                let x = block.x * BITMAP_WIDTH + j;
+                                let y = block.y * BITMAP_WIDTH + k;
+                                x = Math.floor(x / zoom);
+                                y = Math.floor(y / zoom);
+                                if (block.is_visited(j, k)) {
+                                    ctx.fillRect(x, y, 1, 1);
+                                }
+                            }
+                        }
+                    }
+
+
+                }
+                // console.log(`tile render finished ${this.id} size: ${size}`);
+            }
+
+            render() {
+                const zoom = this.parentFogMap.fogZoom;
+                // TODO: perhaps we need a zoomed canvas for tile in focus
+                const blockRenderThreshold = 4;
+                if (zoom >= blockRenderThreshold) {
+                    if (this.zoom <= blockRenderThreshold) {
+                        // TODO: disbale block rendering
+                        Object.values(this.blocks).forEach(block => block.renderEnabled = false);
+                    }
+                    this.zoom = zoom;
+                    this.renderCanvas();
+                } else {
+                    this.zoom = zoom;
+                    this.clearCanvas();
+                    for (const block of this.activeBlocks) {
+                        block.renderEnabled = true;
+                        block.render();
+                    }
+                }
+            }
+
+
+            get activeBlocks() {
+                const xMinInt = Math.floor(Math.max(this.parentFogMap.xMin - this.x, 0) * TILE_WIDTH);
+                const xMaxInt = Math.ceil(Math.min(this.parentFogMap.xMax - this.x, 1) * TILE_WIDTH) - 1;
+                const yMinInt = Math.floor(Math.max(this.parentFogMap.yMin - this.y, 0) * TILE_WIDTH);
+                const yMaxInt = Math.ceil(Math.min(this.parentFogMap.yMax - this.y, 1) * TILE_WIDTH) - 1;
+                return Object.values(this.blocks).filter(block => (block.x >= xMinInt) && (block.x <= xMaxInt) && (block.y >= yMinInt) && (block.y <= yMaxInt));
+            }
+
+            get_block_bounds(block_x, block_y) {
+                let sw = tile_x_y_to_lng_lat(this.x + block_x / TILE_WIDTH, this.y + (block_y + 1) / TILE_WIDTH);
+                let se = tile_x_y_to_lng_lat(this.x + (block_x + 1) / TILE_WIDTH, this.y + (block_y + 1) / TILE_WIDTH);
+                let ne = tile_x_y_to_lng_lat(this.x + (block_x + 1) / TILE_WIDTH, this.y + block_y / TILE_WIDTH);
+                let nw = tile_x_y_to_lng_lat(this.x + block_x / TILE_WIDTH, this.y + block_y / TILE_WIDTH);
+                return [nw, ne, se, sw];
+            }
+
+            bounds() {
+                let sw = tile_x_y_to_lng_lat(this.x, this.y + 1);
+                let se = tile_x_y_to_lng_lat(this.x + 1, this.y + 1);
+                let ne = tile_x_y_to_lng_lat(this.x + 1, this.y);
+                let nw = tile_x_y_to_lng_lat(this.x, this.y);
+                return [nw, ne, se, sw];
+            }
+
+        }
+        class FogMap {
+            constructor(map) {
+                this.tiles = {};
+                this.map = map;
+                this.regionCount = {};
+
+                map.on('resize', () => {
+                    console.log('A resize event occurred.');
+                    // console.log(getZoom())
+                    this.optimizeView();
+                });
+
+                map.on('remove', () => {
+                    console.log('A remove event occurred.');
+                    this.optimizeView();
+                });
+
+                map.on('dragend', () => {
+                    console.log('A dragend event occurred.');
+                    this.optimizeView();
+                });
+
+                map.on('zoomend', () => {
+                    console.log('A zoomend event occurred.');
+                    this.optimizeView();
+                });
+
+                this.optimizeView();
+            }
+
+            get fogZoom() {
+                return Math.max(2 ** Math.floor(15 - this.map.getZoom()), 1);
+            }
+
+            optimizeView() {
+                console.log("optimizing view...");
+                const bounds = this.map.getBounds();
+                const sw = tile_lng_lat_to_x_y(bounds._sw.lng, bounds._sw.lat);
+                const ne = tile_lng_lat_to_x_y(bounds._ne.lng, bounds._ne.lat);
+
+                // FIXME: check if the region across lng=0
+                this.xMin = sw[0];
+                this.xMax = ne[0];
+
+                this.yMin = ne[1];
+                this.yMax = sw[1];
+
+                var xMinInt = Math.floor(this.xMin);
+                var xMaxInt = Math.ceil(this.xMax) - 1;
+
+                var yMinInt = Math.floor(this.yMin);
+                var yMaxInt = Math.ceil(this.yMax) - 1;
+
+                // FIXME: lng cross 0
+                var activeTiles = Object.values(this.tiles).filter(tile => (tile.x >= xMinInt) && (tile.x <= xMaxInt) && (tile.y >= yMinInt) && (tile.y <= yMaxInt));
+
+
+                var mapZoom = this.map.getZoom();
+                var fogZoom = Math.max(2 ** Math.floor(15 - mapZoom), 1);
+                // console.log(`fog zoom is ${fogZoom}`)
+                activeTiles.forEach(tile => {
+                    // FIXME: lng cross 0
+                    tile.render();
+                });
+
+
+                // console.log(`x: [${this.xMin}, ${this.xMax}], y: [${this.yMin}, ${this.yMax}]`);
+                // console.log(activeTiles);
+
+            }
+
+            addFile(filename, data) {
+                try {
+                    var tile = new Tile(this, filename, data, map)
+
+                    this.tiles[[tile.x, tile.y]] = tile;
+                    for (const [region, count] of Object.entries(tile.regionCount)) {
+                        this.regionCount[region] = (this.regionCount[region] || 0) + count
+                    }
+                    console.log(this.regionCount);
+
+
+                } catch (e) {
+                    console.log(`${filename} is not a valid tile file.`)
+                    console.log(e)
+                }
+
+
+                // map.flyTo({
+                //     center: tile.bounds()[0],
+                //     essential: true // this animation is considered essential with respect to prefers-reduced-motion
+                // });
+            }
+
+            addFogAt(coord) {
+                const tile_x = coord[0], tile_y;
+                // add fog only if the fog already be cleaned
+                
+            }
+
+        }
+
+        // Control implemented as ES6 class
+        class DrawControl {
+            constructor (fogMap) {
+                this.fogMap = fogMap;
+            }
+            onAdd(map) {
+                this._map = map;
+                this._container = document.createElement('div');
+                this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+                // this._container.textContent = 'ERASER';
+                this._normalModeButton = document.createElement('button')
+                this._normalModeButton.textContent = "N";
+                this._normalModeButton.addEventListener("click", event => {
+                    console.log("reset to normal mode");
+                    this.disableEdit();
+                });
+                this._container.appendChild(this._normalModeButton);
+
+                this._defogButton = document.createElement('button')
+                this._defogButton.textContent = "DF";
+                this._defogButton.addEventListener("click", event => {
+                    console.log("set to defog mode");
+                    this.enableEdit("DF");
+                });
+                this._container.appendChild(this._defogButton);
+
+                this._fogButton = document.createElement('button')
+                this._fogButton.textContent = "F";
+                this._fogButton.addEventListener("click", event => {
+                    console.log("set to fog mode");
+                    this.enableEdit("F");
+                });
+                this._container.appendChild(this._fogButton);
+
+                return this._container;
+            }
+
+            onRemove() {
+                this._container.parentNode.removeChild(this._container);
+                this._map = undefined;
+            }
+
+            enableEdit(mode) {
+                // disable box zoom
+                this._map.boxZoom.disable();
+                // disable pan drag
+                this._map.dragPan.disable();
+
+                this._map.on('mousedown', DrawControl.genMouseDownCallback(this));
+
+                this._map.on('mousemove', (e) => {
+                    this._map.getCanvas().style.cursor = 'cell'
+                    // this.onMouseMove(e);
+                })
+                // this._map.on('mouseleave', () => {
+                //     this._map.getCanvas().style.cursor = ''
+                // })
+            }
+
+            disableEdit(mode) {
+                this._map.boxZoom.enable();
+                this._map.dragPan.enable();
+                this._map.on('mousemove', () => {
+                    this._map.getCanvas().style.cursor = ''
+                })
+            }
+
+            static genMouseDownCallback(controller) {
+                return (e) => {
+                    if ((e.shiftKey && e.button === 0)) {
+                        // box select mode
+                    } else {
+                        // pointwise draw mode
+                    }
+                    controller._mousemoveCallback = DrawControl.genMouseMoveCallback(controller)
+                    controller._map.on('mousemove', controller._mousemoveCallback)
+                    controller._map.on('mouseup', DrawControl.genMouseUpCallback(controller));
+                }
+            }
+
+            static genMouseMoveCallback(controller) {
+                return (e) => {
+                    console.log(e.lngLat)
+                }
+            }
+
+            static genMouseUpCallback(controller) {
+                return (e) => {
+                    // remove mouse move call back
+                    controller._map.off('mousemove', controller._mousemoveCallback);
+                }
+            }
+
+            onMouseDown(e) {
+                // Continue the rest of the function if the shiftkey is pressed.
+                if ((e.shiftKey && e.button === 0)) {
+                    // box select mode
+                } else {
+                    // pointwise draw mode
+                }
+                // debugger;
+                // FIXME:
+                // map.on('mousemove', this.onMouseMove)
+            }
+
+            static onMouseMove(e) {
+                // TODO: check pointwise draw mode or block mode
+                console.log(e.lngLat)
+            }
+
+            static onMouseUp() {
+                // this._map.off('mousemove', this.onMouseMove);
+            }
+
+        }
+
+
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoidGF2aW1vcmkiLCJhIjoiY2ozeHh3NXdjMDAwYTJ3bnk2ZXhqbTkzbiJ9.BGLmrBqqXkZv50HKrwaZRQ';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [114.20592531593752, 22.690129049232496],
+            // center: [-74.03371051693314, 40.80102059524263],
+            zoom: 10,
+            // antialias: false
+        });
+
+
+        // Add zoom and rotation controls to the map.
+
+        map.addControl(new mapboxgl.FullscreenControl({ container: document.querySelector('body') }));
+        map.addControl(new mapboxgl.NavigationControl({
+            visualizePitch: true
+        }));
+
+
+        map.addControl(new mapboxgl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true
+            },
+            trackUserLocation: true,
+            showUserHeading: true
+        }));
+
+        map.addControl(new mapboxgl.AttributionControl({
+            customAttribution: 'Map design by me'
+        }));
+
+        map.addControl(new DrawControl());
+
+        map.on('load', function () {
+            var fogMap = new FogMap(map);
+
+            // var zone = new FileDrop('zdir', { input: false });
+            var zone = new FileDrop('zdir');
+            zone.multiple(true);
+
+            zone.event('send', function (files) {
+                files.each(function (file) {
+                    console.log(file.name + ' (' + file.size + ') bytes')
+                    file.readData(
+                        function (data) {
+                            fogMap.addFile(file.name, data);
+                        },
+                        function (e) { console.log(`cannot read ${file.name}`) }
+                    )
+                })
+            })
+
+            zone.event('upload', function (e) {
+
+                var error = function () { alert('Problem reading the file system.'); }
+
+                var done = function (files) {
+                    // files is standard FileDrop's FileList object.
+                    files.each(function (file) {
+                        // file is FileDrop.File with native objects accessible
+                        // as file.nativeFile and file.nativeEntry.
+                        // var node = document.createElement('p');
+                        // node.innerText = file.name
+
+                        if (file.nativeFile) {
+                            // This is a file. We can use any FileDrop method here
+                            // like sendTo() and readData() - see below.
+
+                            file.readData(
+                                function (data) {
+                                    fogMap.addFile(file.name, data);
+                                },
+                                function (e) { console.log(`cannot read ${file.name}`) }
+                            )
+
+                        } else {
+                            console.log(`${file.name} is a folder?`);
+                            // file.listEntries(showfilenames, error)
+                            // debugger;
+                        }
+
+                    });
+                };
+
+                zone.eventFiles(e).each(function (root) {
+                    if (root.listEntries(done, error)) {
+                        // Success.
+                    } else if (!root.nativeEntry) {
+                        zone.el.innerHTML = '<p><b>File System API is not' +
+                            ' supported by this browser.</b></p>';
+                    } else {
+                        zone.el.innerHTML = '<p><b>Problem listing ' +
+                            root.name + '.</b></p>';
+                    }
+                });
+            });
+
+        });
+
+    </script>
+</body>
+
+</html>
