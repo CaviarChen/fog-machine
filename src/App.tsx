@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import './App.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
+import MainMenu from './MainMenu';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
 
@@ -17,12 +18,13 @@ function App() {
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v11',
     });
-    map.current.addControl(new mapboxgl.NavigationControl());
-  }, [mapContainer]);
+    map.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+  });
 
   return (
     <div>
-      <div ref={mapContainer} className="h-screen" />
+      <MainMenu />
+      <div ref={mapContainer} className="h-screen z-30" />
     </div>
   );
 }
