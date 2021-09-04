@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import './App.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
 import MainMenu from './MainMenu';
+import GithubCorner from './GithubCorner';
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
 
@@ -23,8 +23,9 @@ function App() {
 
   return (
     <div>
+      <GithubCorner />
       <MainMenu />
-      <div ref={mapContainer} className="h-screen z-30" />
+      <div ref={mapContainer} className="h-screen z-20" />
     </div>
   );
 }
