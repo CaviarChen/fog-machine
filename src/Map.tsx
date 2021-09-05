@@ -19,11 +19,14 @@ function Map() {
       style: 'mapbox://styles/mapbox/streets-v10',
     });
     mapboxMap.addControl(new mapboxgl.NavigationControl(), "bottom-right");
-    mapRenderer.registerMap(mapboxMap);
+    mapboxMap.on("load", () => {
+      mapRenderer.registerMap(mapboxMap);
+    });
     map.current = mapboxMap;
 
     return function cleanup() {
-      mapRenderer.unregisterMap(mapboxMap);
+      // TODO: This clean up seems wrong
+      // mapRenderer.unregisterMap(mapboxMap);
     }
   });
 

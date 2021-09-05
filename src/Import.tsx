@@ -1,5 +1,6 @@
 import { Dialog, Transition } from '@headlessui/react'
 import { ChangeEvent, Fragment, useRef } from 'react'
+import { MapRenderer } from './utils/MapRenderer';
 
 
 type Props = {
@@ -15,17 +16,15 @@ export default function MyModal(props: Props) {
     function fileInputOnChange(e: ChangeEvent<HTMLInputElement>) {
         closeModal();
         // TODO: progress bar, error handling
+        let mapRenderer = MapRenderer.get();
         for (let i=0; i < (e.target.files?.length || 0); i++) {
             let file = e.target.files?.item(i)!;
             let reader = new FileReader();
             reader.readAsArrayBuffer(file);
             reader.onload = (e) => {
-                console.log(reader.result);
+                mapRenderer.addFoGFile(file.name, reader.result as ArrayBuffer);
             }
-
         }
-
-        console.log(e.target.files);
     }
 
     function closeModal() {
