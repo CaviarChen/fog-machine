@@ -20,6 +20,7 @@ function make_key_xy(x: number, y: number) {
     return `${x}-${y}`;
 }
 
+
 export class FogMap {
     tiles: { [key: string]: Tile };
     regionCount: { [key: string]: number }
@@ -32,7 +33,7 @@ export class FogMap {
     // TODO: merge instead of override
     addFile(filename: string, data: ArrayBuffer) {
         try {
-            var tile = new Tile(this, filename, data, map)
+            var tile = new Tile(filename, data)
 
             this.tiles[make_key_xy(tile.x, tile.y)] = tile;
             // for (const [region, count] of Object.entries(tile.regionCount)) {
@@ -84,7 +85,7 @@ class Tile {
                 let block_data = this.data.slice(start_offset, end_offset);
                 let block = new Block(block_x, block_y, block_data)
                 this.blocks[make_key_xy(block_x, block_y)] = block;
-                this.regionCount[block.region] = (this.regionCount[block.region] || 0) + block.count
+                this.regionCount[block.region()] = (this.regionCount[block.region()] || 0) + block.count()
             }
         }
     }
@@ -92,6 +93,11 @@ class Tile {
 
 
 export class Block {
+    x: number;
+    y: number;
+    bitmap: Uint8Array;
+    extraData: Uint8Array;
+
     constructor(x: number, y: number, data: Uint8Array) {
         this.x = x;
         this.y = y;
@@ -99,25 +105,21 @@ export class Block {
         this.extraData = data.slice(BLOCK_BITMAP_SIZE, BLOCK_SIZE);
     }
 
-    get region() {
+    region() {
         let regionChar0 = String.fromCharCode((this.extraData[0] >> 3) + "?".charCodeAt(0));
         let regionChar1 = String.fromCharCode((((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xC0) >> 6)) + "?".charCodeAt(0));
         return regionChar0 + regionChar1;
     }
 
-    get count() {
+    count() {
         return (new DataView(this.extraData.buffer, 1, 2).getInt16(0, false) & 0x3FFF) >> 1;
     }
 
-    get bounds() {
-        return this.parentTile.get_block_bounds(this.x, this.y);
-    }
-
-    is_visited(x, y) {
+    is_visited(x: number, y: number) {
         var bit_offset = 7 - x % 8;
         var i = Math.floor(x / 8);
         var j = y;
-        return this.bitmap[i + j * 8] & (1 << bit_offset);
+        return (this.bitmap[i + j * 8] & (1 << bit_offset)) != 0;
     }
 
 }
