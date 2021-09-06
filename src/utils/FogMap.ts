@@ -103,10 +103,12 @@ export class Tile {
         return [lng, lat];
     }
 
-    bounds() {
-        let sw = Tile.x_y_to_lng_lat(this.x, this.y + 1);
-        let se = Tile.x_y_to_lng_lat(this.x + 1, this.y + 1);
-        let ne = Tile.x_y_to_lng_lat(this.x + 1, this.y);
+    // SAD: `extraEmptypadding` is a workaround for https://github.com/mapbox/mapbox-gl-js/issues/9873
+    bounds(extraEmptyPadding:number = 0) {
+        let offset = 1 + extraEmptyPadding;
+        let sw = Tile.x_y_to_lng_lat(this.x, this.y + offset);
+        let se = Tile.x_y_to_lng_lat(this.x + offset, this.y + offset);
+        let ne = Tile.x_y_to_lng_lat(this.x + offset, this.y);
         let nw = Tile.x_y_to_lng_lat(this.x, this.y);
         return [nw, ne, se, sw];
     }

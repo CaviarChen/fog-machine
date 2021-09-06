@@ -5,7 +5,7 @@ export class MapRenderer {
   private static instance = new MapRenderer();
   private map: mapboxgl.Map | null;
   private fogMap: FogMap;
-  private tileCanvases: { [key: TileID]: HTMLCanvasElement };
+  private tileCanvases: { [key: TileID]: TileCanvas };
 
   private constructor() {
     this.map = null;
@@ -20,40 +20,16 @@ export class MapRenderer {
   registerMap(map: mapboxgl.Map) {
     this.map = map;
 
-    // SAD: workaround https://github.com/mapbox/mapbox-gl-js/issues/9873              
-    let canvas = document.createElement("canvas");
-    canvas.width = 13;
-    canvas.height = 13;
-    this.map.addSource("temp", {
-      type: 'canvas',
-      canvas: canvas,
-      coordinates: [
-        [91.4461, 21.5006],
-        [100.3541, 21.5006],
-        [100.3541, 13.9706],
-        [91.4461, 13.9706]
-      ]
-    });
-    this.map.addLayer({
-      id: "temp",
-      type: 'raster',
-      source: "temp",
-      paint: {
-        'raster-resampling': 'nearest'
-      }
-    });
-    setTimeout(() => {
-      if (map !== this.map) return;
-      map.removeLayer("temp");
-      map.removeSource("temp");
-      for (let tileXYKey in this.fogMap.tiles) {
-        this.addTileCanvasToMap(this.fogMap.tiles[tileXYKey]);
-      }
-    }, 200);
+    for (let tileId in this.tileCanvases) {
+      this.tileCanvases[tileId].addToMap(map);
+    }
   }
 
   unregisterMap(map: mapboxgl.Map) {
     if (this.map === map) {
+      for (let tileId in this.tileCanvases) {
+        this.tileCanvases[tileId].removeFromMap(map);
+      }
       this.map = null;
     }
   }
@@ -61,36 +37,16 @@ export class MapRenderer {
   addFoGFile(filename: string, data: ArrayBuffer) {
     let newTile = this.fogMap.addFile(filename, data);
     if (newTile) {
-      let canvas = document.createElement("canvas");
-      let idForMap = `tile${newTile.id}`;
-      if (this.tileCanvases[newTile.id]) {
-        this.map?.removeLayer(idForMap);
-        this.map?.removeSource(idForMap);
+      if (this.map) {
+        this.tileCanvases[newTile.id]?.removeFromMap(this.map);
       }
-      this.tileCanvases[newTile.id] = canvas;
-      this.renderTile(newTile);
-      this.addTileCanvasToMap(newTile);
+      this.tileCanvases[newTile.id] = new TileCanvas(newTile);
+      if (this.map) {
+        this.tileCanvases[newTile.id].addToMap(this.map);
+      }
     }
   }
 
-  private addTileCanvasToMap(tile: Tile) {
-    let idForMap = `tile${tile.id}`;
-    let canvas = this.tileCanvases[tile.id];
-    this.map?.addSource(idForMap, {
-      type: 'canvas',
-      canvas: canvas,
-      coordinates: tile.bounds()
-    });
-
-    this.map?.addLayer({
-      id: idForMap,
-      type: 'raster',
-      source: idForMap,
-      paint: {
-        'raster-resampling': 'nearest'
-      }
-    });
-  }
 
   private getFogZoom() {
     if (this.map) {
@@ -99,26 +55,74 @@ export class MapRenderer {
       return 1;
     }
   }
+}
 
-  private renderTile(tile: Tile) {
-    console.log("rendering tile: ", tile.id);
+class TileCanvas {
+  private tile: Tile;
+  private canvas: HTMLCanvasElement;
+  private zoom: number
+  private scale: number
+
+  // SAD: TypeScript's analyse is not good enough
+  private bounds: number[][] = [];
+  private size: number = 0;
+  private actualSize: number = 0;
+
+  constructor(tile: Tile) {
+    this.tile = tile;
+    this.canvas = document.createElement("canvas");
+
+    // Change to 1 on retina screens to see blurry canvas.
+    this.scale = window.devicePixelRatio;
+    this.zoom = 512;
+    this.resize(Math.floor(TILE_WIDTH * BITMAP_WIDTH / this.zoom));
+  }
+
+  private resize(size: number) {
+    // SAD: workaround https://github.com/mapbox/mapbox-gl-js/issues/9873              
+    this.actualSize = Math.floor(size * this.scale + 1);
+    this.canvas.width = this.actualSize;
+    this.canvas.height = this.actualSize;
+    this.bounds = this.tile.bounds(1 / (this.actualSize - 1));
+  }
+
+  addToMap(map: mapboxgl.Map) {
+    let idForMap = `tile${this.tile.id}`;
+    map.addSource(idForMap, {
+      type: 'canvas',
+      canvas: this.canvas,
+      coordinates: this.bounds
+    });
+
+    map.addLayer({
+      id: idForMap,
+      type: 'raster',
+      source: idForMap,
+      paint: {
+        'raster-resampling': 'nearest'
+      }
+    });
+
+    this.render();
+  }
+
+  removeFromMap(map: mapboxgl.Map) {
+    let idForMap = `tile${this.tile.id}`;
+    map.removeLayer(idForMap);
+    map.removeSource(idForMap);
+  }
+
+  private render() {
+    console.log("rendering tile: ", this.tile.id);
     let zoom = 512;
-    const canvas = this.tileCanvases[tile.id];
 
-    const size = Math.floor(TILE_WIDTH * BITMAP_WIDTH / zoom);
 
-    canvas.width = size;
-    canvas.height = size;
 
-    // Set actual size in memory (scaled to account for extra pixel density).
-    const scale = window.devicePixelRatio; // Change to 1 on retina screens to see blurry canvas.
     // console.log(`the dpi scale is ${scale}`);
     // scale = 1; // FIXME: recheck whether to enable this
-    canvas.width = Math.floor(size * scale);
-    canvas.height = Math.floor(size * scale);
-    const ctx = canvas.getContext("2d")!;
+    const ctx = this.canvas.getContext("2d")!;
 
-    ctx.scale(scale, scale);
+    ctx.scale(this.scale, this.scale);
     // console.log(`CANVAS SIZE IS ${size}`);
     // ctx.clearRect(0,0,50,50);
     ctx.fillStyle = "#000000";
@@ -133,7 +137,7 @@ export class MapRenderer {
     // ctx.font = "24px serif";
     // ctx.fillText(`${this.id}/${this.filename}`, 15, 40);
 
-    let blocks = Object.values(tile.blocks);
+    let blocks = Object.values(this.tile.blocks);
     for (let i = 0; i < blocks.length; i++) {
       let block = blocks[i];
 
@@ -166,4 +170,3 @@ export class MapRenderer {
     }
   }
 }
-
