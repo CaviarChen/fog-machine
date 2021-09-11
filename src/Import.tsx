@@ -1,5 +1,6 @@
 import { Dialog, Transition } from '@headlessui/react'
 import { ChangeEvent, Fragment, useRef } from 'react'
+import { MapRenderer } from './utils/MapRenderer';
 
 
 type Props = {
@@ -14,8 +15,16 @@ export default function MyModal(props: Props) {
 
     function fileInputOnChange(e: ChangeEvent<HTMLInputElement>) {
         closeModal();
-        // TODO: loading
-        console.log(e.target.files);
+        // TODO: progress bar, error handling
+        let mapRenderer = MapRenderer.get();
+        for (let i=0; i < (e.target.files?.length || 0); i++) {
+            let file = e.target.files?.item(i)!;
+            let reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.onload = (e) => {
+                mapRenderer.addFoGFile(file.name, reader.result as ArrayBuffer);
+            }
+        }
     }
 
     function closeModal() {
@@ -78,6 +87,7 @@ export default function MyModal(props: Props) {
                                             ref={fileInput}
                                             style={{ display: 'none' }}
                                             onChange={fileInputOnChange}
+                                            multiple
                                         />
                                         <div className="mb-4 whitespace-nowrap">
                                             TODO: drag and drop a folder
