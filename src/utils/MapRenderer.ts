@@ -1,16 +1,16 @@
 // TODO: consider reactify this?
 import mapboxgl from 'mapbox-gl';
-import { FogMap } from './FogMap';
+import * as fogMap from './FogMap';
 import * as tileLayer from './TileLayer';
 
 export class MapRenderer {
   private static instance = new MapRenderer();
   private map: mapboxgl.Map | null;
-  private fogMap: FogMap;
+  private fogMap: fogMap.Map;
 
   private constructor() {
     this.map = null;
-    this.fogMap = new FogMap();
+    this.fogMap = new fogMap.Map();
   }
 
   static get() {
