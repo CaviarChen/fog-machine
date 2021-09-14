@@ -18,9 +18,9 @@ export const BITMAP_WIDTH = 64
 
 // SAD: Type Aliases do not seem to give us type safety
 export type TileID = number;
-export type  XYKey = string;
+export type XYKey = string;
 
-export class FogMap {
+export class Map {
     tiles: { [key: XYKey]: Tile };
     regionCount: { [key: string]: number }
 
@@ -29,9 +29,8 @@ export class FogMap {
         this.regionCount = {};
     }
 
-
     // It is so silly that tuple cannot be used as key
-    static make_key_xy(x: number, y: number): XYKey {
+    static makeKeyXY(x: number, y: number): XYKey {
         return `${x}-${y}`;
     }
 
@@ -40,7 +39,7 @@ export class FogMap {
         try {
             var tile = new Tile(filename, data)
 
-            this.tiles[FogMap.make_key_xy(tile.x, tile.y)] = tile;
+            this.tiles[Map.makeKeyXY(tile.x, tile.y)] = tile;
             for (const [region, count] of Object.entries(tile.regionCount)) {
                 this.regionCount[region] = (this.regionCount[region] || 0) + count
             }
@@ -90,26 +89,23 @@ export class Tile {
                 let end_offset = start_offset + BLOCK_SIZE
                 let block_data = this.data.slice(start_offset, end_offset);
                 let block = new Block(block_x, block_y, block_data)
-                this.blocks[FogMap.make_key_xy(block_x, block_y)] = block;
+                this.blocks[Map.makeKeyXY(block_x, block_y)] = block;
                 this.regionCount[block.region()] = (this.regionCount[block.region()] || 0) + block.count()
             }
         }
     }
 
-
-    static x_y_to_lng_lat(x: number, y: number) {
+    static XYToLngLat(x: number, y: number) {
         let lng = x / 512 * 360 - 180;
         let lat = Math.atan(Math.sinh(Math.PI - 2 * Math.PI * y / 512)) * 180 / Math.PI;
         return [lng, lat];
     }
 
-    // SAD: `extraEmptypadding` is a workaround for https://github.com/mapbox/mapbox-gl-js/issues/9873
-    bounds(extraEmptyPadding:number = 0) {
-        let offset = 1 + extraEmptyPadding;
-        let sw = Tile.x_y_to_lng_lat(this.x, this.y + offset);
-        let se = Tile.x_y_to_lng_lat(this.x + offset, this.y + offset);
-        let ne = Tile.x_y_to_lng_lat(this.x + offset, this.y);
-        let nw = Tile.x_y_to_lng_lat(this.x, this.y);
+    bounds() {
+        let sw = Tile.XYToLngLat(this.x, this.y + 1);
+        let se = Tile.XYToLngLat(this.x + 1, this.y + 1);
+        let ne = Tile.XYToLngLat(this.x + 1, this.y);
+        let nw = Tile.XYToLngLat(this.x, this.y);
         return [nw, ne, se, sw];
     }
 }
