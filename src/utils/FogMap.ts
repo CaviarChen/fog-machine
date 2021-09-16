@@ -7,13 +7,15 @@ for (var i = 0; i < FILENAME_MASK1.length; i++) {
     FILENAME_ENCODING[FILENAME_MASK1.charAt(i)] = i
 }
 const MAP_WIDTH = 512
-export const TILE_WIDTH = 128
+export const TILE_WIDTH_OFFSET = 7
+export const TILE_WIDTH = 1 << TILE_WIDTH_OFFSET
 const TILE_HEADER_LEN = TILE_WIDTH ** 2;
 const TILE_HEADER_SIZE = TILE_HEADER_LEN * 2;
 const BLOCK_BITMAP_SIZE = 512;
 const BLOCK_EXTRA_DATA = 3
 const BLOCK_SIZE = BLOCK_BITMAP_SIZE + BLOCK_EXTRA_DATA
-export const BITMAP_WIDTH = 64
+export const BITMAP_WIDTH_OFFSET = 6;
+export const BITMAP_WIDTH = 1 << BITMAP_WIDTH_OFFSET;
 
 
 // SAD: Type Aliases do not seem to give us type safety
@@ -91,6 +93,7 @@ export class Tile {
                 let block = new Block(block_x, block_y, block_data)
                 this.blocks[Map.makeKeyXY(block_x, block_y)] = block;
                 this.regionCount[block.region()] = (this.regionCount[block.region()] || 0) + block.count()
+                this.regionCount["BLK"] = (this.regionCount["BLK"] || 0) +1;
             }
         }
     }
@@ -116,12 +119,15 @@ export class Block {
     y: number;
     bitmap: Uint8Array;
     extraData: Uint8Array;
+    imageData: ImageData;
 
     constructor(x: number, y: number, data: Uint8Array) {
         this.x = x;
         this.y = y;
         this.bitmap = data.slice(0, BLOCK_BITMAP_SIZE);
         this.extraData = data.slice(BLOCK_BITMAP_SIZE, BLOCK_SIZE);
+        // this.texture = gl.createTexture();
+        this.imageData = Block.genImageDataFromBitmap(this.bitmap);
     }
 
     region() {
@@ -139,6 +145,25 @@ export class Block {
         var i = Math.floor(x / 8);
         var j = y;
         return (this.bitmap[i + j * 8] & (1 << bit_offset)) !== 0;
+    }
+
+    static genImageDataFromBitmap(bitmap: Uint8Array) {
+        const arr = new Uint8ClampedArray(4 * BITMAP_WIDTH * BITMAP_WIDTH);
+        for (let x = 0; x < BITMAP_WIDTH; x++) {
+            for (let y = 0; y < BITMAP_WIDTH; y++) {
+                const bit_offset = 7 - x % 8;
+                const i = Math.floor(x / 8);
+                const j = y;
+                if ((bitmap[i + j * 8] & (1 << bit_offset)) !== 0) {
+                    const i = ((y * (BITMAP_WIDTH * 4)) + (x * 4));
+                    arr[i] = 255; // R Value
+                    arr[i + 1] = 0; // G Value
+                    arr[i + 2] = 255; // B Value
+                    arr[i + 3] = 255; // A Value
+                }
+            }
+        }
+        return new ImageData(arr, BITMAP_WIDTH);
     }
 
 }

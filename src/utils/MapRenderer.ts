@@ -3,6 +3,10 @@ import mapboxgl from 'mapbox-gl';
 import * as fogMap from './FogMap';
 import * as tileLayer from './TileLayer';
 
+const FOW_TILE_ZOOM = 9;
+const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + fogMap.BITMAP_WIDTH_OFFSET;
+
+
 export class MapRenderer {
   private static instance = new MapRenderer();
   private map: mapboxgl.Map | null;
@@ -39,8 +43,12 @@ export class MapRenderer {
     // process tile info
     let canvas = document.createElement("canvas");
     let ctx = canvas.getContext("2d")!;
-    canvas.width = 512;
-    canvas.height = 512;
+
+    const MAP_TILE_SIZE_OFFSET = 9;
+    const MAP_TILE_SIZE = 1 << MAP_TILE_SIZE_OFFSET;
+
+    canvas.width = MAP_TILE_SIZE;
+    canvas.height = MAP_TILE_SIZE;
     ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
     ctx.fillRect(0, 0, 512, 512);
 
@@ -49,6 +57,40 @@ export class MapRenderer {
     ctx.strokeStyle = "red";
     ctx.rect(0, 0, 512, 512);
     ctx.stroke();
+
+
+    if (tile.z >= FOW_BLOCK_ZOOM) {
+      // sub-block rendering
+
+      // TODO: include zoom==9
+    } else if (tile.z > FOW_TILE_ZOOM) {
+      // sub-tile rendering
+      const zoomOffset = tile.z - FOW_TILE_ZOOM;
+      const fowTileX = tile.x >> zoomOffset;
+      const fowTileY = tile.y >> zoomOffset;
+      const subTileMask = (1 << zoomOffset) - 1;
+      console.log(`subtilemask ${subTileMask}`);
+      // const fowSubTileX = (tile.x & subTileMask);
+      const fowSubTileX = (tile.x & subTileMask) << (fogMap.TILE_WIDTH_OFFSET - zoomOffset);
+      // const fowSubTileY = (tile.y & subTileMask);
+      const fowSubTileY = (tile.y & subTileMask) << (fogMap.TILE_WIDTH_OFFSET - zoomOffset);
+      console.log(`fowTileX ${fowTileX}  fowTileY ${fowTileY}  fowSubTileX ${fowSubTileX}  forSubTileY ${fowSubTileY}`);
+
+      // TODO: currently we assume a block is at least a pixel, what if a block is subpixel?
+      // canvas is 128 * 128 block
+      // if zoomoffset = 0
+      // cbs is 512/128 = 4
+      // if zoomoffset = 1
+      // cbs is 512/(128/2) = 8
+      const CANVAS_BLOCK_SIZE_OFFSET = MAP_TILE_SIZE_OFFSET - fogMap.TILE_WIDTH_OFFSET + zoomOffset;
+      const CANVAS_BLOCK_SIZE = 1 << CANVAS_BLOCK_SIZE_OFFSET;
+      // Object.values(fogMap)
+      // Object.values(this.blocks).filter(block => (block.x >= xMinInt) && (block.x <= xMaxInt) && (block.y >= yMinInt) && (block.y <= yMaxInt)); 
+      // for each block within the range, load on to canvas
+    } else {
+      // render multiple fow tiles
+    }
+
 
     if (tile.z === 9) {
       const x = tile.x;
