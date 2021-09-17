@@ -51,11 +51,18 @@ export class MapRenderer {
         const i = Math.floor(x / 8);
         const j = y;
         if ((bitmap[i + j * 8] & (1 << bit_offset)) !== 0) {
-          const i = (((y >> Math.max(zoomOffset,0)) * (imageWidth * 4)) + ((x >> Math.max(zoomOffset,0)) * 4));
-          arr[i] = 255; // R Value
-          arr[i + 1] = 0; // G Value
-          arr[i + 2] = 255; // B Value
-          arr[i + 3] = 255; // A Value
+          // for each pixel of block, we may draw multiple pixel of image
+          const overscanOffset = Math.max(-zoomOffset, 0);
+          const underscanOffset = Math.max(zoomOffset,0);
+          for (let imageX = x << overscanOffset; imageX < (x+1) << overscanOffset; imageX++) {
+            for (let imageY = y << overscanOffset; imageY < (y+1) << overscanOffset; imageY++) {
+              const i = (((imageY >> underscanOffset) * (imageWidth * 4)) + ((imageX >> underscanOffset) * 4));
+              arr[i] = 255; // R Value
+              arr[i + 1] = 0; // G Value
+              arr[i + 2] = 255; // B Value
+              arr[i + 3] = 255; // A Value
+            }
+          }
         }
       }
     }
