@@ -40,38 +40,35 @@ export class MapRenderer {
   }
 
   static renderTileOnCanvas(ctx: CanvasRenderingContext2D, fowTile: fogMap.Tile, tileSizeOffset: number, dx: number, dy: number) {
-    const CANVAS_BLOCK_SIZE_OFFSET = tileSizeOffset - fogMap.TILE_WIDTH_OFFSET;
+    const CANVAS_FOW_BLOCK_SIZE_OFFSET = tileSizeOffset - fogMap.TILE_WIDTH_OFFSET;
     // ctx.strokeRect(dx,dy,1<<tileSizeOffset, 1<<tileSizeOffset);
-    if (CANVAS_BLOCK_SIZE_OFFSET < 0) {
-      // block is subpixel
-      Object.values(fowTile.blocks).forEach(block => {
-        const blockDx = dx + (block.x >> -CANVAS_BLOCK_SIZE_OFFSET);
-        const blockDy = dy + (block.y >> -CANVAS_BLOCK_SIZE_OFFSET);
-        ctx.fillRect(blockDx, blockDy, 1, 1);
-      })
-    } else {
-      Object.values(fowTile.blocks).forEach(block => {
-        const blockDx = dx + (block.x << CANVAS_BLOCK_SIZE_OFFSET);
-        const blockDy = dy + (block.y << CANVAS_BLOCK_SIZE_OFFSET);
-        MapRenderer.renderBlockOnCanvas(ctx, block, CANVAS_BLOCK_SIZE_OFFSET, blockDx, blockDy);
-      })
-    }
+    const overscanOffset = Math.max(CANVAS_FOW_BLOCK_SIZE_OFFSET, 0);
+    const underscanOffset = Math.max(-CANVAS_FOW_BLOCK_SIZE_OFFSET, 0);
+    Object.values(fowTile.blocks).forEach(block => {
+      const blockDx = dx + ((block.x >> underscanOffset) << overscanOffset);
+      const blockDy = dy + ((block.y >> underscanOffset) << overscanOffset);
+      MapRenderer.renderBlockOnCanvas(ctx, block, CANVAS_FOW_BLOCK_SIZE_OFFSET, blockDx, blockDy);
+    })
   }
 
   static renderBlockOnCanvas(ctx: CanvasRenderingContext2D, fowBlock: fogMap.Block, blockSizeOffset: number, dx: number, dy: number) {
-    const CANVAS_FOW_PIXEL_SIZE_OFFSET = blockSizeOffset - fogMap.BITMAP_WIDTH_OFFSET;
-    for (let x = 0; x < fogMap.BITMAP_WIDTH; x++) {
-      for (let y = 0; y < fogMap.BITMAP_WIDTH; y++) {
-        if (fowBlock.is_visited(x, y)) {
-          // for each pixel of block, we may draw multiple pixel of image
-          const overscanOffset = Math.max(CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
-          const underscanOffset = Math.max(-CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
-          ctx.fillRect(
-            dx + ((x >> underscanOffset) << overscanOffset),
-            dy + ((y >> underscanOffset) << overscanOffset),
-            1 << overscanOffset,
-            1 << overscanOffset
-          );
+    if (blockSizeOffset <= 0) {
+      ctx.fillRect(dx, dy, 1, 1);
+    } else {
+      const CANVAS_FOW_PIXEL_SIZE_OFFSET = blockSizeOffset - fogMap.BITMAP_WIDTH_OFFSET;
+      for (let x = 0; x < fogMap.BITMAP_WIDTH; x++) {
+        for (let y = 0; y < fogMap.BITMAP_WIDTH; y++) {
+          if (fowBlock.is_visited(x, y)) {
+            // for each pixel of block, we may draw multiple pixel of image
+            const overscanOffset = Math.max(CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
+            const underscanOffset = Math.max(-CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
+            ctx.fillRect(
+              dx + ((x >> underscanOffset) << overscanOffset),
+              dy + ((y >> underscanOffset) << overscanOffset),
+              1 << overscanOffset,
+              1 << overscanOffset
+            );
+          }
         }
       }
     }
@@ -83,11 +80,11 @@ export class MapRenderer {
     let canvas = document.createElement("canvas");
     let ctx = canvas.getContext("2d")!;
 
-    const CANVAS_TILE_SIZE_OFFSET = 9;
-    const CANVAS_TILE_SIZE = 1 << CANVAS_TILE_SIZE_OFFSET;
+    const CANVAS_SIZE_OFFSET = 9;
+    const CANVAS_SIZE = 1 << CANVAS_SIZE_OFFSET;
 
-    canvas.width = CANVAS_TILE_SIZE;
-    canvas.height = CANVAS_TILE_SIZE;
+    canvas.width = CANVAS_SIZE;
+    canvas.height = CANVAS_SIZE;
     ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
     ctx.fillRect(0, 0, 512, 512);
 
@@ -97,40 +94,7 @@ export class MapRenderer {
     ctx.rect(0, 0, 512, 512);
     ctx.stroke();
 
-    if (tile.z >= FOW_BLOCK_ZOOM) {
-      // sub-block rendering
-      console.log(`sub-block rendering is not implemented`);
-    } else if (tile.z >= FOW_TILE_ZOOM) {
-      // sub-tile rendering
-      const zoomOffset = tile.z - FOW_TILE_ZOOM;
-      const fowTileX = tile.x >> zoomOffset;
-      const fowTileY = tile.y >> zoomOffset;
-      const subTileMask = (1 << zoomOffset) - 1;
-
-      const fowBlockXMin = (tile.x & subTileMask) << (fogMap.TILE_WIDTH_OFFSET - zoomOffset);
-      const fowBlockXMax = ((tile.x & subTileMask) + 1) << (fogMap.TILE_WIDTH_OFFSET - zoomOffset);
-      const fowBlockYMin = (tile.y & subTileMask) << (fogMap.TILE_WIDTH_OFFSET - zoomOffset);
-      const fowBlockYMax = ((tile.y & subTileMask) + 1) << (fogMap.TILE_WIDTH_OFFSET - zoomOffset);
-
-      // TODO: currently we assume a block is at least a pixel, what if a block is subpixel?
-      const CANVAS_BLOCK_SIZE_OFFSET = CANVAS_TILE_SIZE_OFFSET - fogMap.TILE_WIDTH_OFFSET + zoomOffset;
-
-      const blocks = this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)]?.blocks;
-      if (blocks) {
-        Object.values(blocks)
-          .filter(block =>
-            (block.x >= fowBlockXMin) &&
-            (block.x < fowBlockXMax) &&
-            (block.y >= fowBlockYMin) &&
-            (block.y < fowBlockYMax)
-          )
-          .forEach(block => {
-            const dx = (block.x - fowBlockXMin) << CANVAS_BLOCK_SIZE_OFFSET;
-            const dy = (block.y - fowBlockYMin) << CANVAS_BLOCK_SIZE_OFFSET;
-            MapRenderer.renderBlockOnCanvas(ctx, block, CANVAS_BLOCK_SIZE_OFFSET, dx, dy);
-          })
-      }
-    } else {
+    if (tile.z <= FOW_TILE_ZOOM) {
       // render multiple fow tiles
       const CANVAS_NUM_FOW_TILE_OFFSET = FOW_TILE_ZOOM - tile.z;
       const fowTileXMin = tile.x << CANVAS_NUM_FOW_TILE_OFFSET;
@@ -142,7 +106,7 @@ export class MapRenderer {
           const fowTile = this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)];
           if (fowTile) {
             // TODO: what if this < 0?
-            const CANVAS_FOW_TILE_SIZE_OFFSET = CANVAS_TILE_SIZE_OFFSET - CANVAS_NUM_FOW_TILE_OFFSET;
+            const CANVAS_FOW_TILE_SIZE_OFFSET = CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_TILE_OFFSET;
             MapRenderer.renderTileOnCanvas(ctx,
               fowTile,
               CANVAS_FOW_TILE_SIZE_OFFSET,
@@ -152,9 +116,69 @@ export class MapRenderer {
           }
         }
       }
+    } else {
+      const TILE_OVER_OFFSET = tile.z - FOW_TILE_ZOOM;
+      const fowTileX = tile.x >> TILE_OVER_OFFSET;
+      const fowTileY = tile.y >> TILE_OVER_OFFSET;
+      const subTileMask = (1 << TILE_OVER_OFFSET) - 1;
 
+      const CANVAS_NUM_FOW_BLOCK_OFFSET = fogMap.TILE_WIDTH_OFFSET - (TILE_OVER_OFFSET);
 
-      console.log(`multi-tile rendering is not implemented`);
+      if (tile.z > FOW_BLOCK_ZOOM) {
+        // sub-block rendering
+        const fowBlockX = (tile.x & subTileMask) >> -CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const fowBlockY = (tile.y & subTileMask) >> -CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const subBlockMask = (1 << (TILE_OVER_OFFSET - fogMap.TILE_WIDTH_OFFSET)) - 1;
+
+        const CANVAS_NUM_FOW_PIXEL_OFFSET = CANVAS_NUM_FOW_BLOCK_OFFSET + fogMap.BITMAP_WIDTH_OFFSET;
+
+        const fowBlockPixelXMin = (tile.x & subBlockMask) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+        const fowBlockPixelXMax = ((tile.x & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+        const fowBlockPixelYMin = (tile.y & subBlockMask) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+        const fowBlockPixelYMax = ((tile.y & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+
+        const block = this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)]?.blocks[fogMap.Map.makeKeyXY(fowBlockX, fowBlockY)]
+
+        for (let fowPixelX = fowBlockPixelXMin; fowPixelX < fowBlockPixelXMax; fowPixelX++) {
+          for (let fowPixelY = fowBlockPixelYMin; fowPixelY < fowBlockPixelYMax; fowPixelY++) {
+            const CANVAS_FOW_PIXEL_SIZE_OFFSET = CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_PIXEL_OFFSET;
+            if (block.is_visited(fowPixelX, fowPixelY)) {
+              const x = (fowPixelX - fowBlockPixelXMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
+              const y = (fowPixelY - fowBlockPixelYMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
+              ctx.fillRect(
+                x,
+                y,
+                1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
+                1 << CANVAS_FOW_PIXEL_SIZE_OFFSET
+              );
+            }
+          }
+        }
+      } else {
+        // sub-tile rendering
+        const fowBlockXMin = (tile.x & subTileMask) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const fowBlockXMax = ((tile.x & subTileMask) + 1) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const fowBlockYMin = (tile.y & subTileMask) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+        const fowBlockYMax = ((tile.y & subTileMask) + 1) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+
+        const CANVAS_FOW_BLOCK_SIZE_OFFSET = CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_BLOCK_OFFSET;
+
+        const blocks = this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)]?.blocks;
+        if (blocks) {
+          Object.values(blocks)
+            .filter(block =>
+              (block.x >= fowBlockXMin) &&
+              (block.x < fowBlockXMax) &&
+              (block.y >= fowBlockYMin) &&
+              (block.y < fowBlockYMax)
+            )
+            .forEach(block => {
+              const dx = (block.x - fowBlockXMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
+              const dy = (block.y - fowBlockYMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
+              MapRenderer.renderBlockOnCanvas(ctx, block, CANVAS_FOW_BLOCK_SIZE_OFFSET, dx, dy);
+            })
+        }
+      }
     }
 
     return new tileLayer.TileCanvas(canvas);
