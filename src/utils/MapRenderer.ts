@@ -53,7 +53,7 @@ export class MapRenderer {
 
   static renderBlockOnCanvas(ctx: CanvasRenderingContext2D, fowBlock: fogMap.Block, blockSizeOffset: number, dx: number, dy: number) {
     if (blockSizeOffset <= 0) {
-      ctx.fillRect(dx, dy, 1, 1);
+      ctx.clearRect(dx, dy, 1, 1);
     } else {
       const CANVAS_FOW_PIXEL_SIZE_OFFSET = blockSizeOffset - fogMap.BITMAP_WIDTH_OFFSET;
       for (let x = 0; x < fogMap.BITMAP_WIDTH; x++) {
@@ -62,7 +62,7 @@ export class MapRenderer {
             // for each pixel of block, we may draw multiple pixel of image
             const overscanOffset = Math.max(CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
             const underscanOffset = Math.max(-CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
-            ctx.fillRect(
+            ctx.clearRect(
               dx + ((x >> underscanOffset) << overscanOffset),
               dy + ((y >> underscanOffset) << overscanOffset),
               1 << overscanOffset,
@@ -139,7 +139,7 @@ export class MapRenderer {
             if (block.is_visited(fowPixelX, fowPixelY)) {
               const x = (fowPixelX - fowBlockPixelXMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
               const y = (fowPixelY - fowBlockPixelYMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
-              ctx.fillRect(
+              ctx.clearRect(
                 x,
                 y,
                 1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
