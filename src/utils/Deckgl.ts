@@ -45,6 +45,8 @@ export class Tile {
 }
 
 export class Deckgl {
+  private deck: Deck;
+  private tileLayer: DeckglTileLayer;
 
   constructor(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement,
     onLoadCanvas: (tile: Tile) => TileCanvas, onUnloadCanvas: (tile: Tile) => void) {
@@ -85,6 +87,12 @@ export class Deckgl {
     map.on("move", () => {
       Deckgl.setDeckglView(map, deck);
     });
+    this.deck = deck;
+    this.tileLayer = tileLayer;
+  }
+
+  redraw() {
+    this.tileLayer.setNeedsRedraw(true);
   }
 
   private static setDeckglView(map: mapboxgl.Map, deck: Deck) {

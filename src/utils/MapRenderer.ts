@@ -17,11 +17,13 @@ function tileToKey(tile: deckgl.Tile): TileKey {
 export class MapRenderer {
   private static instance = new MapRenderer();
   private map: mapboxgl.Map | null;
+  private deckgl: deckgl.Deckgl | null;
   private fogMap: fogMap.Map;
   private loadedTileCanvases: { [key: string]: deckgl.TileCanvas }
 
   private constructor() {
     this.map = null;
+    this.deckgl = null;
     this.fogMap = new fogMap.Map();
     this.loadedTileCanvases = {};
   }
@@ -32,7 +34,7 @@ export class MapRenderer {
 
   registerMap(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement) {
     this.map = map;
-    new deckgl.Deckgl(map, deckglContainer, this.onLoadTileCanvas.bind(this), this.onUnloadTileCanvas.bind(this));
+    this.deckgl = new deckgl.Deckgl(map, deckglContainer, this.onLoadTileCanvas.bind(this), this.onUnloadTileCanvas.bind(this));
   }
 
   unregisterMap(map: mapboxgl.Map) {
@@ -48,6 +50,7 @@ export class MapRenderer {
       Object.values(this.loadedTileCanvases).forEach((tileCanvas) => {
         this.drawTileCanvas(tileCanvas);
       });
+      this.deckgl?.redraw();
     }
   }
 
