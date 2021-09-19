@@ -50,7 +50,6 @@ export class MapRenderer {
       Object.values(this.loadedTileCanvases).forEach((tileCanvas) => {
         this.drawTileCanvas(tileCanvas);
       });
-      this.deckgl?.redraw();
     }
   }
 
@@ -91,7 +90,11 @@ export class MapRenderer {
 
   private drawTileCanvas(tileCanvas: deckgl.TileCanvas) {
     let tile = tileCanvas.tile;
-    let ctx = tileCanvas.canvas.getContext("2d")!;
+    let canvas = tileCanvas.canvas;
+    let ctx = canvas.getContext("2d")!;
+
+    canvas.width = CANVAS_SIZE;
+    canvas.height = CANVAS_SIZE;
 
     ctx.fillStyle = "rgba(0, 0, 0, 1)";
     ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
@@ -185,13 +188,7 @@ export class MapRenderer {
     tileCanvas.updateOnce();
   }
 
-  private onLoadTileCanvas(tile: deckgl.Tile) {
-    let canvas = document.createElement("canvas");
-
-    canvas.width = CANVAS_SIZE;
-    canvas.height = CANVAS_SIZE;
-
-    let tileCanvas = new deckgl.TileCanvas(tile, canvas);
+  private onLoadTileCanvas(tile: deckgl.Tile, tileCanvas: deckgl.TileCanvas) {
     this.drawTileCanvas(tileCanvas);
     this.loadedTileCanvases[tileToKey(tile)] = tileCanvas;
     return tileCanvas;
