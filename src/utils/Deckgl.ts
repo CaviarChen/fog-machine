@@ -7,10 +7,12 @@ import { BitmapLayer } from '@deck.gl/layers';
 import { TileLayer as DeckglTileLayer } from '@deck.gl/geo-layers';
 
 export class TileCanvas {
-  private canvas: HTMLCanvasElement;
+  public tile: Tile;
+  public canvas: HTMLCanvasElement;
   private texture2d: Texture2D | null;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(tile: Tile, canvas: HTMLCanvasElement) {
+    this.tile = tile;
     this.canvas = canvas;
     this.texture2d = null
   }
@@ -44,7 +46,8 @@ export class Tile {
 
 export class Deckgl {
 
-  constructor(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement, onLoadCanvas: (tile: Tile) => TileCanvas) {
+  constructor(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement,
+    onLoadCanvas: (tile: Tile) => TileCanvas, onUnloadCanvas: (tile: Tile) => void) {
     const tileLayer =
       new DeckglTileLayer({
         id: 'deckgl-tile-layer',
@@ -68,7 +71,8 @@ export class Deckgl {
             });
 
           return [dynamicBitmapLayer];
-        }
+        },
+        onTileUnload: onUnloadCanvas
       });
     let deck = new Deck({
       canvas: deckglContainer,

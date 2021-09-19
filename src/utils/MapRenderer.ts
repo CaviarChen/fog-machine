@@ -5,16 +5,25 @@ import * as deckgl from './Deckgl';
 
 const FOW_TILE_ZOOM = 9;
 const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + fogMap.TILE_WIDTH_OFFSET;
+const CANVAS_SIZE_OFFSET = 9;
+const CANVAS_SIZE = 1 << CANVAS_SIZE_OFFSET;
 
+type TileKey = string;
+
+function tileToKey(tile: deckgl.Tile): TileKey {
+  return `${tile.x}-${tile.y}-${tile.z}`;
+}
 
 export class MapRenderer {
   private static instance = new MapRenderer();
   private map: mapboxgl.Map | null;
   private fogMap: fogMap.Map;
+  private loadedTileCanvases: { [key: string]: deckgl.TileCanvas }
 
   private constructor() {
     this.map = null;
     this.fogMap = new fogMap.Map();
+    this.loadedTileCanvases = {};
   }
 
   static get() {
@@ -23,7 +32,7 @@ export class MapRenderer {
 
   registerMap(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement) {
     this.map = map;
-    new deckgl.Deckgl(map, deckglContainer, this.onLoadTileCanvas.bind(this));
+    new deckgl.Deckgl(map, deckglContainer, this.onLoadTileCanvas.bind(this), this.onUnloadTileCanvas.bind(this));
   }
 
   unregisterMap(map: mapboxgl.Map) {
@@ -35,7 +44,10 @@ export class MapRenderer {
   addFoGFile(filename: string, data: ArrayBuffer) {
     let newTile = this.fogMap.addFile(filename, data);
     if (newTile) {
-      // TODO
+      // TODO: only update changed parts or at least debounce this.
+      Object.values(this.loadedTileCanvases).forEach((tileCanvas) => {
+        this.drawTileCanvas(tileCanvas);
+      });
     }
   }
 
@@ -74,19 +86,12 @@ export class MapRenderer {
     }
   }
 
-  private onLoadTileCanvas(tile: deckgl.Tile) {
-    console.log(tile);
-    // process tile info
-    let canvas = document.createElement("canvas");
-    let ctx = canvas.getContext("2d")!;
+  private drawTileCanvas(tileCanvas: deckgl.TileCanvas) {
+    let tile = tileCanvas.tile;
+    let ctx = tileCanvas.canvas.getContext("2d")!;
 
-    const CANVAS_SIZE_OFFSET = 9;
-    const CANVAS_SIZE = 1 << CANVAS_SIZE_OFFSET;
-
-    canvas.width = CANVAS_SIZE;
-    canvas.height = CANVAS_SIZE;
     ctx.fillStyle = "rgba(0, 0, 0, 1)";
-    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
     if (tile.z <= FOW_TILE_ZOOM) {
       // render multiple fow tiles
@@ -174,7 +179,22 @@ export class MapRenderer {
         }
       }
     }
+    tileCanvas.updateOnce();
+  }
 
-    return new deckgl.TileCanvas(canvas);
+  private onLoadTileCanvas(tile: deckgl.Tile) {
+    let canvas = document.createElement("canvas");
+
+    canvas.width = CANVAS_SIZE;
+    canvas.height = CANVAS_SIZE;
+
+    let tileCanvas = new deckgl.TileCanvas(tile, canvas);
+    this.drawTileCanvas(tileCanvas);
+    this.loadedTileCanvases[tileToKey(tile)] = tileCanvas;
+    return tileCanvas;
+  }
+
+  private onUnloadTileCanvas(tile: deckgl.Tile) {
+    delete this.loadedTileCanvases[tileToKey(tile)];
   }
 }
