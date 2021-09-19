@@ -1,7 +1,7 @@
 // TODO: consider reactify this?
 import mapboxgl from 'mapbox-gl';
 import * as fogMap from './FogMap';
-import * as tileLayer from './TileLayer';
+import * as deckgl from './Deckgl';
 
 const FOW_TILE_ZOOM = 9;
 const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + fogMap.TILE_WIDTH_OFFSET;
@@ -21,9 +21,9 @@ export class MapRenderer {
     return MapRenderer.instance;
   }
 
-  registerMap(map: mapboxgl.Map) {
+  registerMap(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement) {
     this.map = map;
-    new tileLayer.TileLayer(map, this.onLoadTileCanvas.bind(this));
+    new deckgl.Deckgl(map, deckglContainer, this.onLoadTileCanvas.bind(this));
   }
 
   unregisterMap(map: mapboxgl.Map) {
@@ -53,7 +53,7 @@ export class MapRenderer {
 
   static renderBlockOnCanvas(ctx: CanvasRenderingContext2D, fowBlock: fogMap.Block, blockSizeOffset: number, dx: number, dy: number) {
     if (blockSizeOffset <= 0) {
-      ctx.fillRect(dx, dy, 1, 1);
+      ctx.clearRect(dx, dy, 1, 1);
     } else {
       const CANVAS_FOW_PIXEL_SIZE_OFFSET = blockSizeOffset - fogMap.BITMAP_WIDTH_OFFSET;
       for (let x = 0; x < fogMap.BITMAP_WIDTH; x++) {
@@ -62,7 +62,7 @@ export class MapRenderer {
             // for each pixel of block, we may draw multiple pixel of image
             const overscanOffset = Math.max(CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
             const underscanOffset = Math.max(-CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
-            ctx.fillRect(
+            ctx.clearRect(
               dx + ((x >> underscanOffset) << overscanOffset),
               dy + ((y >> underscanOffset) << overscanOffset),
               1 << overscanOffset,
@@ -74,7 +74,7 @@ export class MapRenderer {
     }
   }
 
-  private onLoadTileCanvas(tile: tileLayer.Tile) {
+  private onLoadTileCanvas(tile: deckgl.Tile) {
     console.log(tile);
     // process tile info
     let canvas = document.createElement("canvas");
@@ -85,14 +85,8 @@ export class MapRenderer {
 
     canvas.width = CANVAS_SIZE;
     canvas.height = CANVAS_SIZE;
-    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    ctx.fillStyle = "rgba(0, 0, 0, 1)";
     ctx.fillRect(0, 0, 512, 512);
-
-    ctx.beginPath();
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = "red";
-    ctx.rect(0, 0, 512, 512);
-    ctx.stroke();
 
     if (tile.z <= FOW_TILE_ZOOM) {
       // render multiple fow tiles
@@ -145,7 +139,7 @@ export class MapRenderer {
             if (block.is_visited(fowPixelX, fowPixelY)) {
               const x = (fowPixelX - fowBlockPixelXMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
               const y = (fowPixelY - fowBlockPixelYMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
-              ctx.fillRect(
+              ctx.clearRect(
                 x,
                 y,
                 1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
@@ -181,6 +175,6 @@ export class MapRenderer {
       }
     }
 
-    return new tileLayer.TileCanvas(canvas);
+    return new deckgl.TileCanvas(canvas);
   }
 }
