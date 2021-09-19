@@ -1,8 +1,8 @@
 // need typed definitions from luma.gl and deck.gl
 // @ts-nocheck
 import mapboxgl from 'mapbox-gl';
+import { Deck } from '@deck.gl/core';
 import { Texture2D } from '@luma.gl/core';
-import { MapboxLayer } from '@deck.gl/mapbox';
 import { BitmapLayer } from '@deck.gl/layers';
 import { TileLayer as DeckglTileLayer } from '@deck.gl/geo-layers';
 
@@ -42,18 +42,18 @@ export class Tile {
   bbox: Bbox;
 }
 
-export class TileLayer {
+export class Deckgl {
 
-  constructor(map: mapboxgl.Map, onLoadCanvas: (tile: Tile) => TileCanvas) {
+  constructor(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement, onLoadCanvas: (tile: Tile) => TileCanvas) {
     const tileLayer =
-      new MapboxLayer({
+      new DeckglTileLayer({
         id: 'deckgl-tile-layer',
-        type: DeckglTileLayer,
         maxRequests: 10,
         pickable: false,
         minZoom: 0,
         maxZoom: 19,
         tileSize: 512,
+        refinementStrategy: 'best-available',
         zoomOffset: devicePixelRatio === 1 ? -1 : 0,
         renderSubLayers: props => {
           let tile: Tile = props.tile;
@@ -70,7 +70,29 @@ export class TileLayer {
           return [dynamicBitmapLayer];
         }
       });
-    map.addLayer(tileLayer);
+    let deck = new Deck({
+      canvas: deckglContainer,
+      width: '100%',
+      height: '100%',
+      layers: [tileLayer]
+    });
+    Deckgl.setDeckglView(map, deck);
+    map.on("move", () => {
+      Deckgl.setDeckglView(map, deck);
+    });
+  }
+
+  private static setDeckglView(map: mapboxgl.Map, deck: Deck) {
+    let { lng, lat } = map.getCenter();
+    deck.setProps({
+      initialViewState: {
+        latitude: lat,
+        longitude: lng,
+        zoom: map.getZoom(),
+        bearing: map.getBearing(),
+        pitch: map.getPitch()
+      }
+    });
   }
 }
 
