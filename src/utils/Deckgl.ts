@@ -1,7 +1,7 @@
 // need typed definitions from luma.gl and deck.gl
 // @ts-nocheck
 import mapboxgl from 'mapbox-gl';
-import { Deck } from '@deck.gl/core';
+import { Deck, MapView } from '@deck.gl/core';
 import { Texture2D } from '@luma.gl/core';
 import { BitmapLayer } from '@deck.gl/layers';
 import { TileLayer as DeckglTileLayer } from '@deck.gl/geo-layers';
@@ -74,6 +74,7 @@ export class Deckgl {
       canvas: deckglContainer,
       width: '100%',
       height: '100%',
+      views: new MapView({ repeat: true }),
       layers: [tileLayer]
     });
     Deckgl.setDeckglView(map, deck);

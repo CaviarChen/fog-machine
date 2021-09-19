@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import './Map.css'
 import mapboxgl from 'mapbox-gl';
 import { MapRenderer } from './utils/MapRenderer'
 
@@ -34,8 +35,8 @@ function Map() {
 
   return (
     <div className="h-screen">
-      <div ref={mapContainer} className="absolute w-full h-full inset-0 z-10" />
-      <canvas ref={deckglContainer} className="absolute w-full h-full inset-0 z-20 pointer-events-none opacity-50" />
+      <div ref={mapContainer} className="absolute w-full h-full inset-0" />
+      <canvas ref={deckglContainer} className="absolute w-full h-full inset-0 z-10 pointer-events-none opacity-50" />
     </div>
   );
 }
