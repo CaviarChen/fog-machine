@@ -14,6 +14,12 @@ function tileToKey(tile: deckgl.Tile): TileKey {
   return `${tile.x}-${tile.y}-${tile.z}`;
 }
 
+// NOTE: this does not handle wraparound
+function isBboxOverlap(a: deckgl.Bbox, b: deckgl.Bbox) {
+  return (a.north >= b.south && b.north >= a.south)
+    && (a.east >= b.west && b.east >= a.west)
+}
+
 export class MapRenderer {
   private static instance = new MapRenderer();
   private map: mapboxgl.Map | null;
@@ -43,13 +49,18 @@ export class MapRenderer {
     }
   }
 
+  private redrawArea(area: deckgl.Bbox) {
+    Object.values(this.loadedTileCanvases).forEach((tileCanvas) => {
+      if (isBboxOverlap(tileCanvas.tile.bbox, area)) {
+        this.drawTileCanvas(tileCanvas);
+      }
+    });
+  }
+
   addFoGFile(filename: string, data: ArrayBuffer) {
     let newTile = this.fogMap.addFile(filename, data);
     if (newTile) {
-      // TODO: only update changed parts or at least debounce this.
-      Object.values(this.loadedTileCanvases).forEach((tileCanvas) => {
-        this.drawTileCanvas(tileCanvas);
-      });
+      this.redrawArea(newTile.bbox());
     }
   }
 

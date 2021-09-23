@@ -1,4 +1,5 @@
 import pako from 'pako';
+import * as deckgl from './Deckgl';
 
 const FILENAME_MASK1 = "olhwjsktri";
 // const FILENAME_MASK2 = "eizxdwknmo";
@@ -93,7 +94,7 @@ export class Tile {
                 let block = new Block(block_x, block_y, block_data)
                 this.blocks[Map.makeKeyXY(block_x, block_y)] = block;
                 this.regionCount[block.region()] = (this.regionCount[block.region()] || 0) + block.count()
-                this.regionCount["BLK"] = (this.regionCount["BLK"] || 0) +1;
+                this.regionCount["BLK"] = (this.regionCount["BLK"] || 0) + 1;
             }
         }
     }
@@ -110,6 +111,13 @@ export class Tile {
         let ne = Tile.XYToLngLat(this.x + 1, this.y);
         let nw = Tile.XYToLngLat(this.x, this.y);
         return [nw, ne, se, sw];
+    }
+
+    bbox() {
+        let [west, south] = Tile.XYToLngLat(this.x, this.y + 1);
+        let [east, north] = Tile.XYToLngLat(this.x + 1, this.y);
+        let bbox = new deckgl.Bbox(west, south, east, north);
+        return bbox;
     }
 }
 
@@ -143,5 +151,5 @@ export class Block {
         var i = Math.floor(x / 8);
         var j = y;
         return (this.bitmap[i + j * 8] & (1 << bit_offset)) !== 0;
-    } 
+    }
 }
