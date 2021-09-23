@@ -7,16 +7,21 @@ import { BitmapLayer } from '@deck.gl/layers';
 import { TileLayer as DeckglTileLayer } from '@deck.gl/geo-layers';
 
 export class TileCanvas {
-  private canvas: HTMLCanvasElement;
+  public tile: Tile;
+  public canvas: HTMLCanvasElement;
   private texture2d: Texture2D | null;
+  private tileLayer: DeckglTileLayer;
 
-  constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
+  constructor(tile: Tile, tileLayer: DeckglTileLayer) {
+    this.tile = tile;
+    this.canvas = document.createElement("canvas");
     this.texture2d = null
+    this.tileLayer = tileLayer;
   }
 
   updateOnce() {
     this.texture2d = null;
+    this.tileLayer.setNeedsRedraw(true);
   }
 
   _getTexture2D(gl: WebGL2RenderingContext) {
@@ -43,8 +48,11 @@ export class Tile {
 }
 
 export class Deckgl {
+  private deck: Deck;
+  private tileLayer: DeckglTileLayer;
 
-  constructor(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement, onLoadCanvas: (tile: Tile) => TileCanvas) {
+  constructor(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement,
+    onLoadCanvas: (tile: Tile, tileCanvas: TileCanvas) => void, onUnloadCanvas: (tile: Tile) => void) {
     const tileLayer =
       new DeckglTileLayer({
         id: 'deckgl-tile-layer',
@@ -58,7 +66,10 @@ export class Deckgl {
         renderSubLayers: props => {
           let tile: Tile = props.tile;
           const { bbox: { west, south, east, north } } = props.tile;
-          let tileCanvas = onLoadCanvas(tile);
+
+          let tileCanvas = new TileCanvas(tile, tileLayer);
+
+          onLoadCanvas(tile, tileCanvas);
 
           let dynamicBitmapLayer =
             new DynamicBitmapLayer(props, {
@@ -68,7 +79,8 @@ export class Deckgl {
             });
 
           return [dynamicBitmapLayer];
-        }
+        },
+        onTileUnload: onUnloadCanvas
       });
     let deck = new Deck({
       canvas: deckglContainer,
@@ -81,6 +93,8 @@ export class Deckgl {
     map.on("move", () => {
       Deckgl.setDeckglView(map, deck);
     });
+    this.deck = deck;
+    this.tileLayer = tileLayer;
   }
 
   private static setDeckglView(map: mapboxgl.Map, deck: Deck) {
