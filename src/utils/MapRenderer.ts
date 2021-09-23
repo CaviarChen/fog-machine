@@ -144,18 +144,20 @@ export class MapRenderer {
 
         const block = this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)]?.blocks[fogMap.Map.makeKeyXY(fowBlockX, fowBlockY)]
 
-        for (let fowPixelX = fowBlockPixelXMin; fowPixelX < fowBlockPixelXMax; fowPixelX++) {
-          for (let fowPixelY = fowBlockPixelYMin; fowPixelY < fowBlockPixelYMax; fowPixelY++) {
-            const CANVAS_FOW_PIXEL_SIZE_OFFSET = CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_PIXEL_OFFSET;
-            if (block.is_visited(fowPixelX, fowPixelY)) {
-              const x = (fowPixelX - fowBlockPixelXMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
-              const y = (fowPixelY - fowBlockPixelYMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
-              ctx.clearRect(
-                x,
-                y,
-                1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
-                1 << CANVAS_FOW_PIXEL_SIZE_OFFSET
-              );
+        if (block) {
+          for (let fowPixelX = fowBlockPixelXMin; fowPixelX < fowBlockPixelXMax; fowPixelX++) {
+            for (let fowPixelY = fowBlockPixelYMin; fowPixelY < fowBlockPixelYMax; fowPixelY++) {
+              const CANVAS_FOW_PIXEL_SIZE_OFFSET = CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_PIXEL_OFFSET;
+              if (block.is_visited(fowPixelX, fowPixelY)) {
+                const x = (fowPixelX - fowBlockPixelXMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
+                const y = (fowPixelY - fowBlockPixelYMin) << CANVAS_FOW_PIXEL_SIZE_OFFSET;
+                ctx.clearRect(
+                  x,
+                  y,
+                  1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
+                  1 << CANVAS_FOW_PIXEL_SIZE_OFFSET
+                );
+              }
             }
           }
         }
