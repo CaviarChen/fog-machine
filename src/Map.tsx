@@ -1,13 +1,12 @@
-import React, { useEffect, useRef } from 'react';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import './Map.css'
-import mapboxgl from 'mapbox-gl';
-import { MapRenderer } from './utils/MapRenderer'
+import React, { useEffect, useRef } from "react";
+import "mapbox-gl/dist/mapbox-gl.css";
+import "./Map.css";
+import mapboxgl from "mapbox-gl";
+import { MapRenderer } from "./utils/MapRenderer";
 
-mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
+mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
 
 function Map() {
-
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const deckglContainer = useRef<HTMLCanvasElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -19,7 +18,7 @@ function Map() {
     if (!deckglContainer.current) return;
     const mapboxMap = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v10',
+      style: "mapbox://styles/mapbox/streets-v10",
     });
     mapboxMap.addControl(new mapboxgl.NavigationControl(), "bottom-right");
     mapboxMap.on("load", () => {
@@ -30,13 +29,16 @@ function Map() {
     return function cleanup() {
       // TODO: This clean up seems wrong
       // mapRenderer.unregisterMap(mapboxMap);
-    }
+    };
   });
 
   return (
     <div className="h-screen">
       <div ref={mapContainer} className="absolute w-full h-full inset-0" />
-      <canvas ref={deckglContainer} className="absolute w-full h-full inset-0 z-10 pointer-events-none opacity-50" />
+      <canvas
+        ref={deckglContainer}
+        className="absolute w-full h-full inset-0 z-10 pointer-events-none opacity-50"
+      />
     </div>
   );
 }

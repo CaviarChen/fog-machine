@@ -51,6 +51,7 @@
     "@types/pako": "^1.0.2",
     "autoprefixer": "^9",
     "postcss": "^7",
+    "prettier": "2.4.1",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat"
   }
 }
