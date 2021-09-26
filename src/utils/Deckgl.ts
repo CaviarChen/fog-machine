@@ -1,10 +1,11 @@
 // need typed definitions from luma.gl and deck.gl
+/* eslint-disable */
 // @ts-nocheck
-import mapboxgl from 'mapbox-gl';
-import { Deck, MapView } from '@deck.gl/core';
-import { Texture2D } from '@luma.gl/core';
-import { BitmapLayer } from '@deck.gl/layers';
-import { TileLayer as DeckglTileLayer } from '@deck.gl/geo-layers';
+import mapboxgl from "mapbox-gl";
+import { Deck, MapView } from "@deck.gl/core";
+import { Texture2D } from "@luma.gl/core";
+import { BitmapLayer } from "@deck.gl/layers";
+import { TileLayer as DeckglTileLayer } from "@deck.gl/geo-layers";
 
 export class TileCanvas {
   public tile: Tile;
@@ -15,11 +16,11 @@ export class TileCanvas {
   constructor(tile: Tile, tileLayer: DeckglTileLayer) {
     this.tile = tile;
     this.canvas = document.createElement("canvas");
-    this.texture2d = null
+    this.texture2d = null;
     this.tileLayer = tileLayer;
   }
 
-  updateOnce() {
+  updateOnce(): void {
     this.texture2d = null;
     this.tileLayer.setNeedsRedraw(true);
   }
@@ -58,43 +59,47 @@ export class Deckgl {
   private deck: Deck;
   private tileLayer: DeckglTileLayer;
 
-  constructor(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement,
-    onLoadCanvas: (tile: Tile, tileCanvas: TileCanvas) => void, onUnloadCanvas: (tile: Tile) => void) {
-    const tileLayer =
-      new DeckglTileLayer({
-        id: 'deckgl-tile-layer',
-        maxRequests: 10,
-        pickable: false,
-        minZoom: 0,
-        maxZoom: 19,
-        tileSize: 512,
-        refinementStrategy: 'best-available',
-        zoomOffset: devicePixelRatio === 1 ? -1 : 0,
-        renderSubLayers: props => {
-          let tile: Tile = props.tile;
-          const { bbox: { west, south, east, north } } = props.tile;
+  constructor(
+    map: mapboxgl.Map,
+    deckglContainer: HTMLCanvasElement,
+    onLoadCanvas: (tile: Tile, tileCanvas: TileCanvas) => void,
+    onUnloadCanvas: (tile: Tile) => void
+  ) {
+    const tileLayer = new DeckglTileLayer({
+      id: "deckgl-tile-layer",
+      maxRequests: 10,
+      pickable: false,
+      minZoom: 0,
+      maxZoom: 19,
+      tileSize: 512,
+      refinementStrategy: "best-available",
+      zoomOffset: devicePixelRatio === 1 ? -1 : 0,
+      renderSubLayers: (props) => {
+        const tile: Tile = props.tile;
+        const {
+          bbox: { west, south, east, north },
+        } = props.tile;
 
-          let tileCanvas = new TileCanvas(tile, tileLayer);
+        const tileCanvas = new TileCanvas(tile, tileLayer);
 
-          onLoadCanvas(tile, tileCanvas);
+        onLoadCanvas(tile, tileCanvas);
 
-          let dynamicBitmapLayer =
-            new DynamicBitmapLayer(props, {
-              image: null,
-              canvas: tileCanvas,
-              bounds: [west, south, east, north],
-            });
+        const dynamicBitmapLayer = new DynamicBitmapLayer(props, {
+          image: null,
+          canvas: tileCanvas,
+          bounds: [west, south, east, north],
+        });
 
-          return [dynamicBitmapLayer];
-        },
-        onTileUnload: onUnloadCanvas
-      });
-    let deck = new Deck({
+        return [dynamicBitmapLayer];
+      },
+      onTileUnload: onUnloadCanvas,
+    });
+    const deck = new Deck({
       canvas: deckglContainer,
-      width: '100%',
-      height: '100%',
+      width: "100%",
+      height: "100%",
       views: new MapView({ repeat: true }),
-      layers: [tileLayer]
+      layers: [tileLayer],
     });
     Deckgl.setDeckglView(map, deck);
     map.on("move", () => {
@@ -105,15 +110,15 @@ export class Deckgl {
   }
 
   private static setDeckglView(map: mapboxgl.Map, deck: Deck) {
-    let { lng, lat } = map.getCenter();
+    const { lng, lat } = map.getCenter();
     deck.setProps({
       initialViewState: {
         latitude: lat,
         longitude: lng,
         zoom: map.getZoom(),
         bearing: map.getBearing(),
-        pitch: map.getPitch()
-      }
+        pitch: map.getPitch(),
+      },
     });
   }
 }

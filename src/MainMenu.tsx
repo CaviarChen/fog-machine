@@ -1,26 +1,25 @@
-import { Popover, Transition } from '@headlessui/react'
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/solid'
-import { Fragment } from 'react'
+import { Popover, Transition } from "@headlessui/react";
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/solid";
+import { Fragment } from "react";
 
 export enum Actions {
-  Import
-};
+  Import,
+}
 
 type Props = {
   onAction(action: Actions): void;
-}
+};
 
 const menuItems = [
   {
-    name: 'Import',
-    description: 'Import data from [Fog of World]',
+    name: "Import",
+    description: "Import data from [Fog of World]",
     action: Actions.Import,
     icon: IconImport,
   },
-]
+];
 
-
-export default function MainMenu(props: Props) {
+export default function MainMenu(props: Props): JSX.Element {
   return (
     <div className="absolute z-40 top-4 left-4">
       <div className="max-w-sm m-auto bg-white bg-opacity-90 rounded-xl shadow-md flex items-center space-x-4">
@@ -29,23 +28,23 @@ export default function MainMenu(props: Props) {
             <>
               <Popover.Button
                 className={`
-                ${open ? '' : 'text-opacity-90'}
+                ${open ? "" : "text-opacity-90"}
                 text-black group bg-orange-700 px-3 py-2 rounded-md inline-flex items-center text-base font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`}
               >
                 <div className="p-0.5">
                   <span>FogMachine</span>
                 </div>
-                {open ?
+                {open ? (
                   <ChevronUpIcon
                     className="ml-2 h-5 w-5 text-orange-300 group-hover:text-opacity-80 transition ease-in-out duration-150"
                     aria-hidden="true"
                   />
-                  :
+                ) : (
                   <ChevronDownIcon
                     className="ml-2 h-5 w-5 text-orange-300 group-hover:text-opacity-80 transition ease-in-out duration-150"
                     aria-hidden="true"
                   />
-                }
+                )}
               </Popover.Button>
               <Transition
                 as={Fragment}
@@ -88,7 +87,7 @@ export default function MainMenu(props: Props) {
         </Popover>
       </div>
     </div>
-  )
+  );
 }
 
 function IconImport() {
@@ -117,6 +116,5 @@ function IconImport() {
         />
       </svg>
     </svg>
-  )
+  );
 }
-
