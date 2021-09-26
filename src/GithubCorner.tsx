@@ -1,6 +1,6 @@
 import "./GithubCorner.css";
 
-export default function GithubCorner() {
+export default function GithubCorner(): JSX.Element {
   return (
     <div className="z-50 absolute top-0 right-0">
       <a

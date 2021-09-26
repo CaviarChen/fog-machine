@@ -7,22 +7,24 @@ type Props = {
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-export default function MyModal(props: Props) {
-  let { isOpen, setIsOpen } = props;
+export default function MyModal(props: Props): JSX.Element {
+  const { isOpen, setIsOpen } = props;
 
   const fileInput = useRef<HTMLInputElement | null>(null);
 
   function fileInputOnChange(e: ChangeEvent<HTMLInputElement>) {
     closeModal();
     // TODO: progress bar, error handling
-    let mapRenderer = MapRenderer.get();
+    const mapRenderer = MapRenderer.get();
     for (let i = 0; i < (e.target.files?.length || 0); i++) {
-      let file = e.target.files?.item(i)!;
-      let reader = new FileReader();
-      reader.readAsArrayBuffer(file);
-      reader.onload = (e) => {
-        mapRenderer.addFoGFile(file.name, reader.result as ArrayBuffer);
-      };
+      const file = e.target.files?.item(i);
+      if (file) {
+        const reader = new FileReader();
+        reader.readAsArrayBuffer(file);
+        reader.onload = (_e) => {
+          mapRenderer.addFoGFile(file.name, reader.result as ArrayBuffer);
+        };
+      }
     }
   }
 

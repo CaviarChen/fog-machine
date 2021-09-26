@@ -6,7 +6,7 @@ import { MapRenderer } from "./utils/MapRenderer";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
 
-function Map() {
+function Map(): JSX.Element {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const deckglContainer = useRef<HTMLCanvasElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);

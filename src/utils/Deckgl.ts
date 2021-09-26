@@ -1,4 +1,5 @@
 // need typed definitions from luma.gl and deck.gl
+/* eslint-disable */
 // @ts-nocheck
 import mapboxgl from "mapbox-gl";
 import { Deck, MapView } from "@deck.gl/core";
@@ -19,7 +20,7 @@ export class TileCanvas {
     this.tileLayer = tileLayer;
   }
 
-  updateOnce() {
+  updateOnce(): void {
     this.texture2d = null;
     this.tileLayer.setNeedsRedraw(true);
   }
@@ -74,16 +75,16 @@ export class Deckgl {
       refinementStrategy: "best-available",
       zoomOffset: devicePixelRatio === 1 ? -1 : 0,
       renderSubLayers: (props) => {
-        let tile: Tile = props.tile;
+        const tile: Tile = props.tile;
         const {
           bbox: { west, south, east, north },
         } = props.tile;
 
-        let tileCanvas = new TileCanvas(tile, tileLayer);
+        const tileCanvas = new TileCanvas(tile, tileLayer);
 
         onLoadCanvas(tile, tileCanvas);
 
-        let dynamicBitmapLayer = new DynamicBitmapLayer(props, {
+        const dynamicBitmapLayer = new DynamicBitmapLayer(props, {
           image: null,
           canvas: tileCanvas,
           bounds: [west, south, east, north],
@@ -93,7 +94,7 @@ export class Deckgl {
       },
       onTileUnload: onUnloadCanvas,
     });
-    let deck = new Deck({
+    const deck = new Deck({
       canvas: deckglContainer,
       width: "100%",
       height: "100%",
@@ -109,7 +110,7 @@ export class Deckgl {
   }
 
   private static setDeckglView(map: mapboxgl.Map, deck: Deck) {
-    let { lng, lat } = map.getCenter();
+    const { lng, lat } = map.getCenter();
     deck.setProps({
       initialViewState: {
         latitude: lat,

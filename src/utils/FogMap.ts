@@ -3,8 +3,8 @@ import * as deckgl from "./Deckgl";
 
 const FILENAME_MASK1 = "olhwjsktri";
 // const FILENAME_MASK2 = "eizxdwknmo";
-var FILENAME_ENCODING: { [key: string]: number } = {};
-for (var i = 0; i < FILENAME_MASK1.length; i++) {
+const FILENAME_ENCODING: { [key: string]: number } = {};
+for (let i = 0; i < FILENAME_MASK1.length; i++) {
   FILENAME_ENCODING[FILENAME_MASK1.charAt(i)] = i;
 }
 const MAP_WIDTH = 512;
@@ -37,9 +37,9 @@ export class Map {
   }
 
   // TODO: merge instead of override
-  addFile(filename: string, data: ArrayBuffer) {
+  addFile(filename: string, data: ArrayBuffer): Tile | undefined {
     try {
-      var tile = new Tile(filename, data);
+      const tile = new Tile(filename, data);
 
       this.tiles[Map.makeKeyXY(tile.x, tile.y)] = tile;
       for (const [region, count] of Object.entries(tile.regionCount)) {
@@ -82,19 +82,19 @@ export class Tile {
     // TODO: try catch
     this.data = pako.inflate(new Uint8Array(data));
 
-    let header = new Uint16Array(this.data.slice(0, TILE_HEADER_SIZE).buffer);
+    const header = new Uint16Array(this.data.slice(0, TILE_HEADER_SIZE).buffer);
     this.blocks = {};
     this.regionCount = {};
 
-    for (var i = 0; i < header.length; i++) {
-      var block_idx = header[i];
+    for (let i = 0; i < header.length; i++) {
+      const block_idx = header[i];
       if (block_idx > 0) {
-        let block_x = i % TILE_WIDTH;
-        let block_y = Math.floor(i / TILE_WIDTH);
-        let start_offset = TILE_HEADER_SIZE + (block_idx - 1) * BLOCK_SIZE;
-        let end_offset = start_offset + BLOCK_SIZE;
-        let block_data = this.data.slice(start_offset, end_offset);
-        let block = new Block(block_x, block_y, block_data);
+        const block_x = i % TILE_WIDTH;
+        const block_y = Math.floor(i / TILE_WIDTH);
+        const start_offset = TILE_HEADER_SIZE + (block_idx - 1) * BLOCK_SIZE;
+        const end_offset = start_offset + BLOCK_SIZE;
+        const block_data = this.data.slice(start_offset, end_offset);
+        const block = new Block(block_x, block_y, block_data);
         this.blocks[Map.makeKeyXY(block_x, block_y)] = block;
         this.regionCount[block.region()] =
           (this.regionCount[block.region()] || 0) + block.count();
@@ -103,25 +103,25 @@ export class Tile {
     }
   }
 
-  static XYToLngLat(x: number, y: number) {
-    let lng = (x / 512) * 360 - 180;
-    let lat =
+  static XYToLngLat(x: number, y: number): number[] {
+    const lng = (x / 512) * 360 - 180;
+    const lat =
       (Math.atan(Math.sinh(Math.PI - (2 * Math.PI * y) / 512)) * 180) / Math.PI;
     return [lng, lat];
   }
 
-  bounds() {
-    let sw = Tile.XYToLngLat(this.x, this.y + 1);
-    let se = Tile.XYToLngLat(this.x + 1, this.y + 1);
-    let ne = Tile.XYToLngLat(this.x + 1, this.y);
-    let nw = Tile.XYToLngLat(this.x, this.y);
+  bounds(): number[][] {
+    const sw = Tile.XYToLngLat(this.x, this.y + 1);
+    const se = Tile.XYToLngLat(this.x + 1, this.y + 1);
+    const ne = Tile.XYToLngLat(this.x + 1, this.y);
+    const nw = Tile.XYToLngLat(this.x, this.y);
     return [nw, ne, se, sw];
   }
 
-  bbox() {
-    let [west, south] = Tile.XYToLngLat(this.x, this.y + 1);
-    let [east, north] = Tile.XYToLngLat(this.x + 1, this.y);
-    let bbox = new deckgl.Bbox(west, south, east, north);
+  bbox(): deckgl.Bbox {
+    const [west, south] = Tile.XYToLngLat(this.x, this.y + 1);
+    const [east, north] = Tile.XYToLngLat(this.x + 1, this.y);
+    const bbox = new deckgl.Bbox(west, south, east, north);
     return bbox;
   }
 }
@@ -140,28 +140,28 @@ export class Block {
     // this.texture = gl.createTexture();
   }
 
-  region() {
-    let regionChar0 = String.fromCharCode(
+  region(): string {
+    const regionChar0 = String.fromCharCode(
       (this.extraData[0] >> 3) + "?".charCodeAt(0)
     );
-    let regionChar1 = String.fromCharCode(
+    const regionChar1 = String.fromCharCode(
       (((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xc0) >> 6)) +
         "?".charCodeAt(0)
     );
     return regionChar0 + regionChar1;
   }
 
-  count() {
+  count(): number {
     return (
       (new DataView(this.extraData.buffer, 1, 2).getInt16(0, false) & 0x3fff) >>
       1
     );
   }
 
-  is_visited(x: number, y: number) {
-    var bit_offset = 7 - (x % 8);
-    var i = Math.floor(x / 8);
-    var j = y;
+  is_visited(x: number, y: number): boolean {
+    const bit_offset = 7 - (x % 8);
+    const i = Math.floor(x / 8);
+    const j = y;
     return (this.bitmap[i + j * 8] & (1 << bit_offset)) !== 0;
   }
 }

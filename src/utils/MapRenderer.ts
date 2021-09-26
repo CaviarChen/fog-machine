@@ -38,11 +38,11 @@ export class MapRenderer {
     this.loadedTileCanvases = {};
   }
 
-  static get() {
+  static get(): MapRenderer {
     return MapRenderer.instance;
   }
 
-  registerMap(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement) {
+  registerMap(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement): void {
     this.map = map;
     this.deckgl = new deckgl.Deckgl(
       map,
@@ -52,13 +52,11 @@ export class MapRenderer {
     );
   }
 
-  unregisterMap(map: mapboxgl.Map) {
-    if (this.map === map) {
-      this.map = null;
-    }
+  unregisterMap(_map: mapboxgl.Map): void {
+    // TODO
   }
 
-  private redrawArea(area: deckgl.Bbox) {
+  private redrawArea(area: deckgl.Bbox): void {
     Object.values(this.loadedTileCanvases).forEach((tileCanvas) => {
       if (isBboxOverlap(tileCanvas.tile.bbox, area)) {
         this.drawTileCanvas(tileCanvas);
@@ -66,8 +64,8 @@ export class MapRenderer {
     });
   }
 
-  addFoGFile(filename: string, data: ArrayBuffer) {
-    let newTile = this.fogMap.addFile(filename, data);
+  addFoGFile(filename: string, data: ArrayBuffer): void {
+    const newTile = this.fogMap.addFile(filename, data);
     if (newTile) {
       this.redrawArea(newTile.bbox());
     }
@@ -79,7 +77,7 @@ export class MapRenderer {
     tileSizeOffset: number,
     dx: number,
     dy: number
-  ) {
+  ): void {
     const CANVAS_FOW_BLOCK_SIZE_OFFSET =
       tileSizeOffset - fogMap.TILE_WIDTH_OFFSET;
     // ctx.strokeRect(dx,dy,1<<tileSizeOffset, 1<<tileSizeOffset);
@@ -104,7 +102,7 @@ export class MapRenderer {
     blockSizeOffset: number,
     dx: number,
     dy: number
-  ) {
+  ): void {
     if (blockSizeOffset <= 0) {
       ctx.clearRect(dx, dy, 1, 1);
     } else {
@@ -129,9 +127,9 @@ export class MapRenderer {
   }
 
   private drawTileCanvas(tileCanvas: deckgl.TileCanvas) {
-    let tile = tileCanvas.tile;
-    let canvas = tileCanvas.canvas;
-    let ctx = canvas.getContext("2d")!;
+    const tile = tileCanvas.tile;
+    const canvas = tileCanvas.canvas;
+    const ctx = canvas.getContext("2d")!;
 
     canvas.width = CANVAS_SIZE;
     canvas.height = CANVAS_SIZE;

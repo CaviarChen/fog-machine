@@ -19,7 +19,7 @@ const menuItems = [
   },
 ];
 
-export default function MainMenu(props: Props) {
+export default function MainMenu(props: Props): JSX.Element {
   return (
     <div className="absolute z-40 top-4 left-4">
       <div className="max-w-sm m-auto bg-white bg-opacity-90 rounded-xl shadow-md flex items-center space-x-4">
