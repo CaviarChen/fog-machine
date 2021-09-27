@@ -164,4 +164,20 @@ export class Block {
     const j = y;
     return (this.bitmap[i + j * 8] & (1 << bit_offset)) !== 0;
   }
+
+  setPoint(x: number, y: number, val: boolean) {
+    const bit_offset = 7 - x % 8;
+    const i = Math.floor(x / 8);
+    const j = y;
+    const val_number = val? 1:0;
+    this.bitmap[i + j * 8] = (this.bitmap[i + j * 8] & (~(1 << bit_offset))) | (val_number << bit_offset);
+  }
+
+  setRect(x: number, y: number, width: number, height: number, val: boolean) {
+    for (let i=0; i < width; i++) {
+      for (let j=0; j<height; j++) {
+        this.setPoint(x+i, y+j, val)
+      }
+    }
+  }
 }
