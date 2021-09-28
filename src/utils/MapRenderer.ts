@@ -30,12 +30,14 @@ export class MapRenderer {
   private deckgl: deckgl.Deckgl | null;
   private fogMap: fogMap.Map;
   private loadedTileCanvases: { [key: string]: deckgl.TileCanvas };
+  private eraserMode: boolean;
 
   private constructor() {
     this.map = null;
     this.deckgl = null;
     this.fogMap = new fogMap.Map();
     this.loadedTileCanvases = {};
+    this.eraserMode = false;
   }
 
   static get(): MapRenderer {
@@ -50,6 +52,7 @@ export class MapRenderer {
       this.onLoadTileCanvas.bind(this),
       this.onUnloadTileCanvas.bind(this)
     );
+    this.setEraserMod(this.eraserMode);
   }
 
   unregisterMap(_map: mapboxgl.Map): void {
@@ -68,6 +71,19 @@ export class MapRenderer {
     const newTile = this.fogMap.addFile(filename, data);
     if (newTile) {
       this.redrawArea(newTile.bbox());
+    }
+  }
+
+  setEraserMod(isActivated: boolean): void {
+    this.eraserMode = isActivated;
+    const mapboxCanvas = this.map?.getCanvasContainer();
+    if (!mapboxCanvas) {
+      return;
+    }
+    if (this.eraserMode) {
+      mapboxCanvas.style.cursor = "cell";
+    } else {
+      mapboxCanvas.style.cursor = "";
     }
   }
 

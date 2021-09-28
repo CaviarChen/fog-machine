@@ -1,3 +1,7 @@
 .mapboxgl-ctrl-bottom-right {
   z-index: 15;
 }
+
+.mapboxgl-ctrl-bottom-left {
+  z-index: 15;
+}
