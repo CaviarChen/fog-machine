@@ -82,8 +82,10 @@ export class MapRenderer {
     }
     if (this.eraserMode) {
       mapboxCanvas.style.cursor = "cell";
+      this.map?.dragPan.disable();
     } else {
       mapboxCanvas.style.cursor = "";
+      this.map?.dragPan.enable();
     }
   }
 
