@@ -53,6 +53,34 @@ export class Map {
       console.log(e);
     }
   }
+
+  // we only provide interface for clearing a bbox, because we think it make no sense to add paths for whole bbox
+  clearBbox(bbox: deckgl.Bbox): void {
+    const nw = Tile.LngLatToXY(bbox.west, bbox.north);
+    const se = Tile.LngLatToXY(bbox.east, bbox.south);
+
+    const xMin = nw[0];
+    const xMax = se[0];
+    const yMin = nw[1];
+    const yMax = se[1];
+    // TODO: what if lng=0
+
+    const xMinInt = Math.floor(xMin);
+    const xMaxInt = Math.floor(xMax);
+    const yMinInt = Math.floor(yMin);
+    const yMaxInt = Math.floor(yMax);
+
+    Object.values(this.tiles)
+      .filter(tile => (tile.x >= xMinInt) && (tile.x <= xMaxInt) && (tile.y >= yMinInt) && (tile.y <=
+        yMaxInt))
+      .forEach(tile => {
+        const xp0 = Math.max(xMin - tile.x, 0) << TILE_WIDTH_OFFSET;
+        const yp0 = Math.max(yMin - tile.y, 0) << TILE_WIDTH_OFFSET;
+        const xp1 = Math.min(xMax - tile.x, 1) << TILE_WIDTH_OFFSET;
+        const yp1 = Math.min(yMax - tile.y, 1) << TILE_WIDTH_OFFSET;
+        tile.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+      });
+  }
 }
 
 export class Tile {
@@ -110,6 +138,12 @@ export class Tile {
     return [lng, lat];
   }
 
+  static LngLatToXY(lng: number, lat: number): number[] {
+    const x = (lng + 180) / 360 * 512;
+    const y = (Math.PI - Math.asinh(Math.tan(lat / 180 * Math.PI))) * 512 / (2 * Math.PI);
+    return [x, y];
+  }
+
   bounds(): number[][] {
     const sw = Tile.XYToLngLat(this.x, this.y + 1);
     const se = Tile.XYToLngLat(this.x + 1, this.y + 1);
@@ -123,6 +157,30 @@ export class Tile {
     const [east, north] = Tile.XYToLngLat(this.x + 1, this.y);
     const bbox = new deckgl.Bbox(west, south, east, north);
     return bbox;
+  }
+
+  clearRect(x: number, y: number, width: number, height: number): void {
+    const xMin = x;
+    const yMin = y;
+    const xMax = x + width;
+    const yMax = y + height;
+
+    const xMinInt = Math.floor(xMin);
+    const xMaxInt = Math.floor(xMax);
+
+    const yMinInt = Math.floor(yMin);
+    const yMaxInt = Math.floor(yMax);
+
+    Object.values(this.blocks)
+      .filter(block => (block.x >= xMinInt) && (block.x <= xMaxInt) && (block.y >= yMinInt) && (block.y <=
+        yMaxInt))
+      .forEach(block => {
+        const xp0 = Math.round(Math.max(xMin - block.x, 0) * BITMAP_WIDTH);
+        const yp0 = Math.round(Math.max(yMin - block.y, 0) * BITMAP_WIDTH);
+        const xp1 = Math.round(Math.min(xMax - block.x, 1) * BITMAP_WIDTH);
+        const yp1 = Math.round(Math.min(yMax - block.y, 1) * BITMAP_WIDTH);
+        block.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+      });
   }
 }
 
@@ -146,7 +204,7 @@ export class Block {
     );
     const regionChar1 = String.fromCharCode(
       (((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xc0) >> 6)) +
-        "?".charCodeAt(0)
+      "?".charCodeAt(0)
     );
     return regionChar0 + regionChar1;
   }
@@ -165,18 +223,18 @@ export class Block {
     return (this.bitmap[i + j * 8] & (1 << bit_offset)) !== 0;
   }
 
-  setPoint(x: number, y: number, val: boolean) {
+  setPoint(x: number, y: number, val: boolean): void {
     const bit_offset = 7 - x % 8;
     const i = Math.floor(x / 8);
     const j = y;
-    const val_number = val? 1:0;
+    const val_number = val ? 1 : 0;
     this.bitmap[i + j * 8] = (this.bitmap[i + j * 8] & (~(1 << bit_offset))) | (val_number << bit_offset);
   }
 
-  setRect(x: number, y: number, width: number, height: number, val: boolean) {
-    for (let i=0; i < width; i++) {
-      for (let j=0; j<height; j++) {
-        this.setPoint(x+i, y+j, val)
+  clearRect(x: number, y: number, width: number, height: number): void {
+    for (let i = 0; i < width; i++) {
+      for (let j = 0; j < height; j++) {
+        this.setPoint(x + i, y + j, false);
       }
     }
   }
