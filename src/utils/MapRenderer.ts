@@ -52,6 +52,7 @@ export class MapRenderer {
       this.onLoadTileCanvas.bind(this),
       this.onUnloadTileCanvas.bind(this)
     );
+    this.map?.on('click', this.handleMouseClick.bind(this));
     this.setEraserMod(this.eraserMode);
   }
 
@@ -71,6 +72,20 @@ export class MapRenderer {
     const newTile = this.fogMap.addFile(filename, data);
     if (newTile) {
       this.redrawArea(newTile.bbox());
+    }
+  }
+
+  handleMouseClick(e: mapboxgl.MapMouseEvent): void {
+    if (this.eraserMode) {
+      console.log(`A click event has occurred on a visible portion of the poi-label layer at ${e.lngLat}`);
+      const west = e.lngLat.lng;
+      const north = e.lngLat.lat;
+      const east = e.lngLat.lng + 1;
+      const south = e.lngLat.lat - 1;
+      const bbox = new deckgl.Bbox(west, south, east, north);
+      console.log(`clearing the bbox ${west} ${north} ${east} ${south}`);
+      this.fogMap?.clearBbox(bbox);
+      this.redrawArea(bbox);
     }
   }
 
@@ -212,7 +227,7 @@ export class MapRenderer {
 
         const block =
           this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)]?.blocks[
-            fogMap.Map.makeKeyXY(fowBlockX, fowBlockY)
+          fogMap.Map.makeKeyXY(fowBlockX, fowBlockY)
           ];
 
         if (block) {
