@@ -71,13 +71,18 @@ export class Map {
     const yMaxInt = Math.floor(yMax);
 
     Object.values(this.tiles)
-      .filter(tile => (tile.x >= xMinInt) && (tile.x <= xMaxInt) && (tile.y >= yMinInt) && (tile.y <=
-        yMaxInt))
-      .forEach(tile => {
-        const xp0 = Math.max(xMin - tile.x, 0) << TILE_WIDTH_OFFSET;
-        const yp0 = Math.max(yMin - tile.y, 0) << TILE_WIDTH_OFFSET;
-        const xp1 = Math.min(xMax - tile.x, 1) << TILE_WIDTH_OFFSET;
-        const yp1 = Math.min(yMax - tile.y, 1) << TILE_WIDTH_OFFSET;
+      .filter(
+        (tile) =>
+          tile.x >= xMinInt &&
+          tile.x <= xMaxInt &&
+          tile.y >= yMinInt &&
+          tile.y <= yMaxInt
+      )
+      .forEach((tile) => {
+        const xp0 = Math.max(xMin - tile.x, 0) * TILE_WIDTH;
+        const yp0 = Math.max(yMin - tile.y, 0) * TILE_WIDTH;
+        const xp1 = Math.min(xMax - tile.x, 1) * TILE_WIDTH;
+        const yp1 = Math.min(yMax - tile.y, 1) * TILE_WIDTH;
         tile.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
       });
   }
@@ -139,8 +144,10 @@ export class Tile {
   }
 
   static LngLatToXY(lng: number, lat: number): number[] {
-    const x = (lng + 180) / 360 * 512;
-    const y = (Math.PI - Math.asinh(Math.tan(lat / 180 * Math.PI))) * 512 / (2 * Math.PI);
+    const x = ((lng + 180) / 360) * 512;
+    const y =
+      ((Math.PI - Math.asinh(Math.tan((lat / 180) * Math.PI))) * 512) /
+      (2 * Math.PI);
     return [x, y];
   }
 
@@ -172,9 +179,14 @@ export class Tile {
     const yMaxInt = Math.floor(yMax);
 
     Object.values(this.blocks)
-      .filter(block => (block.x >= xMinInt) && (block.x <= xMaxInt) && (block.y >= yMinInt) && (block.y <=
-        yMaxInt))
-      .forEach(block => {
+      .filter(
+        (block) =>
+          block.x >= xMinInt &&
+          block.x <= xMaxInt &&
+          block.y >= yMinInt &&
+          block.y <= yMaxInt
+      )
+      .forEach((block) => {
         const xp0 = Math.round(Math.max(xMin - block.x, 0) * BITMAP_WIDTH);
         const yp0 = Math.round(Math.max(yMin - block.y, 0) * BITMAP_WIDTH);
         const xp1 = Math.round(Math.min(xMax - block.x, 1) * BITMAP_WIDTH);
@@ -204,7 +216,7 @@ export class Block {
     );
     const regionChar1 = String.fromCharCode(
       (((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xc0) >> 6)) +
-      "?".charCodeAt(0)
+        "?".charCodeAt(0)
     );
     return regionChar0 + regionChar1;
   }
@@ -224,11 +236,13 @@ export class Block {
   }
 
   setPoint(x: number, y: number, val: boolean): void {
-    const bit_offset = 7 - x % 8;
+    const bit_offset = 7 - (x % 8);
     const i = Math.floor(x / 8);
     const j = y;
     const val_number = val ? 1 : 0;
-    this.bitmap[i + j * 8] = (this.bitmap[i + j * 8] & (~(1 << bit_offset))) | (val_number << bit_offset);
+    this.bitmap[i + j * 8] =
+      (this.bitmap[i + j * 8] & ~(1 << bit_offset)) |
+      (val_number << bit_offset);
   }
 
   clearRect(x: number, y: number, width: number, height: number): void {

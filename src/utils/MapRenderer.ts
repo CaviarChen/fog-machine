@@ -31,6 +31,7 @@ export class MapRenderer {
   private fogMap: fogMap.Map;
   private loadedTileCanvases: { [key: string]: deckgl.TileCanvas };
   private eraserMode: boolean;
+  private startPoint: mapboxgl.LngLat | null;
 
   private constructor() {
     this.map = null;
@@ -38,6 +39,7 @@ export class MapRenderer {
     this.fogMap = new fogMap.Map();
     this.loadedTileCanvases = {};
     this.eraserMode = false;
+    this.startPoint = null;
   }
 
   static get(): MapRenderer {
@@ -52,7 +54,8 @@ export class MapRenderer {
       this.onLoadTileCanvas.bind(this),
       this.onUnloadTileCanvas.bind(this)
     );
-    this.map?.on('click', this.handleMouseClick.bind(this));
+    this.map?.on("mousedown", this.handleMouseClick.bind(this));
+    this.map?.on("mouseup", this.handleMouseRelease.bind(this));
     this.setEraserMod(this.eraserMode);
   }
 
@@ -77,15 +80,28 @@ export class MapRenderer {
 
   handleMouseClick(e: mapboxgl.MapMouseEvent): void {
     if (this.eraserMode) {
-      console.log(`A click event has occurred on a visible portion of the poi-label layer at ${e.lngLat}`);
-      const west = e.lngLat.lng;
-      const north = e.lngLat.lat;
-      const east = e.lngLat.lng + 1;
-      const south = e.lngLat.lat - 1;
+      console.log(
+        `A click event has occurred on a visible portion of the poi-label layer at ${e.lngLat}`
+      );
+
+      this.startPoint = new mapboxgl.LngLat(e.lngLat.lng, e.lngLat.lat);
+    }
+  }
+
+  handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
+    if (this.eraserMode && this.startPoint) {
+      const west = Math.min(e.lngLat.lng, this.startPoint.lng);
+      const north = Math.max(e.lngLat.lat, this.startPoint.lat);
+      const east = Math.max(e.lngLat.lng, this.startPoint.lng);
+      const south = Math.min(e.lngLat.lat, this.startPoint.lat);
+
       const bbox = new deckgl.Bbox(west, south, east, north);
       console.log(`clearing the bbox ${west} ${north} ${east} ${south}`);
+
       this.fogMap?.clearBbox(bbox);
       this.redrawArea(bbox);
+
+      this.startPoint = null;
     }
   }
 
@@ -227,7 +243,7 @@ export class MapRenderer {
 
         const block =
           this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)]?.blocks[
-          fogMap.Map.makeKeyXY(fowBlockX, fowBlockY)
+            fogMap.Map.makeKeyXY(fowBlockX, fowBlockY)
           ];
 
         if (block) {
