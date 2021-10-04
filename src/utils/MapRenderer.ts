@@ -31,7 +31,7 @@ export class MapRenderer {
   private fogMap: fogMap.Map;
   private loadedTileCanvases: { [key: string]: deckgl.TileCanvas };
   private eraserMode: boolean;
-  private startPoint: mapboxgl.LngLat | null;
+  private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
 
   private constructor() {
     this.map = null;
@@ -39,7 +39,7 @@ export class MapRenderer {
     this.fogMap = new fogMap.Map();
     this.loadedTileCanvases = {};
     this.eraserMode = false;
-    this.startPoint = null;
+    this.eraserArea = null;
   }
 
   static get(): MapRenderer {
@@ -54,8 +54,9 @@ export class MapRenderer {
       this.onLoadTileCanvas.bind(this),
       this.onUnloadTileCanvas.bind(this)
     );
-    this.map?.on("mousedown", this.handleMouseClick.bind(this));
-    this.map?.on("mouseup", this.handleMouseRelease.bind(this));
+    this.map.on("mousedown", this.handleMouseClick.bind(this));
+    this.map.on("mouseup", this.handleMouseRelease.bind(this));
+    this.map.on("mousemove", this.handleMouseMove.bind(this));
     this.setEraserMod(this.eraserMode);
   }
 
@@ -84,16 +85,87 @@ export class MapRenderer {
         `A click event has occurred on a visible portion of the poi-label layer at ${e.lngLat}`
       );
 
-      this.startPoint = new mapboxgl.LngLat(e.lngLat.lng, e.lngLat.lat);
+      this.map?.addSource("eraser", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "Polygon",
+            coordinates: [[]],
+          },
+        },
+      });
+
+      this.map?.addLayer({
+        id: "eraser",
+        type: "fill",
+        source: "eraser",
+        layout: {},
+        paint: {
+          "fill-color": "#969696",
+          "fill-opacity": 0.5,
+        },
+      });
+      this.map?.addLayer({
+        id: "eraser-outline",
+        type: "line",
+        source: "eraser",
+        layout: {},
+        paint: {
+          "line-color": "#969696",
+          "line-width": 1,
+        },
+      });
+
+      const eraserSource = this.map?.getSource(
+        "eraser"
+      ) as mapboxgl.GeoJSONSource | null;
+      if (eraserSource) {
+        const startPoint = new mapboxgl.LngLat(e.lngLat.lng, e.lngLat.lat);
+        this.eraserArea = [startPoint, eraserSource];
+      }
+    }
+  }
+
+  handleMouseMove(e: mapboxgl.MapMouseEvent): void {
+    if (this.eraserMode && this.eraserArea) {
+      const [startPoint, eraserSource] = this.eraserArea;
+      const west = Math.min(e.lngLat.lng, startPoint.lng);
+      const north = Math.max(e.lngLat.lat, startPoint.lat);
+      const east = Math.max(e.lngLat.lng, startPoint.lng);
+      const south = Math.min(e.lngLat.lat, startPoint.lat);
+
+      eraserSource.setData({
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [east, north],
+              [west, north],
+              [west, south],
+              [east, south],
+              [east, north],
+            ],
+          ],
+        },
+      });
     }
   }
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
-    if (this.eraserMode && this.startPoint) {
-      const west = Math.min(e.lngLat.lng, this.startPoint.lng);
-      const north = Math.max(e.lngLat.lat, this.startPoint.lat);
-      const east = Math.max(e.lngLat.lng, this.startPoint.lng);
-      const south = Math.min(e.lngLat.lat, this.startPoint.lat);
+    if (this.eraserMode && this.eraserArea) {
+      const startPoint = this.eraserArea[0];
+      const west = Math.min(e.lngLat.lng, startPoint.lng);
+      const north = Math.max(e.lngLat.lat, startPoint.lat);
+      const east = Math.max(e.lngLat.lng, startPoint.lng);
+      const south = Math.min(e.lngLat.lat, startPoint.lat);
+
+      this.map?.removeLayer("eraser");
+      this.map?.removeLayer("eraser-outline");
+      this.map?.removeSource("eraser");
 
       const bbox = new deckgl.Bbox(west, south, east, north);
       console.log(`clearing the bbox ${west} ${north} ${east} ${south}`);
@@ -101,7 +173,7 @@ export class MapRenderer {
       this.fogMap?.clearBbox(bbox);
       this.redrawArea(bbox);
 
-      this.startPoint = null;
+      this.eraserArea = null;
     }
   }
 
@@ -117,6 +189,12 @@ export class MapRenderer {
     } else {
       mapboxCanvas.style.cursor = "";
       this.map?.dragPan.enable();
+      if (this.eraserArea) {
+        this.map?.removeLayer("eraser");
+        this.map?.removeLayer("eraser-outline");
+        this.map?.removeSource("eraser");
+        this.eraserArea = null;
+      }
     }
   }
 
