@@ -1,4 +1,6 @@
 import pako from "pako";
+import JSZip from "jszip";
+// import { saveAs } from 'file-saver';
 import * as deckgl from "./Deckgl";
 
 const FILENAME_MASK1 = "olhwjsktri";
@@ -52,6 +54,37 @@ export class Map {
       console.log(`${filename} is not a valid tile file.`);
       console.log(e);
     }
+  }
+
+  exportArchive(): void {
+    const zip = new JSZip();
+    const syncZip = zip.folder("Sync");
+    for (const tile of Object.values(this.tiles)) {
+      syncZip?.file(tile.filename, tile.dump());
+    }
+    syncZip?.generateAsync({ type: "blob" }).then(function (blob) {
+      const name = "Sync.zip";
+
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+
+      link.href = blobUrl;
+      link.download = name;
+
+      document.body.appendChild(link);
+
+      // This is necessary as link.click() does not work on the latest firefox
+      link.dispatchEvent(
+        new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+        })
+      );
+
+      document.body.removeChild(link);
+    });
   }
 
   // we only provide interface for clearing a bbox, because we think it make no sense to add paths for whole bbox
@@ -128,12 +161,38 @@ export class Tile {
         const end_offset = start_offset + BLOCK_SIZE;
         const block_data = this.data.slice(start_offset, end_offset);
         const block = new Block(block_x, block_y, block_data);
+        block.check();
         this.blocks[Map.makeKeyXY(block_x, block_y)] = block;
         this.regionCount[block.region()] =
           (this.regionCount[block.region()] || 0) + block.count();
         this.regionCount["BLK"] = (this.regionCount["BLK"] || 0) + 1;
       }
     }
+  }
+
+  dump(): Uint8Array {
+    // const header = new Uint16Array(TILE_HEADER_LEN);
+    const header = new Uint8Array(TILE_HEADER_SIZE);
+    const headerView = new DataView(header.buffer, 0, TILE_HEADER_SIZE);
+
+    const blockDataSize = BLOCK_SIZE * Object.entries(this.blocks).length;
+
+    const blockData = new Uint8Array(blockDataSize);
+
+    let activeBlockIdx = 1;
+    for (const block of Object.values(this.blocks)) {
+      const i = block.x + block.y * TILE_WIDTH;
+      // header[i] = activeBlockIdx;
+      headerView.setUint16(i * 2, activeBlockIdx, true);
+      blockData.set(block.dump(), (activeBlockIdx - 1) * BLOCK_SIZE);
+      activeBlockIdx++;
+    }
+
+    const data = new Uint8Array(TILE_HEADER_SIZE + blockDataSize);
+    data.set(header);
+    data.set(blockData, TILE_HEADER_SIZE);
+
+    return pako.deflate(data);
   }
 
   static XYToLngLat(x: number, y: number): number[] {
@@ -210,6 +269,47 @@ export class Block {
     // this.texture = gl.createTexture();
   }
 
+  check(): boolean {
+    let count = 0;
+    for (let i = 0; i < BITMAP_WIDTH; i++) {
+      for (let j = 0; j < BITMAP_WIDTH; j++) {
+        if (this.is_visited(i, j)) {
+          count++;
+        }
+      }
+    }
+
+    const isCorrect = count === this.count();
+    if (!isCorrect) {
+      console.warn(`block check sum error!`);
+    }
+    return isCorrect;
+  }
+
+  dump(): Uint8Array {
+    const data = new Uint8Array(BLOCK_SIZE);
+
+    let count = 0;
+    for (let i = 0; i < BITMAP_WIDTH; i++) {
+      for (let j = 0; j < BITMAP_WIDTH; j++) {
+        if (this.is_visited(i, j)) {
+          count++;
+        }
+      }
+    }
+    const checksumDataview = new DataView(this.extraData.buffer, 1, 2);
+    checksumDataview.setUint16(
+      0,
+      (checksumDataview.getUint16(0, false) & 0xc000) | (count << 1),
+      false
+    );
+
+    data.set(this.bitmap);
+    data.set(this.extraData, BLOCK_BITMAP_SIZE);
+
+    return data;
+  }
+
   region(): string {
     const regionChar0 = String.fromCharCode(
       (this.extraData[0] >> 3) + "?".charCodeAt(0)
@@ -223,7 +323,8 @@ export class Block {
 
   count(): number {
     return (
-      (new DataView(this.extraData.buffer, 1, 2).getInt16(0, false) & 0x3fff) >>
+      (new DataView(this.extraData.buffer, 1, 2).getUint16(0, false) &
+        0x3fff) >>
       1
     );
   }

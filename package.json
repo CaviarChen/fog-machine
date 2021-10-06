@@ -15,6 +15,7 @@
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
     "deck.gl": "^8.5.7",
+    "jszip": "^3.7.1",
     "mapbox-gl": "^2.4.1",
     "pako": "^2.0.4",
     "react": "^17.0.2",
