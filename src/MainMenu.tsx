@@ -4,6 +4,7 @@ import { Fragment } from "react";
 
 export enum Actions {
   Import,
+  Export,
 }
 
 type Props = {
@@ -16,6 +17,12 @@ const menuItems = [
     description: "Import data from [Fog of World]",
     action: Actions.Import,
     icon: IconImport,
+  },
+  {
+    name: "Export",
+    description: "Import data to [Fog of World] format",
+    action: Actions.Export,
+    icon: IconExport,
   },
 ];
 
@@ -101,10 +108,10 @@ function IconImport() {
     >
       <rect width="48" height="48" rx="8" fill="#FFEDD5" />
       <svg
-        x="7"
-        y="7"
-        width="34"
-        height="34"
+        x="8"
+        y="8"
+        width="32"
+        height="32"
         aria-hidden="true"
         focusable="false"
         xmlns="http://www.w3.org/2000/svg"
@@ -113,6 +120,35 @@ function IconImport() {
         <path
           fill="#FDBA74"
           d="M16 288c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h112v-64zm489-183L407.1 7c-4.5-4.5-10.6-7-17-7H384v128h128v-6.1c0-6.3-2.5-12.4-7-16.9zm-153 31V0H152c-13.3 0-24 10.7-24 24v264h128v-65.2c0-14.3 17.3-21.4 27.4-11.3L379 308c6.6 6.7 6.6 17.4 0 24l-95.7 96.4c-10.1 10.1-27.4 3-27.4-11.3V352H128v136c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H376c-13.2 0-24-10.8-24-24z"
+        />
+      </svg>
+    </svg>
+  );
+}
+
+function IconExport() {
+  return (
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect width="48" height="48" rx="8" fill="#FFEDD5" />
+      <svg
+        x="8"
+        y="8"
+        width="32"
+        height="32"
+        aria-hidden="true"
+        focusable="false"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 512 512"
+      >
+        <path
+          fill="#FDBA74"
+          d="M216 0h80c13.3 0 24 10.7 24 24v168h87.7c17.8 0 26.7 21.5 14.1 34.1L269.7 378.3c-7.5 7.5-19.8 7.5-27.3 0L90.1 226.1c-12.6-12.6-3.7-34.1 14.1-34.1H192V24c0-13.3 10.7-24 24-24zm296 376v112c0 13.3-10.7 24-24 24H24c-13.3 0-24-10.7-24-24V376c0-13.3 10.7-24 24-24h146.7l49 49c20.1 20.1 52.5 20.1 72.6 0l49-49H488c13.3 0 24 10.7 24 24zm-124 88c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20zm64 0c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20z"
         />
       </svg>
     </svg>
