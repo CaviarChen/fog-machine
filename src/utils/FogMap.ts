@@ -1,6 +1,5 @@
 import pako from "pako";
 import JSZip from "jszip";
-// import { saveAs } from 'file-saver';
 import * as deckgl from "./Deckgl";
 
 const FILENAME_MASK1 = "olhwjsktri";
@@ -56,35 +55,18 @@ export class Map {
     }
   }
 
-  exportArchive(): void {
+  async exportArchive(): Promise<Blob | null> {
     const zip = new JSZip();
     const syncZip = zip.folder("Sync");
-    for (const tile of Object.values(this.tiles)) {
-      syncZip?.file(tile.filename, tile.dump());
+    if (!syncZip) {
+      // TODO: handle error
+      console.log("unable to create archive");
+      return null;
     }
-    syncZip?.generateAsync({ type: "blob" }).then(function (blob) {
-      const name = "Sync.zip";
-
-      const blobUrl = URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-
-      link.href = blobUrl;
-      link.download = name;
-
-      document.body.appendChild(link);
-
-      // This is necessary as link.click() does not work on the latest firefox
-      link.dispatchEvent(
-        new MouseEvent("click", {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-        })
-      );
-
-      document.body.removeChild(link);
-    });
+    for (const tile of Object.values(this.tiles)) {
+      syncZip.file(tile.filename, tile.dump());
+    }
+    return syncZip.generateAsync({ type: "blob" });
   }
 
   // we only provide interface for clearing a bbox, because we think it make no sense to add paths for whole bbox

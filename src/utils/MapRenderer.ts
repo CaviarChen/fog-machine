@@ -28,7 +28,7 @@ export class MapRenderer {
   private static instance = new MapRenderer();
   private map: mapboxgl.Map | null;
   private deckgl: deckgl.Deckgl | null;
-  private fogMap: fogMap.Map;
+  public fogMap: fogMap.Map;
   private loadedTileCanvases: { [key: string]: deckgl.TileCanvas };
   private eraserMode: boolean;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
@@ -57,9 +57,6 @@ export class MapRenderer {
     this.map.on("mousedown", this.handleMouseClick.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
-    this.map
-      .getCanvas()
-      .addEventListener("keydown", this.handleKeydownEvent.bind(this), true);
     this.setEraserMod(this.eraserMode);
   }
 
@@ -177,13 +174,6 @@ export class MapRenderer {
       this.redrawArea(bbox);
 
       this.eraserArea = null;
-    }
-  }
-
-  handleKeydownEvent(e: KeyboardEvent): void {
-    e.preventDefault();
-    if (e.code === "KeyS") {
-      this.fogMap.exportArchive();
     }
   }
 
