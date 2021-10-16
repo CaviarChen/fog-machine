@@ -239,7 +239,7 @@ export class MapRenderer {
         blockSizeOffset - fogMap.BITMAP_WIDTH_OFFSET;
       for (let x = 0; x < fogMap.BITMAP_WIDTH; x++) {
         for (let y = 0; y < fogMap.BITMAP_WIDTH; y++) {
-          if (fowBlock.is_visited(x, y)) {
+          if (fowBlock.isVisited(x, y)) {
             // for each pixel of block, we may draw multiple pixel of image
             const overscanOffset = Math.max(CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
             const underscanOffset = Math.max(-CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
@@ -339,7 +339,7 @@ export class MapRenderer {
             ) {
               const CANVAS_FOW_PIXEL_SIZE_OFFSET =
                 CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_PIXEL_OFFSET;
-              if (block.is_visited(fowPixelX, fowPixelY)) {
+              if (block.isVisited(fowPixelX, fowPixelY)) {
                 const x =
                   (fowPixelX - fowBlockPixelXMin) <<
                   CANVAS_FOW_PIXEL_SIZE_OFFSET;

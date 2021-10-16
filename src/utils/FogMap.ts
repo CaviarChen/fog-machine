@@ -136,16 +136,16 @@ export class Tile {
     this.regionCount = {};
 
     for (let i = 0; i < header.length; i++) {
-      const block_idx = header[i];
-      if (block_idx > 0) {
-        const block_x = i % TILE_WIDTH;
-        const block_y = Math.floor(i / TILE_WIDTH);
-        const start_offset = TILE_HEADER_SIZE + (block_idx - 1) * BLOCK_SIZE;
-        const end_offset = start_offset + BLOCK_SIZE;
-        const block_data = this.data.slice(start_offset, end_offset);
-        const block = new Block(block_x, block_y, block_data);
+      const blockIdx = header[i];
+      if (blockIdx > 0) {
+        const blockX = i % TILE_WIDTH;
+        const blockY = Math.floor(i / TILE_WIDTH);
+        const startOffset = TILE_HEADER_SIZE + (blockIdx - 1) * BLOCK_SIZE;
+        const endOffset = startOffset + BLOCK_SIZE;
+        const blockData = this.data.slice(startOffset, endOffset);
+        const block = new Block(blockX, blockY, blockData);
         block.check();
-        this.blocks[Map.makeKeyXY(block_x, block_y)] = block;
+        this.blocks[Map.makeKeyXY(blockX, blockY)] = block;
         this.regionCount[block.region()] =
           (this.regionCount[block.region()] || 0) + block.count();
         this.regionCount["BLK"] = (this.regionCount["BLK"] || 0) + 1;
@@ -260,7 +260,7 @@ export class Block {
     let count = 0;
     for (let i = 0; i < BITMAP_WIDTH; i++) {
       for (let j = 0; j < BITMAP_WIDTH; j++) {
-        if (this.is_visited(i, j)) {
+        if (this.isVisited(i, j)) {
           count++;
         }
       }
@@ -279,7 +279,7 @@ export class Block {
     let count = 0;
     for (let i = 0; i < BITMAP_WIDTH; i++) {
       for (let j = 0; j < BITMAP_WIDTH; j++) {
-        if (this.is_visited(i, j)) {
+        if (this.isVisited(i, j)) {
           count++;
         }
       }
@@ -316,21 +316,20 @@ export class Block {
     );
   }
 
-  is_visited(x: number, y: number): boolean {
-    const bit_offset = 7 - (x % 8);
+  isVisited(x: number, y: number): boolean {
+    const bitOffset = 7 - (x % 8);
     const i = Math.floor(x / 8);
     const j = y;
-    return (this.bitmap[i + j * 8] & (1 << bit_offset)) !== 0;
+    return (this.bitmap[i + j * 8] & (1 << bitOffset)) !== 0;
   }
 
   setPoint(x: number, y: number, val: boolean): void {
-    const bit_offset = 7 - (x % 8);
+    const bitOffset = 7 - (x % 8);
     const i = Math.floor(x / 8);
     const j = y;
-    const val_number = val ? 1 : 0;
+    const valNumber = val ? 1 : 0;
     this.bitmap[i + j * 8] =
-      (this.bitmap[i + j * 8] & ~(1 << bit_offset)) |
-      (val_number << bit_offset);
+      (this.bitmap[i + j * 8] & ~(1 << bitOffset)) | (valNumber << bitOffset);
   }
 
   clearRect(x: number, y: number, width: number, height: number): void {

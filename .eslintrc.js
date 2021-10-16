@@ -12,5 +12,6 @@ module.exports = {
       "warn",
       { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
     ],
+    camelcase: ["error", { properties: "always" }],
   },
 };
