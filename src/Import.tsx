@@ -5,10 +5,11 @@ import { MapRenderer } from "./utils/MapRenderer";
 type Props = {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  msgboxShow(title: string, msg: string): void;
 };
 
 export default function MyModal(props: Props): JSX.Element {
-  const { isOpen, setIsOpen } = props;
+  const { isOpen, setIsOpen, msgboxShow } = props;
 
   const fileInput = useRef<HTMLInputElement | null>(null);
 
@@ -26,6 +27,7 @@ export default function MyModal(props: Props): JSX.Element {
         };
       }
     }
+    msgboxShow("AAA", "BBB");
   }
 
   function closeModal() {
