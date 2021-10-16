@@ -219,21 +219,22 @@ export class Tile {
     const yMinInt = Math.floor(yMin);
     const yMaxInt = Math.floor(yMax);
 
-    Object.values(this.blocks)
-      .filter(
-        (block) =>
-          block.x >= xMinInt &&
-          block.x <= xMaxInt &&
-          block.y >= yMinInt &&
-          block.y <= yMaxInt
-      )
-      .forEach((block) => {
-        const xp0 = Math.round(Math.max(xMin - block.x, 0) * BITMAP_WIDTH);
-        const yp0 = Math.round(Math.max(yMin - block.y, 0) * BITMAP_WIDTH);
-        const xp1 = Math.round(Math.min(xMax - block.x, 1) * BITMAP_WIDTH);
-        const yp1 = Math.round(Math.min(yMax - block.y, 1) * BITMAP_WIDTH);
-        block.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
-      });
+    for (let x = xMinInt; x <= xMaxInt; x++) {
+      for (let y = yMinInt; y <= yMaxInt; y++) {
+        const key = Map.makeKeyXY(x, y);
+        const block = this.blocks[key];
+        if (block) {
+          const xp0 = Math.round(Math.max(xMin - block.x, 0) * BITMAP_WIDTH);
+          const yp0 = Math.round(Math.max(yMin - block.y, 0) * BITMAP_WIDTH);
+          const xp1 = Math.round(Math.min(xMax - block.x, 1) * BITMAP_WIDTH);
+          const yp1 = Math.round(Math.min(yMax - block.y, 1) * BITMAP_WIDTH);
+          block.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+          if (block.isEmpty()) {
+            delete this.blocks[key];
+          }
+        }
+      }
+    }
   }
 }
 
@@ -334,5 +335,9 @@ export class Block {
         this.setPoint(x + i, y + j, false);
       }
     }
+  }
+
+  isEmpty(): boolean {
+    return this.bitmap.every((v) => v === 0);
   }
 }
