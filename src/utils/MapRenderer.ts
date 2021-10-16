@@ -85,45 +85,47 @@ export class MapRenderer {
         `A click event has occurred on a visible portion of the poi-label layer at ${e.lngLat}`
       );
 
-      this.map?.addSource("eraser", {
-        type: "geojson",
-        data: {
-          type: "Feature",
-          properties: {},
-          geometry: {
-            type: "Polygon",
-            coordinates: [[]],
+      if (!this.eraserArea) {
+        this.map?.addSource("eraser", {
+          type: "geojson",
+          data: {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "Polygon",
+              coordinates: [[]],
+            },
           },
-        },
-      });
+        });
 
-      this.map?.addLayer({
-        id: "eraser",
-        type: "fill",
-        source: "eraser",
-        layout: {},
-        paint: {
-          "fill-color": "#969696",
-          "fill-opacity": 0.5,
-        },
-      });
-      this.map?.addLayer({
-        id: "eraser-outline",
-        type: "line",
-        source: "eraser",
-        layout: {},
-        paint: {
-          "line-color": "#969696",
-          "line-width": 1,
-        },
-      });
+        this.map?.addLayer({
+          id: "eraser",
+          type: "fill",
+          source: "eraser",
+          layout: {},
+          paint: {
+            "fill-color": "#969696",
+            "fill-opacity": 0.5,
+          },
+        });
+        this.map?.addLayer({
+          id: "eraser-outline",
+          type: "line",
+          source: "eraser",
+          layout: {},
+          paint: {
+            "line-color": "#969696",
+            "line-width": 1,
+          },
+        });
 
-      const eraserSource = this.map?.getSource(
-        "eraser"
-      ) as mapboxgl.GeoJSONSource | null;
-      if (eraserSource) {
-        const startPoint = new mapboxgl.LngLat(e.lngLat.lng, e.lngLat.lat);
-        this.eraserArea = [startPoint, eraserSource];
+        const eraserSource = this.map?.getSource(
+          "eraser"
+        ) as mapboxgl.GeoJSONSource | null;
+        if (eraserSource) {
+          const startPoint = new mapboxgl.LngLat(e.lngLat.lng, e.lngLat.lat);
+          this.eraserArea = [startPoint, eraserSource];
+        }
       }
     }
   }
