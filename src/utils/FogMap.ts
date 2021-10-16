@@ -85,21 +85,22 @@ export class Map {
     const yMinInt = Math.floor(yMin);
     const yMaxInt = Math.floor(yMax);
 
-    Object.values(this.tiles)
-      .filter(
-        (tile) =>
-          tile.x >= xMinInt &&
-          tile.x <= xMaxInt &&
-          tile.y >= yMinInt &&
-          tile.y <= yMaxInt
-      )
-      .forEach((tile) => {
-        const xp0 = Math.max(xMin - tile.x, 0) * TILE_WIDTH;
-        const yp0 = Math.max(yMin - tile.y, 0) * TILE_WIDTH;
-        const xp1 = Math.min(xMax - tile.x, 1) * TILE_WIDTH;
-        const yp1 = Math.min(yMax - tile.y, 1) * TILE_WIDTH;
-        tile.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
-      });
+    for (let x = xMinInt; x <= xMaxInt; x++) {
+      for (let y = yMinInt; y <= yMaxInt; y++) {
+        const key = Map.makeKeyXY(x, y);
+        const tile = this.tiles[key];
+        if (tile) {
+          const xp0 = Math.max(xMin - tile.x, 0) * TILE_WIDTH;
+          const yp0 = Math.max(yMin - tile.y, 0) * TILE_WIDTH;
+          const xp1 = Math.min(xMax - tile.x, 1) * TILE_WIDTH;
+          const yp1 = Math.min(yMax - tile.y, 1) * TILE_WIDTH;
+          tile.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+          if (tile.isEmpty()) {
+            delete this.tiles[key];
+          }
+        }
+      }
+    }
   }
 }
 
@@ -236,6 +237,10 @@ export class Tile {
       }
     }
   }
+
+  isEmpty(): boolean {
+    return Object.keys(this.blocks).length === 0;
+  }
 }
 
 export class Block {
@@ -249,7 +254,6 @@ export class Block {
     this.y = y;
     this.bitmap = data.slice(0, BLOCK_BITMAP_SIZE);
     this.extraData = data.slice(BLOCK_BITMAP_SIZE, BLOCK_SIZE);
-    // this.texture = gl.createTexture();
   }
 
   check(): boolean {
