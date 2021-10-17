@@ -9,14 +9,22 @@ type Props = {
   msgboxShow(title: string, msg: string): void;
 };
 
+let isImported = false;
+
 export default function MyModal(props: Props): JSX.Element {
   const { isOpen, setIsOpen, msgboxShow } = props;
-  const _ = msgboxShow;
 
   const fileInput = useRef<HTMLInputElement | null>(null);
 
   async function fileInputOnChange(e: ChangeEvent<HTMLInputElement>) {
     closeModal();
+    if (isImported) {
+      msgboxShow(
+        "Error",
+        "You already imported data from [Fog of World]. Refresh the page if you want to start over."
+      );
+      return;
+    }
     // TODO: error handling
     // TODO: progress bar
     const mapRenderer = MapRenderer.get();
@@ -32,6 +40,9 @@ export default function MyModal(props: Props): JSX.Element {
         }
       }
       mapRenderer.redrawArea(null);
+      // we need this because we do not support overriding in `mapRenderer.addFoGFile`
+      isImported = true;
+      // TODO: move to center?
     }
   }
 
