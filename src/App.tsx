@@ -15,7 +15,7 @@ function App(): JSX.Element {
   });
 
   function msgboxClose() {
-    setMsgboxState({...msgboxState, isOpen: false});
+    setMsgboxState({ ...msgboxState, isOpen: false });
   }
 
   function msgboxShow(title: string, msg: string) {

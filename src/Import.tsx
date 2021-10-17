@@ -1,5 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { ChangeEvent, Fragment, useRef } from "react";
+import { readFileAsync } from "./Utils";
 import { MapRenderer } from "./utils/MapRenderer";
 
 type Props = {
@@ -10,24 +11,28 @@ type Props = {
 
 export default function MyModal(props: Props): JSX.Element {
   const { isOpen, setIsOpen, msgboxShow } = props;
+  const _ = msgboxShow;
 
   const fileInput = useRef<HTMLInputElement | null>(null);
 
-  function fileInputOnChange(e: ChangeEvent<HTMLInputElement>) {
+  async function fileInputOnChange(e: ChangeEvent<HTMLInputElement>) {
     closeModal();
-    // TODO: progress bar, error handling
+    // TODO: error handling
+    // TODO: progress bar
     const mapRenderer = MapRenderer.get();
-    for (let i = 0; i < (e.target.files?.length || 0); i++) {
-      const file = e.target.files?.item(i);
-      if (file) {
-        const reader = new FileReader();
-        reader.readAsArrayBuffer(file);
-        reader.onload = (_e) => {
-          mapRenderer.addFoGFile(file.name, reader.result as ArrayBuffer);
-        };
+    const files = e.target.files;
+    if (files) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files.item(i);
+        if (file) {
+          const data = await readFileAsync(file);
+          if (data instanceof ArrayBuffer) {
+            mapRenderer.addFoGFile(file.name, data, false);
+          }
+        }
       }
+      mapRenderer.redrawArea(null);
     }
-    msgboxShow("AAA", "BBB");
   }
 
   function closeModal() {
