@@ -1,30 +1,48 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { ChangeEvent, Fragment, useRef } from "react";
+import { readFileAsync } from "./Utils";
 import { MapRenderer } from "./utils/MapRenderer";
 
 type Props = {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  msgboxShow(title: string, msg: string): void;
 };
 
+let isImported = false;
+
 export default function MyModal(props: Props): JSX.Element {
-  const { isOpen, setIsOpen } = props;
+  const { isOpen, setIsOpen, msgboxShow } = props;
 
   const fileInput = useRef<HTMLInputElement | null>(null);
 
-  function fileInputOnChange(e: ChangeEvent<HTMLInputElement>) {
+  async function fileInputOnChange(e: ChangeEvent<HTMLInputElement>) {
     closeModal();
-    // TODO: progress bar, error handling
+    if (isImported) {
+      msgboxShow(
+        "Error",
+        "You already imported data from [Fog of World]. Refresh the page if you want to start over."
+      );
+      return;
+    }
+    // TODO: error handling
+    // TODO: progress bar
     const mapRenderer = MapRenderer.get();
-    for (let i = 0; i < (e.target.files?.length || 0); i++) {
-      const file = e.target.files?.item(i);
-      if (file) {
-        const reader = new FileReader();
-        reader.readAsArrayBuffer(file);
-        reader.onload = (_e) => {
-          mapRenderer.addFoGFile(file.name, reader.result as ArrayBuffer);
-        };
+    const files = e.target.files;
+    if (files) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files.item(i);
+        if (file) {
+          const data = await readFileAsync(file);
+          if (data instanceof ArrayBuffer) {
+            mapRenderer.addFoGFile(file.name, data, false);
+          }
+        }
       }
+      mapRenderer.redrawArea(null);
+      // we need this because we do not support overriding in `mapRenderer.addFoGFile`
+      isImported = true;
+      // TODO: move to center?
     }
   }
 

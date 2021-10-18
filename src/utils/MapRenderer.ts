@@ -64,17 +64,17 @@ export class MapRenderer {
     // TODO
   }
 
-  private redrawArea(area: deckgl.Bbox): void {
+  redrawArea(area: deckgl.Bbox | null): void {
     Object.values(this.loadedTileCanvases).forEach((tileCanvas) => {
-      if (isBboxOverlap(tileCanvas.tile.bbox, area)) {
+      if (area === null || isBboxOverlap(tileCanvas.tile.bbox, area)) {
         this.drawTileCanvas(tileCanvas);
       }
     });
   }
 
-  addFoGFile(filename: string, data: ArrayBuffer): void {
+  addFoGFile(filename: string, data: ArrayBuffer, redraw = true): void {
     const newTile = this.fogMap.addFile(filename, data);
-    if (newTile) {
+    if (newTile && redraw) {
       this.redrawArea(newTile.bbox());
     }
   }
