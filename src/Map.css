@@ -5,3 +5,7 @@
 .mapboxgl-ctrl-bottom-left {
   z-index: 15;
 }
+
+body {
+  -webkit-overflow-scrolling: touch;
+}
