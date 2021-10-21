@@ -38,7 +38,7 @@ function Map(): JSX.Element {
   });
 
   return (
-    <div className="h-screen">
+    <div className="absolute inset-0">
       <div ref={mapContainer} className="absolute w-full h-full inset-0" />
       <canvas
         ref={deckglContainer}
