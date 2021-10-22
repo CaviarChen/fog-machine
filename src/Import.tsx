@@ -34,13 +34,10 @@ export default function MyModal(props: Props): JSX.Element {
     let done = false;
     const mapRenderer = MapRenderer.get();
     if (files.every((file) => parsePath(file.name).ext === "")) {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        if (file) {
-          const data = await readFileAsync(file);
-          if (data instanceof ArrayBuffer) {
-            mapRenderer.addFoGFile(file.name, data, false);
-          }
+      for (const file of files) {
+        const data = await readFileAsync(file);
+        if (data instanceof ArrayBuffer) {
+          mapRenderer.addFoGFile(file.name, data, false);
         }
       }
       done = true;
