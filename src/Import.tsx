@@ -4,6 +4,7 @@ import { readFileAsync } from "./Utils";
 import { MapRenderer } from "./utils/MapRenderer";
 import { useDropzone } from "react-dropzone";
 import JSZip from "jszip";
+import parsePath from "parse-filepath";
 
 type Props = {
   isOpen: boolean;
@@ -15,12 +16,6 @@ let isImported = false;
 
 export default function MyModal(props: Props): JSX.Element {
   const { isOpen, setIsOpen, msgboxShow } = props;
-
-  function fileExtension(filename: string) {
-    return filename
-      .substring(filename.lastIndexOf(".") + 1, filename.length)
-      .toLowerCase();
-  }
 
   async function importFiles(files: File[]) {
     closeModal();
@@ -35,10 +30,10 @@ export default function MyModal(props: Props): JSX.Element {
     console.log(files);
     // TODO: error handling
     // TODO: progress bar
+    // TODO: improve file checking
     let done = false;
     const mapRenderer = MapRenderer.get();
-    files.forEach((file) => console.log(fileExtension(file.name)));
-    if (files.every((file) => fileExtension(file.name) === "")) {
+    if (files.every((file) => parsePath(file.name).ext === "")) {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (file) {
@@ -50,7 +45,7 @@ export default function MyModal(props: Props): JSX.Element {
       }
       done = true;
     } else {
-      if (files.length === 1 && fileExtension(files[0].name) === "zip") {
+      if (files.length === 1 && parsePath(files[0].name).ext === ".zip") {
         const data = await readFileAsync(files[0]);
         if (data instanceof ArrayBuffer) {
           const zip = await new JSZip().loadAsync(data);
