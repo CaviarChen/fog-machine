@@ -1,6 +1,7 @@
-import { Popover, Transition } from "@headlessui/react";
+import { Popover, Tab, Transition } from "@headlessui/react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/solid";
 import { Fragment } from "react";
+import { useTranslation } from "react-i18next";
 
 export enum Actions {
   Import,
@@ -11,22 +12,55 @@ type Props = {
   onAction(action: Actions): void;
 };
 
-const menuItems = [
-  {
-    name: "Import",
-    description: "Import data from [Fog of World]",
-    action: Actions.Import,
-    icon: IconImport,
-  },
-  {
-    name: "Export",
-    description: "Import data to [Fog of World] format",
-    action: Actions.Export,
-    icon: IconExport,
-  },
-];
-
 export default function MainMenu(props: Props): JSX.Element {
+  const { t, i18n } = useTranslation();
+
+  const menuItems = [
+    {
+      name: "Import",
+      description: "Import data from [Fog of World]",
+      action: Actions.Import,
+      icon: IconImport,
+    },
+    {
+      name: "Export",
+      description: "Import data to [Fog of World] format",
+      action: Actions.Export,
+      icon: IconExport,
+    },
+  ];
+
+  const languageTab = (
+    <div className="w-full pt-4 grid lg:grid-cols-2">
+      <Tab.Group
+        onChange={(index) => {
+          if (index === 0) {
+            i18n.changeLanguage("zh");
+          } else {
+            i18n.changeLanguage("en");
+          }
+        }}
+        defaultIndex={i18n.language === "zh" ? 0 : 1}
+      >
+        <Tab.List className="flex p-1 space-x-1 bg-gray-300 rounded-xl">
+          {["简体中文", "English"].map((category) => (
+            <Tab
+              key={category}
+              className={({ selected }) => {
+                return (
+                  "w-full py-1 text-sm leading-5 font-medium text-grey-500 rounded-lg focus:outline-none" +
+                  (selected ? " bg-white" : " hover:bg-gray-200")
+                );
+              }}
+            >
+              {category}
+            </Tab>
+          ))}
+        </Tab.List>
+      </Tab.Group>
+    </div>
+  );
+
   return (
     <div className="absolute z-40 top-4 left-4">
       <div className="max-w-sm m-auto bg-white bg-opacity-90 rounded-xl shadow-md flex items-center space-x-4">
@@ -39,7 +73,7 @@ export default function MainMenu(props: Props): JSX.Element {
                 text-black group bg-orange-700 px-3 py-2 rounded-md inline-flex items-center text-base font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`}
               >
                 <div className="p-0.5">
-                  <span>FogMachine</span>
+                  <span>{t("main-title")}</span>
                 </div>
                 {open ? (
                   <ChevronUpIcon
@@ -84,6 +118,15 @@ export default function MainMenu(props: Props): JSX.Element {
                           </div>
                         </a>
                       ))}
+                    </div>
+
+                    <div className="p-4 bg-gray-50">
+                      <span className="flex items-center">
+                        <span className="text-sm font-medium text-gray-900">
+                          Language
+                        </span>
+                      </span>
+                      {languageTab}
                     </div>
                   </div>
                 </Popover.Panel>
