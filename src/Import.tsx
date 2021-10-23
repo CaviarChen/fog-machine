@@ -1,7 +1,10 @@
 import { Dialog, Transition } from "@headlessui/react";
-import { ChangeEvent, Fragment, useRef } from "react";
+import { Fragment } from "react";
 import { readFileAsync } from "./Utils";
 import { MapRenderer } from "./utils/MapRenderer";
+import { useDropzone } from "react-dropzone";
+import JSZip from "jszip";
+import parsePath from "parse-filepath";
 
 type Props = {
   isOpen: boolean;
@@ -14,9 +17,7 @@ let isImported = false;
 export default function MyModal(props: Props): JSX.Element {
   const { isOpen, setIsOpen, msgboxShow } = props;
 
-  const fileInput = useRef<HTMLInputElement | null>(null);
-
-  async function fileInputOnChange(e: ChangeEvent<HTMLInputElement>) {
+  async function importFiles(files: File[]) {
     closeModal();
     if (isImported) {
       msgboxShow(
@@ -25,26 +26,51 @@ export default function MyModal(props: Props): JSX.Element {
       );
       return;
     }
+
+    console.log(files);
     // TODO: error handling
     // TODO: progress bar
+    // TODO: improve file checking
+    let done = false;
     const mapRenderer = MapRenderer.get();
-    const files = e.target.files;
-    if (files) {
-      for (let i = 0; i < files.length; i++) {
-        const file = files.item(i);
-        if (file) {
-          const data = await readFileAsync(file);
-          if (data instanceof ArrayBuffer) {
-            mapRenderer.addFoGFile(file.name, data, false);
-          }
+    if (files.every((file) => parsePath(file.name).ext === "")) {
+      for (const file of files) {
+        const data = await readFileAsync(file);
+        if (data instanceof ArrayBuffer) {
+          mapRenderer.addFoGFile(file.name, data, false);
         }
       }
+      done = true;
+    } else {
+      if (files.length === 1 && parsePath(files[0].name).ext === ".zip") {
+        const data = await readFileAsync(files[0]);
+        if (data instanceof ArrayBuffer) {
+          const zip = await new JSZip().loadAsync(data);
+          for (const filename in zip.files) {
+            const data = await zip.files[filename].async("arraybuffer");
+            mapRenderer.addFoGFile(filename, data, false);
+          }
+        }
+        done = true;
+      }
+    }
+
+    if (done) {
       mapRenderer.redrawArea(null);
       // we need this because we do not support overriding in `mapRenderer.addFoGFile`
       isImported = true;
       // TODO: move to center?
+    } else {
+      msgboxShow("Error", "Invalid format");
     }
   }
+
+  const { open, getRootProps, getInputProps } = useDropzone({
+    noClick: true,
+    noKeyboard: true,
+    onDrop: (files) => importFiles(files),
+  });
+  const openFileSelector = open;
 
   function closeModal() {
     setIsOpen(false);
@@ -94,32 +120,38 @@ export default function MyModal(props: Props): JSX.Element {
                 Import data
               </Dialog.Title>
               <div className="mt-2">
-                <p className="text-sm text-gray-500">TODO: description</p>
+                <p className="text-sm text-gray-500">
+                  All your data will be handled locally.
+                  <br />
+                  <br />
+                  Accept data format:
+                  <br />
+                  - The "Sync" folder.
+                  <br />
+                  - Files in the "Sync" folder.
+                  <br />
+                  - A zip archive contains the "Sync" folder.
+                  <br />
+                  <br />
+                </p>
               </div>
               <div className="pt-4">
                 <div className="border-2 border-dashed border-gray-300 border-opacity-100 rounded-lg">
-                  <div className="py-4 w-min mx-auto">
-                    <input
-                      id="myInput"
-                      type="file"
-                      ref={fileInput}
-                      style={{ display: "none" }}
-                      onChange={fileInputOnChange}
-                      multiple
-                    />
-                    <div className="mb-4 whitespace-nowrap">
-                      TODO: drag and drop a folder
-                    </div>
-                    <div className="w-min mx-auto">
-                      <button
-                        type="button"
-                        className="inline-flex justify-center px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-                        onClick={() => {
-                          fileInput.current?.click();
-                        }}
-                      >
-                        Select
-                      </button>
+                  <div {...getRootProps({ className: "dropzone" })}>
+                    <input {...getInputProps()} />
+                    <div className="py-4 w-min mx-auto">
+                      <div className="mb-4 whitespace-nowrap">
+                        drag and drop [Fog of World] sync data
+                      </div>
+                      <div className="w-min mx-auto">
+                        <button
+                          type="button"
+                          className="inline-flex justify-center px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                          onClick={openFileSelector}
+                        >
+                          Select
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
