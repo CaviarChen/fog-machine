@@ -62,10 +62,10 @@ function Map(): JSX.Element {
         ref={deckglContainer}
         className="absolute w-full h-full inset-0 z-10 pointer-events-none opacity-50"
       />
-      <div className="absolute bottom-0 pb-4 z-10 flex justify-center w-full">
+      <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
         <button
           className={
-            "flex items-center justify-center w-9 h-9 p-2 bg-white shadow rounded-lg hover:bg-gray-200" +
+            "flex items-center justify-center w-9 h-9 p-2 pointer-events-auto bg-white shadow rounded-lg hover:bg-gray-200" +
             (eraserMode ? " ring-4 ring-gray-700" : "")
           }
           onClick={() => {
