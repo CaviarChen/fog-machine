@@ -3,10 +3,23 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import "./Map.css";
 import mapboxgl from "mapbox-gl";
 import { MapRenderer } from "./utils/MapRenderer";
+import { useTranslation } from "react-i18next";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
 
+function setMapboxLanguage(map: mapboxgl.Map, lng: string): void {
+  if (lng !== "zh") {
+    lng = "en";
+  }
+  map.getStyle().layers?.forEach(function (thisLayer) {
+    if (thisLayer.type == "symbol") {
+      map.setLayoutProperty(thisLayer.id, "text-field", ["get", "name_" + lng]);
+    }
+  });
+}
+
 function Map(): JSX.Element {
+  const { i18n } = useTranslation();
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const deckglContainer = useRef<HTMLCanvasElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -28,6 +41,11 @@ function Map(): JSX.Element {
     mapboxMap.addControl(new mapboxgl.NavigationControl(), "bottom-right");
     mapboxMap.on("load", () => {
       mapRenderer.registerMap(mapboxMap, deckglContainer.current!);
+
+      setMapboxLanguage(mapboxMap, i18n.language);
+      i18n.on("languageChanged", (lng) => {
+        setMapboxLanguage(mapboxMap, lng);
+      });
     });
     map.current = mapboxMap;
 
