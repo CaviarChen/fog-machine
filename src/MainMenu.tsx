@@ -40,7 +40,7 @@ export default function MainMenu(props: Props): JSX.Element {
             i18n.changeLanguage("en");
           }
         }}
-        defaultIndex={i18n.language === "zh" ? 0 : 1}
+        defaultIndex={i18n.resolvedLanguage === "zh" ? 0 : 1}
       >
         <Tab.List className="flex p-1 space-x-1 bg-gray-300 rounded-xl">
           {["简体中文", "English"].map((category) => (

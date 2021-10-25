@@ -42,7 +42,7 @@ function Map(): JSX.Element {
     mapboxMap.on("load", () => {
       mapRenderer.registerMap(mapboxMap, deckglContainer.current!);
 
-      setMapboxLanguage(mapboxMap, i18n.language);
+      setMapboxLanguage(mapboxMap, i18n.resolvedLanguage);
       i18n.on("languageChanged", (lng) => {
         setMapboxLanguage(mapboxMap, lng);
       });
