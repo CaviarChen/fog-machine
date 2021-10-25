@@ -17,14 +17,14 @@ export default function MainMenu(props: Props): JSX.Element {
 
   const menuItems = [
     {
-      name: "Import",
-      description: "Import data from [Fog of World]",
+      name: t("import"),
+      description: t("import-description"),
       action: Actions.Import,
       icon: IconImport,
     },
     {
-      name: "Export",
-      description: "Import data to [Fog of World] format",
+      name: t("export"),
+      description: t("export-description"),
       action: Actions.Export,
       icon: IconExport,
     },
@@ -123,7 +123,7 @@ export default function MainMenu(props: Props): JSX.Element {
                     <div className="p-4 bg-gray-50">
                       <span className="flex items-center">
                         <span className="text-sm font-medium text-gray-900">
-                          Language
+                          {t("language")}
                         </span>
                       </span>
                       {languageTab}
