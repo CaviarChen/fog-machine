@@ -20,16 +20,33 @@ i18n
           export: "Export",
           "export-description": "Export data in [Fog of World] format",
           language: "Language",
+          error: "Error",
+          "error-already-imported":
+            "You already imported data from [Fog of World]. Refresh the page if you want to start over.",
+          "error-invalid-format": "Invalid format.",
+          "import-dialog-description":
+            'All your data will be handled locally.<br /><br />Accept data format:<br />- The "Sync" folder.<br />- Files in the "Sync" folder.<br />- A zip archive contains the "Sync" folder.<br /><br />',
+          "import-dialog-drag-and-drop":
+            "drag and drop [Fog of World] sync data",
+          "import-dialog-select": "Select manually",
         },
       },
       zh: {
         translation: {
           "main-title": "迷雾机器",
           import: "导入",
-          "import-description": "从 [世界迷雾] 中导入数据",
+          "import-description": "从 [世界迷雾] 中导入数据。",
           export: "导出",
-          "export-description": "以 [世界迷雾] 的格式导出数据",
+          "export-description": "以 [世界迷雾] 的格式导出数据。",
           language: "语言",
+          error: "错误",
+          "error-already-imported":
+            "无法多次导入 [世界迷雾] 数据。可通过刷新页面重置。",
+          "error-invalid-format": "无效文件格式。",
+          "import-dialog-description":
+            '你的数据将完全在本地处理。<br /><br />接受的数据格式:<br />- "Sync" 文件夹<br />-  "Sync" 文件夹中的全部文件<br />- 包含 "Sync" 文件夹的 zip 压缩包<br /><br />',
+          "import-dialog-drag-and-drop": "拖入 [世界迷雾] 同步数据",
+          "import-dialog-select": "手动选择",
         },
       },
     },

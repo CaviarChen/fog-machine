@@ -5,13 +5,27 @@ import GithubCorner from "./GithubCorner";
 import Import from "./Import";
 import { MapRenderer } from "./utils/MapRenderer";
 import { Dialog, Transition } from "@headlessui/react";
+import { useTranslation } from "react-i18next";
 
 function App(): JSX.Element {
+  const { t } = useTranslation();
+  const t_ = (key: string | null) => {
+    if (key) {
+      return t(key);
+    } else {
+      return "";
+    }
+  };
+
   const [importDialog, setImportDialog] = useState(false);
-  const [msgboxState, setMsgboxState] = useState({
+  const [msgboxState, setMsgboxState] = useState<{
+    isOpen: boolean;
+    title: null | string;
+    msg: null | string;
+  }>({
     isOpen: false,
-    title: "",
-    msg: "",
+    title: null,
+    msg: null,
   });
 
   function msgboxClose() {
@@ -63,10 +77,10 @@ function App(): JSX.Element {
                 as="h3"
                 className="text-lg font-medium leading-6 text-gray-900"
               >
-                {msgboxState.title}
+                {t_(msgboxState.title)}
               </Dialog.Title>
               <div className="mt-2">
-                <p className="text-sm text-gray-500">{msgboxState.msg}</p>
+                <p className="text-sm text-gray-500">{t_(msgboxState.msg)}</p>
               </div>
 
               <div className="mt-4">
