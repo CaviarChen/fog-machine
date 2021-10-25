@@ -5,7 +5,7 @@ import { MapRenderer } from "./utils/MapRenderer";
 import { useDropzone } from "react-dropzone";
 import JSZip from "jszip";
 import parsePath from "parse-filepath";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   isOpen: boolean;
@@ -120,16 +120,16 @@ export default function MyModal(props: Props): JSX.Element {
               </Dialog.Title>
               <div className="mt-2">
                 <p className="text-sm text-gray-500">
-                  {/* {t("import-dialog-description")} */}
-                  <Trans i18nKey="import-dialog-description">
-                    <br />
-                    <br />
-                    <br />
-                    <br />
-                    <br />
-                    <br />
-                    <br />
-                  </Trans>
+                  {t("import-dialog-description")
+                    .split("\n")
+                    .map((item) => {
+                      return (
+                        <>
+                          {" "}
+                          {item} <br />
+                        </>
+                      );
+                    })}
                 </p>
               </div>
               <div className="pt-4">
