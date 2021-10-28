@@ -29,6 +29,8 @@ i18n
           "import-dialog-drag-and-drop":
             "drag and drop [Fog of World] sync data",
           "import-dialog-select": "Select manually",
+          "info": "Info",
+          "export-done-message": 'Exported successfully.\n\nPlease use the "Sync" folder in the exported zip archive to replace the original folder. You also need to reset the [Fog of World] app to remove the existing data.',
         },
       },
       zh: {
@@ -47,6 +49,8 @@ i18n
             '你的数据将完全在本地处理。\n\n接受的数据格式:\n- "Sync" 文件夹\n-  "Sync" 文件夹中的全部文件\n- 包含 "Sync" 文件夹的 zip 压缩包\n\n',
           "import-dialog-drag-and-drop": "拖入 [世界迷雾] 同步数据",
           "import-dialog-select": "手动选择",
+          "info": "提示",
+          "export-done-message": '导出成功。\n\n请使用导出的 zip 压缩包中的 "Sync" 文件夹替换原有文件夹，并重置 [世界迷雾] app 以清除已有数据。',
         },
       },
     },

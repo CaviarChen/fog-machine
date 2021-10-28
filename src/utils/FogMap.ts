@@ -64,7 +64,7 @@ export class Map {
       return null;
     }
     for (const tile of Object.values(this.tiles)) {
-      syncZip.file(tile.filename, tile.dump());
+      syncZip.file("Sync/" + tile.filename, tile.dump());
     }
     return syncZip.generateAsync({ type: "blob" });
   }
