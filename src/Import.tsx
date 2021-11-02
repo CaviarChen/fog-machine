@@ -5,6 +5,7 @@ import { MapRenderer } from "./utils/MapRenderer";
 import { useDropzone } from "react-dropzone";
 import JSZip from "jszip";
 import parsePath from "parse-filepath";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   isOpen: boolean;
@@ -15,15 +16,13 @@ type Props = {
 let isImported = false;
 
 export default function MyModal(props: Props): JSX.Element {
+  const { t } = useTranslation();
   const { isOpen, setIsOpen, msgboxShow } = props;
 
   async function importFiles(files: File[]) {
     closeModal();
     if (isImported) {
-      msgboxShow(
-        "Error",
-        "You already imported data from [Fog of World]. Refresh the page if you want to start over."
-      );
+      msgboxShow("error", "error-already-imported");
       return;
     }
 
@@ -61,7 +60,7 @@ export default function MyModal(props: Props): JSX.Element {
       isImported = true;
       // TODO: move to center?
     } else {
-      msgboxShow("Error", "Invalid format");
+      msgboxShow("error", "error-invalid-format");
     }
   }
 
@@ -117,22 +116,20 @@ export default function MyModal(props: Props): JSX.Element {
                 as="h3"
                 className="text-lg font-medium leading-6 text-gray-900"
               >
-                Import data
+                {t("import")}
               </Dialog.Title>
               <div className="mt-2">
                 <p className="text-sm text-gray-500">
-                  All your data will be handled locally.
-                  <br />
-                  <br />
-                  Accept data format:
-                  <br />
-                  - The "Sync" folder.
-                  <br />
-                  - Files in the "Sync" folder.
-                  <br />
-                  - A zip archive contains the "Sync" folder.
-                  <br />
-                  <br />
+                  {t("import-dialog-description")
+                    .split("\n")
+                    .map((item) => {
+                      return (
+                        <>
+                          {" "}
+                          {item} <br />
+                        </>
+                      );
+                    })}
                 </p>
               </div>
               <div className="pt-4">
@@ -141,15 +138,15 @@ export default function MyModal(props: Props): JSX.Element {
                     <input {...getInputProps()} />
                     <div className="py-4 w-min mx-auto">
                       <div className="mb-4 whitespace-nowrap">
-                        drag and drop [Fog of World] sync data
+                        {t("import-dialog-drag-and-drop")}
                       </div>
                       <div className="w-min mx-auto">
                         <button
                           type="button"
-                          className="inline-flex justify-center px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                          className="whitespace-nowrap px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                           onClick={openFileSelector}
                         >
-                          Select
+                          {t("import-dialog-select")}
                         </button>
                       </div>
                     </div>

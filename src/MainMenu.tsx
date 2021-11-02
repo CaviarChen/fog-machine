@@ -17,14 +17,14 @@ export default function MainMenu(props: Props): JSX.Element {
 
   const menuItems = [
     {
-      name: "Import",
-      description: "Import data from [Fog of World]",
+      name: t("import"),
+      description: t("import-description"),
       action: Actions.Import,
       icon: IconImport,
     },
     {
-      name: "Export",
-      description: "Import data to [Fog of World] format",
+      name: t("export"),
+      description: t("export-description"),
       action: Actions.Export,
       icon: IconExport,
     },
@@ -40,7 +40,7 @@ export default function MainMenu(props: Props): JSX.Element {
             i18n.changeLanguage("en");
           }
         }}
-        defaultIndex={i18n.language === "zh" ? 0 : 1}
+        defaultIndex={i18n.resolvedLanguage === "zh" ? 0 : 1}
       >
         <Tab.List className="flex p-1 space-x-1 bg-gray-300 rounded-xl">
           {["简体中文", "English"].map((category) => (
@@ -103,7 +103,7 @@ export default function MainMenu(props: Props): JSX.Element {
                         <a
                           key={item.name}
                           onClick={() => props.onAction(item.action)}
-                          className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-50 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
+                          className="flex items-center cursor-pointer p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-50 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
                         >
                           <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 text-white sm:h-12 sm:w-12">
                             <item.icon aria-hidden="true" />
@@ -123,7 +123,7 @@ export default function MainMenu(props: Props): JSX.Element {
                     <div className="p-4 bg-gray-50">
                       <span className="flex items-center">
                         <span className="text-sm font-medium text-gray-900">
-                          Language
+                          {t("language")}
                         </span>
                       </span>
                       {languageTab}
