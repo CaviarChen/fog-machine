@@ -4,19 +4,9 @@ import "./Map.css";
 import mapboxgl from "mapbox-gl";
 import { MapRenderer } from "./utils/MapRenderer";
 import { useTranslation } from "react-i18next";
+import { initLanguageControl } from "./utils/MapLanguage";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
-
-function setMapboxLanguage(map: mapboxgl.Map, lng: string): void {
-  if (lng !== "zh") {
-    lng = "en";
-  }
-  map.getStyle().layers?.forEach(function (thisLayer) {
-    if (thisLayer.type == "symbol") {
-      map.setLayoutProperty(thisLayer.id, "text-field", ["get", "name_" + lng]);
-    }
-  });
-}
 
 function Map(): JSX.Element {
   const { i18n } = useTranslation();
@@ -36,15 +26,19 @@ function Map(): JSX.Element {
     if (!deckglContainer.current) return;
     const mapboxMap = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/streets-v10",
+      style: "mapbox://styles/mapbox/streets-v11",
     });
     mapboxMap.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+    const setMapboxLanguage = initLanguageControl(
+      mapboxMap,
+      i18n.resolvedLanguage
+    );
+
     mapboxMap.on("load", () => {
       mapRenderer.registerMap(mapboxMap, deckglContainer.current!);
-
-      setMapboxLanguage(mapboxMap, i18n.resolvedLanguage);
-      i18n.on("languageChanged", (lng) => {
-        setMapboxLanguage(mapboxMap, lng);
+      setMapboxLanguage(i18n.resolvedLanguage);
+      i18n.on("languageChanged", (_) => {
+        setMapboxLanguage(i18n.resolvedLanguage);
       });
     });
     map.current = mapboxMap;
