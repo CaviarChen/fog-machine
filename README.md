@@ -1,46 +1,57 @@
-# Getting Started with Create React App
+# Fog Machine
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Fog Machine is a web tool for visualizing and editing the data of [_Fog of World_](https://fogofworld.app/) App. Currently, it supports:
 
-## Available Scripts
+- import and visualize FoW data
+- delete tracks
+- export data (if you deletes any tracks, you need to reinstall your FoW App first, and then sync with modified data.)
 
-In the project directory, you can run:
+You may use fog machine at [https://fogmachine.8bits.io/](https://fogmachine.8bits.io/)
 
-### `yarn start`
+## Examples
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+![Demo Image (New York)](.github/landscape.png)
+![Demo Image (Edit)](.github/edit.png)
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Security, Privacy, and Consisterncy
 
-### `yarn test`
+Fog Machine is an open-source static web application. That means all your data stays in your web browser and you can audit our code to verify this.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+We render and edit your data at the same resolution as the original file and we'll recompute the checksum when you export. The file exported by Fog Machine should be consistent with the file handled by FoW App.
 
-### `yarn build`
+## Why original FoW App does not support deleting tracks?
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+By reverse engineering, we found the sync data of FoW 3 contains no version info. Whenever App syncs, it takes a union of cloud data and the local data -- in other words, you can only **add** tracks to the App's internal storage through syncing.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Also because of this, if you delete any track using our tool, you need to reinitialize your FoW App (clean up its internal storage) before syncing with modified data.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+# Contributing
 
-### `yarn eject`
+PRs are welcomed, and in particular, we are expecting the following features:
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+- more language support
+- adding tracks (import gpx, etc.)
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+To understand the internal sync format of FoW App, you may refer to [Fog-of-World-Data-Parser](https://github.com/CaviarChen/Fog-of-World-Data-Parser) project.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+---
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Install required dependency and run the web App:
 
-## Learn More
+```bash
+yarn install
+yarn start
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+By default, Fog Machine will be hosted at `http://localhost:3000`.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Linter support:
+
+```bash
+yarn run cicheck
+yarn run autofix
+```
+
+# License
+
+Fog Machine is available under the [MIT License](https://opensource.org/licenses/MIT).
