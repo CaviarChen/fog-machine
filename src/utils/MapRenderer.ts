@@ -176,7 +176,7 @@ export class MapRenderer {
       const bbox = new deckgl.Bbox(west, south, east, north);
       console.log(`clearing the bbox ${west} ${north} ${east} ${south}`);
 
-      this.fogMap.clearBbox(bbox);
+      this.fogMap = this.fogMap.clearBbox(bbox);
       this.redrawArea(bbox);
 
       this.eraserArea = null;
