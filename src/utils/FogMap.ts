@@ -93,7 +93,7 @@ export class FogMap extends Record({
             const yp0 = Math.max(yMin - tile.y, 0) * TILE_WIDTH;
             const xp1 = Math.min(xMax - tile.x, 1) * TILE_WIDTH;
             const yp1 = Math.min(yMax - tile.y, 1) * TILE_WIDTH;
-            let newTile = tile.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+            const newTile = tile.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
             if (newTile) {
               tiles = tiles.set(key, newTile);
             } else {

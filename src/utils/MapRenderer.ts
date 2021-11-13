@@ -28,7 +28,7 @@ export class MapRenderer {
   private static instance = new MapRenderer();
   private map: mapboxgl.Map | null;
   private deckgl: deckgl.Deckgl | null;
-  public fogMap: fogMap.Map;
+  public fogMap: fogMap.FogMap;
   private loadedTileCanvases: { [key: string]: deckgl.TileCanvas };
   private eraserMode: boolean;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
@@ -36,7 +36,7 @@ export class MapRenderer {
   private constructor() {
     this.map = null;
     this.deckgl = null;
-    this.fogMap = new fogMap.Map();
+    this.fogMap = new fogMap.FogMap();
     this.loadedTileCanvases = {};
     this.eraserMode = false;
     this.eraserArea = null;
@@ -73,9 +73,13 @@ export class MapRenderer {
   }
 
   addFoGFile(filename: string, data: ArrayBuffer, redraw = true): void {
-    const newTile = this.fogMap.addFile(filename, data);
-    if (newTile && redraw) {
-      this.redrawArea(newTile.bbox());
+    const result = this.fogMap.addFile(filename, data);
+    if (result) {
+      const [fogMap, newTile] = result;
+      this.fogMap = fogMap;
+      if (redraw) {
+        this.redrawArea(newTile.bbox());
+      }
     }
   }
 
@@ -212,7 +216,7 @@ export class MapRenderer {
     // ctx.strokeRect(dx,dy,1<<tileSizeOffset, 1<<tileSizeOffset);
     const overscanOffset = Math.max(CANVAS_FOW_BLOCK_SIZE_OFFSET, 0);
     const underscanOffset = Math.max(-CANVAS_FOW_BLOCK_SIZE_OFFSET, 0);
-    Object.values(fowTile.blocks).forEach((block) => {
+    fowTile.blocks.forEach((block) => {
       const blockDx = dx + ((block.x >> underscanOffset) << overscanOffset);
       const blockDy = dy + ((block.y >> underscanOffset) << overscanOffset);
       MapRenderer.renderBlockOnCanvas(
@@ -275,8 +279,9 @@ export class MapRenderer {
       const fowTileYMax = (tile.y + 1) << CANVAS_NUM_FOW_TILE_OFFSET;
       for (let fowTileX = fowTileXMin; fowTileX < fowTileXMax; fowTileX++) {
         for (let fowTileY = fowTileYMin; fowTileY < fowTileYMax; fowTileY++) {
-          const fowTile =
-            this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)];
+          const fowTile = this.fogMap.tiles.get(
+            fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)
+          );
           if (fowTile) {
             // TODO: what if this < 0?
             const CANVAS_FOW_TILE_SIZE_OFFSET =
@@ -321,10 +326,9 @@ export class MapRenderer {
         const fowBlockPixelYMax =
           ((tile.y & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
 
-        const block =
-          this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)]?.blocks[
-            fogMap.Map.makeKeyXY(fowBlockX, fowBlockY)
-          ];
+        const block = this.fogMap.tiles
+          .get(fogMap.FogMap.makeKeyXY(fowTileX, fowTileY))
+          ?.blocks.get(fogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY));
 
         if (block) {
           for (
@@ -370,10 +374,11 @@ export class MapRenderer {
         const CANVAS_FOW_BLOCK_SIZE_OFFSET =
           CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_BLOCK_OFFSET;
 
-        const blocks =
-          this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)]?.blocks;
+        const blocks = this.fogMap.tiles.get(
+          fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)
+        )?.blocks;
         if (blocks) {
-          Object.values(blocks)
+          blocks
             .filter(
               (block) =>
                 block.x >= fowBlockXMin &&
