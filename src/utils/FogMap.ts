@@ -1,6 +1,8 @@
 import pako from "pako";
 import JSZip from "jszip";
 import * as deckgl from "./Deckgl";
+import { Record } from "immutable";
+// import { Map } from "immutable";
 
 const FILENAME_MASK1 = "olhwjsktri";
 // const FILENAME_MASK2 = "eizxdwknmo";
@@ -18,6 +20,8 @@ const BLOCK_EXTRA_DATA = 3;
 const BLOCK_SIZE = BLOCK_BITMAP_SIZE + BLOCK_EXTRA_DATA;
 export const BITMAP_WIDTH_OFFSET = 6;
 export const BITMAP_WIDTH = 1 << BITMAP_WIDTH_OFFSET;
+
+// TODO: figure out a better way to imeplement immutable data structure
 
 // SAD: Type Aliases do not seem to give us type safety
 export type TileID = number;
@@ -143,7 +147,7 @@ export class Tile {
         const startOffset = TILE_HEADER_SIZE + (blockIdx - 1) * BLOCK_SIZE;
         const endOffset = startOffset + BLOCK_SIZE;
         const blockData = this.data.slice(startOffset, endOffset);
-        const block = new Block(blockX, blockY, blockData);
+        const block = Block.create(blockX, blockY, blockData);
         block.check();
         this.blocks[Map.makeKeyXY(blockX, blockY)] = block;
         this.regionCount[block.region()] =
@@ -229,8 +233,10 @@ export class Tile {
           const yp0 = Math.round(Math.max(yMin - block.y, 0) * BITMAP_WIDTH);
           const xp1 = Math.round(Math.min(xMax - block.x, 1) * BITMAP_WIDTH);
           const yp1 = Math.round(Math.min(yMax - block.y, 1) * BITMAP_WIDTH);
-          block.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
-          if (block.isEmpty()) {
+          const newBlock = block.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+          if (newBlock) {
+            this.blocks[key] = newBlock;
+          } else {
             delete this.blocks[key];
           }
         }
@@ -243,17 +249,16 @@ export class Tile {
   }
 }
 
-export class Block {
-  x: number;
-  y: number;
-  bitmap: Uint8Array;
-  extraData: Uint8Array;
-
-  constructor(x: number, y: number, data: Uint8Array) {
-    this.x = x;
-    this.y = y;
-    this.bitmap = data.slice(0, BLOCK_BITMAP_SIZE);
-    this.extraData = data.slice(BLOCK_BITMAP_SIZE, BLOCK_SIZE);
+export class Block extends Record({
+  x: 0,
+  y: 0,
+  bitmap: new Uint8Array(),
+  extraData: new Uint8Array(),
+}) {
+  static create(x: number, y: number, data: Uint8Array): Block {
+    const bitmap = data.slice(0, BLOCK_BITMAP_SIZE);
+    const extraData = data.slice(BLOCK_BITMAP_SIZE, BLOCK_SIZE);
+    return new Block({ x, y, bitmap, extraData });
   }
 
   check(): boolean {
@@ -323,24 +328,47 @@ export class Block {
     return (this.bitmap[i + j * 8] & (1 << bitOffset)) !== 0;
   }
 
-  setPoint(x: number, y: number, val: boolean): void {
+  private static setPoint(
+    mutableBitmap: Uint8Array,
+    x: number,
+    y: number,
+    val: boolean
+  ): void {
     const bitOffset = 7 - (x % 8);
     const i = Math.floor(x / 8);
     const j = y;
     const valNumber = val ? 1 : 0;
-    this.bitmap[i + j * 8] =
-      (this.bitmap[i + j * 8] & ~(1 << bitOffset)) | (valNumber << bitOffset);
+    mutableBitmap[i + j * 8] =
+      (mutableBitmap[i + j * 8] & ~(1 << bitOffset)) | (valNumber << bitOffset);
   }
 
-  clearRect(x: number, y: number, width: number, height: number): void {
-    for (let i = 0; i < width; i++) {
-      for (let j = 0; j < height; j++) {
-        this.setPoint(x + i, y + j, false);
+  private static bitmapEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.byteLength !== b.byteLength) {
+      return false;
+    }
+    for (let i = 0; i != a.byteLength; i++) {
+      if (a[i] !== b[i]) {
+        return false;
       }
     }
+    return true;
   }
 
-  isEmpty(): boolean {
-    return this.bitmap.every((v) => v === 0);
+  clearRect(x: number, y: number, width: number, height: number): Block | null {
+    const mutableBitmap = new Uint8Array(this.bitmap);
+
+    for (let i = 0; i < width; i++) {
+      for (let j = 0; j < height; j++) {
+        Block.setPoint(mutableBitmap, x + i, y + j, false);
+      }
+    }
+    if (mutableBitmap.every((v) => v === 0)) {
+      return null;
+    }
+    if (Block.bitmapEqual(mutableBitmap, this.bitmap)) {
+      return this;
+    } else {
+      return this.set("bitmap", mutableBitmap);
+    }
   }
 }
