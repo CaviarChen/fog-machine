@@ -157,13 +157,17 @@ export class Tile extends Record({
     const header = new Uint8Array(TILE_HEADER_SIZE);
     const headerView = new DataView(header.buffer, 0, TILE_HEADER_SIZE);
 
-    const blockDataSize = BLOCK_SIZE * Object.entries(this.blocks).length;
+    const blockDataSize = BLOCK_SIZE * this.blocks.size;
 
     const blockData = new Uint8Array(blockDataSize);
 
     let activeBlockIdx = 1;
     this.blocks
       .toArray()
+      .map(([_, block]) => {
+        const i = block.x + block.y * TILE_WIDTH;
+        return [i, block] as [number, Block];
+      })
       .sort((a, b) => {
         if (a[0] < b[0]) {
           return -1;
@@ -173,10 +177,8 @@ export class Tile extends Record({
         }
         return 0;
       })
-      .forEach((element) => {
-        const block = element[1];
-        const i = block.x + block.y * TILE_WIDTH;
-        // header[i] = activeBlockIdx;
+      .forEach(([i, block]) => {
+        console.log(i);
         headerView.setUint16(i * 2, activeBlockIdx, true);
         blockData.set(block.dump(), (activeBlockIdx - 1) * BLOCK_SIZE);
         activeBlockIdx++;
