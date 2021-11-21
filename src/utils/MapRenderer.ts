@@ -378,15 +378,13 @@ export class MapRenderer {
           fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)
         )?.blocks;
         if (blocks) {
-          blocks
-            .filter(
-              (block) =>
-                block.x >= fowBlockXMin &&
-                block.x < fowBlockXMax &&
-                block.y >= fowBlockYMin &&
-                block.y < fowBlockYMax
-            )
-            .forEach((block) => {
+          blocks.forEach((block) => {
+            if (
+              block.x >= fowBlockXMin &&
+              block.x < fowBlockXMax &&
+              block.y >= fowBlockYMin &&
+              block.y < fowBlockYMax
+            ) {
               const dx =
                 (block.x - fowBlockXMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
               const dy =
@@ -398,7 +396,8 @@ export class MapRenderer {
                 dx,
                 dy
               );
-            });
+            }
+          });
         }
       }
     }
