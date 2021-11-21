@@ -11,10 +11,10 @@ function timeit(text: string, f: () => void): void {
 test("fogMap", async () => {
   const data1 = await fs.readFile("./src/__tests__/data/23e4lltkkoke");
   const data2 = await fs.readFile("./src/__tests__/data/cd36lltksiwo");
-  const fogMapData = new fogMap.Map();
+  let fogMapData = fogMap.FogMap.empty();
   timeit("fogMap.Map.addFile", () => {
-    fogMapData.addFile("23e4lltkkoke", data1);
-    fogMapData.addFile("cd36lltksiwo", data2);
+    fogMapData = fogMapData.addFile("23e4lltkkoke", data1)![0];
+    fogMapData = fogMapData.addFile("cd36lltksiwo", data2)![0];
   });
 
   let visitedCount = 0;
@@ -23,8 +23,8 @@ test("fogMap", async () => {
       [412, 229],
       [411, 229],
     ].forEach(([x, y]) => {
-      const tile = fogMapData.tiles[fogMap.Map.makeKeyXY(x, y)];
-      Object.values(tile.blocks).forEach((block) => {
+      const tile = fogMapData.tiles.get(fogMap.FogMap.makeKeyXY(x, y))!;
+      tile.blocks.forEach((block) => {
         for (let i = 0; i < 64; i++) {
           for (let j = 0; j < 64; j++) {
             if (block.isVisited(i, j)) {
