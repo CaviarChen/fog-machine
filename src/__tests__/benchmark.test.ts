@@ -24,7 +24,7 @@ test("fogMap", async () => {
       [411, 229],
     ].forEach(([x, y]) => {
       const tile = fogMapData.tiles.get(fogMap.FogMap.makeKeyXY(x, y))!;
-      tile.blocks.forEach((block) => {
+      Object.values(tile.blocks).forEach((block) => {
         for (let i = 0; i < 64; i++) {
           for (let j = 0; j < 64; j++) {
             if (block.isVisited(i, j)) {

@@ -112,7 +112,9 @@ export class Tile extends Record({
   id: 0 as TileID,
   x: 0,
   y: 0,
-  blocks: Map<XYKey, Block>(),
+  // TODO: doc
+  // blocks: Map<XYKey, Block>(),
+  blocks: {} as { [key: XYKey]: Block },
 }) {
   static create(filename: string, data: ArrayBuffer): Tile {
     // TODO: try catch
@@ -135,7 +137,7 @@ export class Tile extends Record({
       actualData.slice(0, TILE_HEADER_SIZE).buffer
     );
 
-    let blocks = Map<XYKey, Block>();
+    const blocks = {} as { [key: XYKey]: Block };
 
     for (let i = 0; i < header.length; i++) {
       const blockIdx = header[i];
@@ -147,9 +149,10 @@ export class Tile extends Record({
         const blockData = actualData.slice(startOffset, endOffset);
         const block = Block.create(blockX, blockY, blockData);
         block.check();
-        blocks = blocks.set(FogMap.makeKeyXY(blockX, blockY), block);
+        blocks[FogMap.makeKeyXY(blockX, blockY)] = block;
       }
     }
+    Object.freeze(blocks);
     return new Tile({ filename, id, x, y, blocks });
   }
 
@@ -157,14 +160,13 @@ export class Tile extends Record({
     const header = new Uint8Array(TILE_HEADER_SIZE);
     const headerView = new DataView(header.buffer, 0, TILE_HEADER_SIZE);
 
-    const blockDataSize = BLOCK_SIZE * this.blocks.size;
+    const blockDataSize = BLOCK_SIZE * Object.entries(this.blocks).length;
 
     const blockData = new Uint8Array(blockDataSize);
 
     let activeBlockIdx = 1;
-    this.blocks
-      .toArray()
-      .map(([_, block]) => {
+    Object.values(this.blocks)
+      .map((block) => {
         const i = block.x + block.y * TILE_WIDTH;
         return [i, block] as [number, Block];
       })
@@ -233,32 +235,43 @@ export class Tile extends Record({
     const yMinInt = Math.floor(yMin);
     const yMaxInt = Math.floor(yMax);
 
-    const newBlcoks = this.blocks.withMutations((blocks) => {
-      for (let x = xMinInt; x <= xMaxInt; x++) {
-        for (let y = yMinInt; y <= yMaxInt; y++) {
-          const key = FogMap.makeKeyXY(x, y);
-          const block = blocks.get(key);
-          if (block) {
-            const xp0 = Math.round(Math.max(xMin - block.x, 0) * BITMAP_WIDTH);
-            const yp0 = Math.round(Math.max(yMin - block.y, 0) * BITMAP_WIDTH);
-            const xp1 = Math.round(Math.min(xMax - block.x, 1) * BITMAP_WIDTH);
-            const yp1 = Math.round(Math.min(yMax - block.y, 1) * BITMAP_WIDTH);
-            const newBlock = block.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+    let mutableBlocks: { [key: string]: Block } | null = null;
+
+    for (let x = xMinInt; x <= xMaxInt; x++) {
+      for (let y = yMinInt; y <= yMaxInt; y++) {
+        const key = FogMap.makeKeyXY(x, y);
+        const block = this.blocks[key];
+        if (block) {
+          const xp0 = Math.round(Math.max(xMin - block.x, 0) * BITMAP_WIDTH);
+          const yp0 = Math.round(Math.max(yMin - block.y, 0) * BITMAP_WIDTH);
+          const xp1 = Math.round(Math.min(xMax - block.x, 1) * BITMAP_WIDTH);
+          const yp1 = Math.round(Math.min(yMax - block.y, 1) * BITMAP_WIDTH);
+          const newBlock = block.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+
+          if (newBlock !== block) {
+            if (!mutableBlocks) {
+              mutableBlocks = { ...this.blocks };
+            }
             if (newBlock) {
-              blocks = blocks.set(key, newBlock);
+              mutableBlocks[key] = newBlock;
             } else {
-              blocks = blocks.remove(key);
+              delete mutableBlocks[key];
             }
           }
         }
       }
-    });
+    }
 
-    if (newBlcoks.size === 0) {
+    if (Object.entries(this.blocks).length === 0) {
       return null;
     } else {
       // Immutable.js avoids creating new objects for updates where no change in value occurred
-      return this.set("blocks", newBlcoks);
+      if (mutableBlocks) {
+        Object.freeze(mutableBlocks);
+        return this.set("blocks", mutableBlocks);
+      } else {
+        return this;
+      }
     }
   }
 }

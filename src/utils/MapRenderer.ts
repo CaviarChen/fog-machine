@@ -216,7 +216,7 @@ export class MapRenderer {
     // ctx.strokeRect(dx,dy,1<<tileSizeOffset, 1<<tileSizeOffset);
     const overscanOffset = Math.max(CANVAS_FOW_BLOCK_SIZE_OFFSET, 0);
     const underscanOffset = Math.max(-CANVAS_FOW_BLOCK_SIZE_OFFSET, 0);
-    fowTile.blocks.forEach((block) => {
+    Object.values(fowTile.blocks).forEach((block) => {
       const blockDx = dx + ((block.x >> underscanOffset) << overscanOffset);
       const blockDy = dy + ((block.y >> underscanOffset) << overscanOffset);
       MapRenderer.renderBlockOnCanvas(
@@ -328,7 +328,7 @@ export class MapRenderer {
 
         const block = this.fogMap.tiles
           .get(fogMap.FogMap.makeKeyXY(fowTileX, fowTileY))
-          ?.blocks.get(fogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY));
+          ?.blocks[fogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)];
 
         if (block) {
           for (
@@ -378,7 +378,7 @@ export class MapRenderer {
           fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)
         )?.blocks;
         if (blocks) {
-          blocks.forEach((block) => {
+          Object.values(blocks).forEach((block) => {
             if (
               block.x >= fowBlockXMin &&
               block.x < fowBlockXMax &&
