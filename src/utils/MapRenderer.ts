@@ -69,18 +69,13 @@ export class MapRenderer {
       if (area === null || isBboxOverlap(tileCanvas.tile.bbox, area)) {
         this.drawTileCanvas(tileCanvas);
       }
+
     });
   }
 
-  addFoGFile(filename: string, data: ArrayBuffer, redraw = true): void {
-    const result = this.fogMap.addFile(filename, data);
-    if (result) {
-      const [fogMap, newTile] = result;
-      this.fogMap = fogMap;
-      if (redraw) {
-        this.redrawArea(newTile.bbox());
-      }
-    }
+  addFoGFiles(files: [string, ArrayBuffer][]): void {
+    this.fogMap = this.fogMap.addFiles(files);
+    this.redrawArea(null);
   }
 
   handleMouseClick(e: mapboxgl.MapMouseEvent): void {
@@ -279,9 +274,9 @@ export class MapRenderer {
       const fowTileYMax = (tile.y + 1) << CANVAS_NUM_FOW_TILE_OFFSET;
       for (let fowTileX = fowTileXMin; fowTileX < fowTileXMax; fowTileX++) {
         for (let fowTileY = fowTileYMin; fowTileY < fowTileYMax; fowTileY++) {
-          const fowTile = this.fogMap.tiles.get(
-            fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)
-          );
+          const fowTile =
+            this.fogMap.tiles[fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)];
+
           if (fowTile) {
             // TODO: what if this < 0?
             const CANVAS_FOW_TILE_SIZE_OFFSET =
@@ -326,9 +321,9 @@ export class MapRenderer {
         const fowBlockPixelYMax =
           ((tile.y & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
 
-        const block = this.fogMap.tiles
-          .get(fogMap.FogMap.makeKeyXY(fowTileX, fowTileY))
-          ?.blocks[fogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)];
+        const block =
+          this.fogMap.tiles[fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]
+            ?.blocks[fogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)];
 
         if (block) {
           for (
@@ -374,9 +369,9 @@ export class MapRenderer {
         const CANVAS_FOW_BLOCK_SIZE_OFFSET =
           CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_BLOCK_OFFSET;
 
-        const blocks = this.fogMap.tiles.get(
-          fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)
-        )?.blocks;
+        const blocks =
+          this.fogMap.tiles[fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]
+            ?.blocks;
         if (blocks) {
           Object.values(blocks).forEach((block) => {
             if (

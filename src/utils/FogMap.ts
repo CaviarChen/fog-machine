@@ -1,7 +1,7 @@
 import pako from "pako";
 import JSZip from "jszip";
 import * as deckgl from "./Deckgl";
-import { Map, Record } from "immutable";
+import { Record } from "immutable";
 
 const FILENAME_MASK1 = "olhwjsktri";
 // const FILENAME_MASK2 = "eizxdwknmo";
@@ -27,10 +27,13 @@ export type TileID = number;
 export type XYKey = string;
 
 export class FogMap extends Record({
-  tiles: Map<XYKey, Tile>(),
+  // TODO: Doc
+  tiles: {} as { [key: XYKey]: Tile },
 }) {
   static empty(): FogMap {
-    return new FogMap();
+    const tiles = {} as { [key: XYKey]: Tile };
+    Object.freeze(tiles);
+    return new FogMap({ tiles: tiles });
   }
 
   // It is so silly that tuple cannot be used as key
@@ -39,18 +42,23 @@ export class FogMap extends Record({
   }
 
   // TODO: merge instead of override
-  addFile(filename: string, data: ArrayBuffer): [FogMap, Tile] | null {
-    try {
-      const tile = Tile.create(filename, data);
-
-      const newTiles = this.tiles.set(FogMap.makeKeyXY(tile.x, tile.y), tile);
-      return [this.set("tiles", newTiles), tile];
-    } catch (e) {
-      // TODO: handle error properly
-      console.log(`${filename} is not a valid tile file.`);
-      console.log(e);
+  addFiles(files: [string, ArrayBuffer][]): FogMap {
+    if (files.length === 0) {
+      return this;
     }
-    return null;
+    const mutableTiles = { ...this.tiles };
+    files.forEach(([filename, data]) => {
+      try {
+        const tile = Tile.create(filename, data);
+        mutableTiles[FogMap.makeKeyXY(tile.x, tile.y)] = tile;
+      } catch (e) {
+        // TODO: handle error properly
+        console.log(`${filename} is not a valid tile file.`);
+        console.log(e);
+      }
+    });
+    Object.freeze(mutableTiles);
+    return this.set("tiles", mutableTiles);
   }
 
   async exportArchive(): Promise<Blob | null> {
@@ -61,7 +69,7 @@ export class FogMap extends Record({
       console.log("unable to create archive");
       return null;
     }
-    this.tiles.forEach((tile) => {
+    Object.values(this.tiles).forEach((tile) => {
       syncZip.file("Sync/" + tile.filename, tile.dump());
     });
     return syncZip.generateAsync({ type: "blob" });
@@ -83,27 +91,38 @@ export class FogMap extends Record({
     const yMinInt = Math.floor(yMin);
     const yMaxInt = Math.floor(yMax);
 
-    const newTiles = this.tiles.withMutations((tiles) => {
-      for (let x = xMinInt; x <= xMaxInt; x++) {
-        for (let y = yMinInt; y <= yMaxInt; y++) {
-          const key = FogMap.makeKeyXY(x, y);
-          const tile = tiles.get(key);
-          if (tile) {
-            const xp0 = Math.max(xMin - tile.x, 0) * TILE_WIDTH;
-            const yp0 = Math.max(yMin - tile.y, 0) * TILE_WIDTH;
-            const xp1 = Math.min(xMax - tile.x, 1) * TILE_WIDTH;
-            const yp1 = Math.min(yMax - tile.y, 1) * TILE_WIDTH;
-            const newTile = tile.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+    let mutableTiles: { [key: XYKey]: Tile } | null = null;
+
+    for (let x = xMinInt; x <= xMaxInt; x++) {
+      for (let y = yMinInt; y <= yMaxInt; y++) {
+        const key = FogMap.makeKeyXY(x, y);
+        const tile = this.tiles[key];
+        if (tile) {
+          const xp0 = Math.max(xMin - tile.x, 0) * TILE_WIDTH;
+          const yp0 = Math.max(yMin - tile.y, 0) * TILE_WIDTH;
+          const xp1 = Math.min(xMax - tile.x, 1) * TILE_WIDTH;
+          const yp1 = Math.min(yMax - tile.y, 1) * TILE_WIDTH;
+          const newTile = tile.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+
+          if (tile !== newTile) {
+            if (!mutableTiles) {
+              mutableTiles = { ...this.tiles };
+            }
             if (newTile) {
-              tiles = tiles.set(key, newTile);
+              mutableTiles[key] = newTile;
             } else {
-              tiles = tiles.remove(key);
+              delete mutableTiles[key];
             }
           }
         }
       }
-    });
-    return this.set("tiles", newTiles);
+    }
+    if (mutableTiles) {
+      Object.freeze(mutableTiles);
+      return this.set("tiles", mutableTiles);
+    } else {
+      return this;
+    }
   }
 }
 
@@ -235,7 +254,7 @@ export class Tile extends Record({
     const yMinInt = Math.floor(yMin);
     const yMaxInt = Math.floor(yMax);
 
-    let mutableBlocks: { [key: string]: Block } | null = null;
+    let mutableBlocks: { [key: XYKey]: Block } | null = null;
 
     for (let x = xMinInt; x <= xMaxInt; x++) {
       for (let y = yMinInt; y <= yMaxInt; y++) {
