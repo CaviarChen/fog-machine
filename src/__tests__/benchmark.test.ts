@@ -13,8 +13,7 @@ test("fogMap", async () => {
   const data2 = await fs.readFile("./src/__tests__/data/cd36lltksiwo");
   let fogMapData = fogMap.FogMap.empty();
   timeit("fogMap.Map.addFile", () => {
-    fogMapData = fogMapData.addFile("23e4lltkkoke", data1)![0];
-    fogMapData = fogMapData.addFile("cd36lltksiwo", data2)![0];
+    fogMapData = fogMapData.addFiles([["23e4lltkkoke", data1], ["cd36lltksiwo", data2]]);
   });
 
   let visitedCount = 0;
@@ -23,7 +22,7 @@ test("fogMap", async () => {
       [412, 229],
       [411, 229],
     ].forEach(([x, y]) => {
-      const tile = fogMapData.tiles.get(fogMap.FogMap.makeKeyXY(x, y))!;
+      const tile = fogMapData.tiles[fogMap.FogMap.makeKeyXY(x, y)];
       Object.values(tile.blocks).forEach((block) => {
         for (let i = 0; i < 64; i++) {
           for (let j = 0; j < 64; j++) {
