@@ -1,7 +1,6 @@
 import pako from "pako";
 import JSZip from "jszip";
 import * as deckgl from "./Deckgl";
-import { Record } from "immutable";
 
 const FILENAME_MASK1 = "olhwjsktri";
 // const FILENAME_MASK2 = "eizxdwknmo";
@@ -21,19 +20,19 @@ export const BITMAP_WIDTH_OFFSET = 6;
 export const BITMAP_WIDTH = 1 << BITMAP_WIDTH_OFFSET;
 
 // TODO: figure out a better way to imeplement immutable data structure
+//       we encountered performance issue when using `immutable.js`
 
 // SAD: Type Aliases do not seem to give us type safety
 export type TileID = number;
 export type XYKey = string;
 
-export class FogMap extends Record({
-  // TODO: Doc
-  tiles: {} as { [key: XYKey]: Tile },
-}) {
-  static empty(): FogMap {
-    const tiles = {} as { [key: XYKey]: Tile };
+export class FogMap {
+  readonly tiles: { [key: XYKey]: Tile };
+  static empty = new FogMap({});
+
+  private constructor(tiles: { [key: XYKey]: Tile }) {
     Object.freeze(tiles);
-    return new FogMap({ tiles: tiles });
+    this.tiles = tiles;
   }
 
   // It is so silly that tuple cannot be used as key
@@ -57,8 +56,7 @@ export class FogMap extends Record({
         console.log(e);
       }
     });
-    Object.freeze(mutableTiles);
-    return this.set("tiles", mutableTiles);
+    return new FogMap(mutableTiles);
   }
 
   async exportArchive(): Promise<Blob | null> {
@@ -118,23 +116,35 @@ export class FogMap extends Record({
       }
     }
     if (mutableTiles) {
-      Object.freeze(mutableTiles);
-      return this.set("tiles", mutableTiles);
+      return new FogMap(mutableTiles);
     } else {
       return this;
     }
   }
 }
 
-export class Tile extends Record({
-  filename: "",
-  id: 0 as TileID,
-  x: 0,
-  y: 0,
-  // TODO: doc
-  // blocks: Map<XYKey, Block>(),
-  blocks: {} as { [key: XYKey]: Block },
-}) {
+export class Tile {
+  readonly filename: string;
+  readonly id: TileID;
+  readonly x: number;
+  readonly y: number;
+  readonly blocks: { [key: XYKey]: Block };
+
+  private constructor(
+    filename: string,
+    id: TileID,
+    x: number,
+    y: number,
+    blocks: { [key: XYKey]: Block }
+  ) {
+    Object.freeze(blocks);
+    this.filename = filename;
+    this.id = id;
+    this.x = x;
+    this.y = y;
+    this.blocks = blocks;
+  }
+
   static create(filename: string, data: ArrayBuffer): Tile {
     // TODO: try catch
     const id = Number.parseInt(
@@ -171,8 +181,7 @@ export class Tile extends Record({
         blocks[FogMap.makeKeyXY(blockX, blockY)] = block;
       }
     }
-    Object.freeze(blocks);
-    return new Tile({ filename, id, x, y, blocks });
+    return new Tile(filename, id, x, y, blocks);
   }
 
   dump(): Uint8Array {
@@ -287,7 +296,7 @@ export class Tile extends Record({
       // Immutable.js avoids creating new objects for updates where no change in value occurred
       if (mutableBlocks) {
         Object.freeze(mutableBlocks);
-        return this.set("blocks", mutableBlocks);
+        return new Tile(this.filename, this.id, this.x, this.y, mutableBlocks);
       } else {
         return this;
       }
@@ -295,16 +304,28 @@ export class Tile extends Record({
   }
 }
 
-export class Block extends Record({
-  x: 0,
-  y: 0,
-  bitmap: new Uint8Array(),
-  extraData: new Uint8Array(),
-}) {
+export class Block {
+  readonly x: number;
+  readonly y: number;
+  readonly bitmap: Uint8Array;
+  readonly extraData: Uint8Array;
+
+  private constructor(
+    x: number,
+    y: number,
+    bitmap: Uint8Array,
+    extraData: Uint8Array
+  ) {
+    this.x = x;
+    this.y = y;
+    this.bitmap = bitmap;
+    this.extraData = extraData;
+  }
+
   static create(x: number, y: number, data: Uint8Array): Block {
     const bitmap = data.slice(0, BLOCK_BITMAP_SIZE);
     const extraData = data.slice(BLOCK_BITMAP_SIZE, BLOCK_SIZE);
-    return new Block({ x, y, bitmap, extraData });
+    return new Block(x, y, bitmap, extraData);
   }
 
   check(): boolean {
@@ -414,7 +435,7 @@ export class Block extends Record({
     if (Block.bitmapEqual(mutableBitmap, this.bitmap)) {
       return this;
     } else {
-      return this.set("bitmap", mutableBitmap);
+      return new Block(this.x, this.y, mutableBitmap, this.extraData);
     }
   }
 }

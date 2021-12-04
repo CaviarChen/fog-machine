@@ -36,7 +36,7 @@ export class MapRenderer {
   private constructor() {
     this.map = null;
     this.deckgl = null;
-    this.fogMap = new fogMap.FogMap();
+    this.fogMap = fogMap.FogMap.empty;
     this.loadedTileCanvases = {};
     this.eraserMode = false;
     this.eraserArea = null;
@@ -69,7 +69,6 @@ export class MapRenderer {
       if (area === null || isBboxOverlap(tileCanvas.tile.bbox, area)) {
         this.drawTileCanvas(tileCanvas);
       }
-
     });
   }
 

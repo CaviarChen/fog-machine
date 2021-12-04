@@ -11,9 +11,12 @@ function timeit(text: string, f: () => void): void {
 test("fogMap", async () => {
   const data1 = await fs.readFile("./src/__tests__/data/23e4lltkkoke");
   const data2 = await fs.readFile("./src/__tests__/data/cd36lltksiwo");
-  let fogMapData = fogMap.FogMap.empty();
+  let fogMapData = fogMap.FogMap.empty;
   timeit("fogMap.Map.addFile", () => {
-    fogMapData = fogMapData.addFiles([["23e4lltkkoke", data1], ["cd36lltksiwo", data2]]);
+    fogMapData = fogMapData.addFiles([
+      ["23e4lltkkoke", data1],
+      ["cd36lltksiwo", data2],
+    ]);
   });
 
   let visitedCount = 0;
