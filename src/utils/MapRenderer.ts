@@ -2,6 +2,7 @@
 import mapboxgl from "mapbox-gl";
 import * as fogMap from "./FogMap";
 import * as deckgl from "./Deckgl";
+import { FogCanvas } from "./FogCanvas";
 
 const FOW_TILE_ZOOM = 9;
 const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + fogMap.TILE_WIDTH_OFFSET;
@@ -29,7 +30,7 @@ export class MapRenderer {
   private map: mapboxgl.Map | null;
   private deckgl: deckgl.Deckgl | null;
   public fogMap: fogMap.Map;
-  private loadedTileCanvases: { [key: string]: deckgl.TileCanvas };
+  private loadedFogCanvases: { [key: string]: FogCanvas };
   private eraserMode: boolean;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
 
@@ -37,7 +38,7 @@ export class MapRenderer {
     this.map = null;
     this.deckgl = null;
     this.fogMap = new fogMap.Map();
-    this.loadedTileCanvases = {};
+    this.loadedFogCanvases = {};
     this.eraserMode = false;
     this.eraserArea = null;
   }
@@ -51,8 +52,8 @@ export class MapRenderer {
     this.deckgl = new deckgl.Deckgl(
       map,
       deckglContainer,
-      this.onLoadTileCanvas.bind(this),
-      this.onUnloadTileCanvas.bind(this)
+      this.onLoadFogCanvas.bind(this),
+      this.onUnloadFogCanvas.bind(this)
     );
     this.map.on("mousedown", this.handleMouseClick.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
@@ -65,9 +66,9 @@ export class MapRenderer {
   }
 
   redrawArea(area: deckgl.Bbox | null): void {
-    Object.values(this.loadedTileCanvases).forEach((tileCanvas) => {
-      if (area === null || isBboxOverlap(tileCanvas.tile.bbox, area)) {
-        this.drawTileCanvas(tileCanvas);
+    Object.values(this.loadedFogCanvases).forEach((fogCanvas) => {
+      if (area === null || isBboxOverlap(fogCanvas.tile.bbox, area)) {
+        this.drawFogCanvas(fogCanvas);
       }
     });
     this.deckgl?.updateOnce();
@@ -256,9 +257,9 @@ export class MapRenderer {
     }
   }
 
-  private drawTileCanvas(tileCanvas: deckgl.TileCanvas) {
-    const tile = tileCanvas.tile;
-    const canvas = tileCanvas.canvas;
+  private drawFogCanvas(fogCanvas: FogCanvas) {
+    const tile = fogCanvas.tile;
+    const canvas = fogCanvas.tileCanvas.canvas;
     const ctx = canvas.getContext("2d")!;
 
     canvas.width = CANVAS_SIZE;
@@ -398,17 +399,17 @@ export class MapRenderer {
         }
       }
     }
-    tileCanvas.updateOnce();
+    fogCanvas.tileCanvas.updateOnce();
   }
 
-  private onLoadTileCanvas(tile: deckgl.Tile) {
-    const tileCanvas = new deckgl.TileCanvas(tile);
-    this.drawTileCanvas(tileCanvas);
-    this.loadedTileCanvases[tileToKey(tile)] = tileCanvas;
-    return tileCanvas;
+  private onLoadFogCanvas(tile: deckgl.Tile) {
+    const fogCanvas = new FogCanvas(tile);
+    this.drawFogCanvas(fogCanvas);
+    this.loadedFogCanvases[tileToKey(tile)] = fogCanvas;
+    return fogCanvas;
   }
 
-  private onUnloadTileCanvas(tile: deckgl.Tile) {
-    delete this.loadedTileCanvases[tileToKey(tile)];
+  private onUnloadFogCanvas(tile: deckgl.Tile) {
+    delete this.loadedFogCanvases[tileToKey(tile)];
   }
 }
