@@ -243,12 +243,14 @@ export class MapRenderer {
             // for each pixel of block, we may draw multiple pixel of image
             const overscanOffset = Math.max(CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
             const underscanOffset = Math.max(-CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
-            fogCanvas.RedrawContext().clearRect(
-              dx + ((x >> underscanOffset) << overscanOffset),
-              dy + ((y >> underscanOffset) << overscanOffset),
-              1 << overscanOffset,
-              1 << overscanOffset
-            );
+            fogCanvas
+              .RedrawContext()
+              .clearRect(
+                dx + ((x >> underscanOffset) << overscanOffset),
+                dy + ((y >> underscanOffset) << overscanOffset),
+                1 << overscanOffset,
+                1 << overscanOffset
+              );
           }
         }
       }
@@ -344,12 +346,14 @@ export class MapRenderer {
                 const y =
                   (fowPixelY - fowBlockPixelYMin) <<
                   CANVAS_FOW_PIXEL_SIZE_OFFSET;
-                fogCanvas.RedrawContext().clearRect(
-                  x,
-                  y,
-                  1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
-                  1 << CANVAS_FOW_PIXEL_SIZE_OFFSET
-                );
+                fogCanvas
+                  .RedrawContext()
+                  .clearRect(
+                    x,
+                    y,
+                    1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
+                    1 << CANVAS_FOW_PIXEL_SIZE_OFFSET
+                  );
               }
             }
           }
