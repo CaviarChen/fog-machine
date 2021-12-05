@@ -2,12 +2,10 @@
 import mapboxgl from "mapbox-gl";
 import * as fogMap from "./FogMap";
 import * as deckgl from "./Deckgl";
-import { FogCanvas } from "./FogCanvas";
+import { CANVAS_SIZE_OFFSET, FogCanvas } from "./FogCanvas";
 
 const FOW_TILE_ZOOM = 9;
 const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + fogMap.TILE_WIDTH_OFFSET;
-const CANVAS_SIZE_OFFSET = 9;
-const CANVAS_SIZE = 1 << CANVAS_SIZE_OFFSET;
 
 type TileKey = string;
 
@@ -203,7 +201,7 @@ export class MapRenderer {
   }
 
   static renderTileOnCanvas(
-    ctx: CanvasRenderingContext2D,
+    fogCanvas: FogCanvas,
     fowTile: fogMap.Tile,
     tileSizeOffset: number,
     dx: number,
@@ -218,7 +216,7 @@ export class MapRenderer {
       const blockDx = dx + ((block.x >> underscanOffset) << overscanOffset);
       const blockDy = dy + ((block.y >> underscanOffset) << overscanOffset);
       MapRenderer.renderBlockOnCanvas(
-        ctx,
+        fogCanvas,
         block,
         CANVAS_FOW_BLOCK_SIZE_OFFSET,
         blockDx,
@@ -228,14 +226,14 @@ export class MapRenderer {
   }
 
   static renderBlockOnCanvas(
-    ctx: CanvasRenderingContext2D,
+    fogCanvas: FogCanvas,
     fowBlock: fogMap.Block,
     blockSizeOffset: number,
     dx: number,
     dy: number
   ): void {
     if (blockSizeOffset <= 0) {
-      ctx.clearRect(dx, dy, 1, 1);
+      fogCanvas.RedrawContext().clearRect(dx, dy, 1, 1);
     } else {
       const CANVAS_FOW_PIXEL_SIZE_OFFSET =
         blockSizeOffset - fogMap.BITMAP_WIDTH_OFFSET;
@@ -245,7 +243,7 @@ export class MapRenderer {
             // for each pixel of block, we may draw multiple pixel of image
             const overscanOffset = Math.max(CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
             const underscanOffset = Math.max(-CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
-            ctx.clearRect(
+            fogCanvas.RedrawContext().clearRect(
               dx + ((x >> underscanOffset) << overscanOffset),
               dy + ((y >> underscanOffset) << overscanOffset),
               1 << overscanOffset,
@@ -259,14 +257,12 @@ export class MapRenderer {
 
   private drawFogCanvas(fogCanvas: FogCanvas) {
     const tile = fogCanvas.tile;
-    const canvas = fogCanvas.tileCanvas.canvas;
-    const ctx = canvas.getContext("2d")!;
+    fogCanvas.beginRedraw();
 
-    canvas.width = CANVAS_SIZE;
-    canvas.height = CANVAS_SIZE;
-
-    ctx.fillStyle = "rgba(0, 0, 0, 1)";
-    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    if (Object.values(this.fogMap.tiles).length === 0) {
+      fogCanvas.endRedraw();
+      return;
+    }
 
     if (tile.z <= FOW_TILE_ZOOM) {
       // render multiple fow tiles
@@ -284,7 +280,7 @@ export class MapRenderer {
             const CANVAS_FOW_TILE_SIZE_OFFSET =
               CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_TILE_OFFSET;
             MapRenderer.renderTileOnCanvas(
-              ctx,
+              fogCanvas,
               fowTile,
               CANVAS_FOW_TILE_SIZE_OFFSET,
               (fowTileX - fowTileXMin) << CANVAS_FOW_TILE_SIZE_OFFSET,
@@ -348,7 +344,7 @@ export class MapRenderer {
                 const y =
                   (fowPixelY - fowBlockPixelYMin) <<
                   CANVAS_FOW_PIXEL_SIZE_OFFSET;
-                ctx.clearRect(
+                fogCanvas.RedrawContext().clearRect(
                   x,
                   y,
                   1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
@@ -389,7 +385,7 @@ export class MapRenderer {
               const dy =
                 (block.y - fowBlockYMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
               MapRenderer.renderBlockOnCanvas(
-                ctx,
+                fogCanvas,
                 block,
                 CANVAS_FOW_BLOCK_SIZE_OFFSET,
                 dx,
@@ -399,7 +395,7 @@ export class MapRenderer {
         }
       }
     }
-    fogCanvas.tileCanvas.updateOnce();
+    fogCanvas.endRedraw();
   }
 
   private onLoadFogCanvas(tile: deckgl.Tile) {

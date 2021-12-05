@@ -7,7 +7,6 @@ import { Texture2D } from "@luma.gl/core";
 import { BitmapLayer } from "@deck.gl/layers";
 import { TileLayer as DeckglTileLayer } from "@deck.gl/geo-layers";
 
-
 export class TileCanvas {
   public canvas: HTMLCanvasElement;
   private texture2d: Texture2D | null;
@@ -29,7 +28,6 @@ export class TileCanvas {
     return this.texture2d;
   }
 }
-
 
 export class ITileCanvasProvider {
   getTileCanvasForRender(): TileCanvas;
@@ -63,7 +61,7 @@ export class Deckgl {
   constructor(
     map: mapboxgl.Map,
     deckglContainer: HTMLCanvasElement,
-    onLoadCanvas: (tile: Tile) => ITileCanvas,
+    onLoadCanvas: (tile: Tile) => ITileCanvasProvider,
     onUnloadCanvas: (tile: Tile) => void
   ) {
     const tileLayer = new DeckglTileLayer({
@@ -129,7 +127,9 @@ export class Deckgl {
 class DynamicBitmapLayer extends BitmapLayer {
   draw(opts) {
     const { canvas } = this.props;
-    this.props.image = canvas.getTileCanvasForRender()._getTexture2D(this.context.gl);
+    this.props.image = canvas
+      .getTileCanvasForRender()
+      ._getTexture2D(this.context.gl);
     super.draw(opts);
   }
 }
