@@ -7,22 +7,23 @@ import { Texture2D } from "@luma.gl/core";
 import { BitmapLayer } from "@deck.gl/layers";
 import { TileLayer as DeckglTileLayer } from "@deck.gl/geo-layers";
 
-export class TileCanvas {
+export class ITileCanvas {
+  _getTexture2D(gl: WebGL2RenderingContext): Texture2D;
+}
+
+export class TileCanvas implements ITileCanvas {
   public tile: Tile;
   public canvas: HTMLCanvasElement;
   private texture2d: Texture2D | null;
-  private tileLayer: DeckglTileLayer;
 
-  constructor(tile: Tile, tileLayer: DeckglTileLayer) {
+  constructor(tile: Tile) {
     this.tile = tile;
     this.canvas = document.createElement("canvas");
     this.texture2d = null;
-    this.tileLayer = tileLayer;
   }
 
   updateOnce(): void {
     this.texture2d = null;
-    this.tileLayer.setNeedsRedraw(true);
   }
 
   _getTexture2D(gl: WebGL2RenderingContext) {
@@ -62,7 +63,7 @@ export class Deckgl {
   constructor(
     map: mapboxgl.Map,
     deckglContainer: HTMLCanvasElement,
-    onLoadCanvas: (tile: Tile, tileCanvas: TileCanvas) => void,
+    onLoadCanvas: (tile: Tile) => ITileCanvas,
     onUnloadCanvas: (tile: Tile) => void
   ) {
     const tileLayer = new DeckglTileLayer({
@@ -80,9 +81,7 @@ export class Deckgl {
           bbox: { west, south, east, north },
         } = props.tile;
 
-        const tileCanvas = new TileCanvas(tile, tileLayer);
-
-        onLoadCanvas(tile, tileCanvas);
+        const tileCanvas = onLoadCanvas(tile);
 
         const dynamicBitmapLayer = new DynamicBitmapLayer(props, {
           image: null,
@@ -120,6 +119,10 @@ export class Deckgl {
         pitch: map.getPitch(),
       },
     });
+  }
+
+  updateOnce(): void {
+    this.tileLayer.setNeedsRedraw(true);
   }
 }
 

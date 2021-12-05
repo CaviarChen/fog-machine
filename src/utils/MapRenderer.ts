@@ -70,6 +70,7 @@ export class MapRenderer {
         this.drawTileCanvas(tileCanvas);
       }
     });
+    this.deckgl?.updateOnce();
   }
 
   addFoGFile(filename: string, data: ArrayBuffer, redraw = true): void {
@@ -400,7 +401,8 @@ export class MapRenderer {
     tileCanvas.updateOnce();
   }
 
-  private onLoadTileCanvas(tile: deckgl.Tile, tileCanvas: deckgl.TileCanvas) {
+  private onLoadTileCanvas(tile: deckgl.Tile) {
+    const tileCanvas = new deckgl.TileCanvas(tile);
     this.drawTileCanvas(tileCanvas);
     this.loadedTileCanvases[tileToKey(tile)] = tileCanvas;
     return tileCanvas;
