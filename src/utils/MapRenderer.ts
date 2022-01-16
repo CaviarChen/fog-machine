@@ -27,7 +27,7 @@ export class MapRenderer {
   private static instance = new MapRenderer();
   private map: mapboxgl.Map | null;
   private deckgl: deckgl.Deckgl | null;
-  public fogMap: fogMap.Map;
+  public fogMap: fogMap.FogMap;
   private loadedFogCanvases: { [key: string]: FogCanvas };
   private eraserMode: boolean;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
@@ -35,7 +35,7 @@ export class MapRenderer {
   private constructor() {
     this.map = null;
     this.deckgl = null;
-    this.fogMap = new fogMap.Map();
+    this.fogMap = fogMap.FogMap.empty;
     this.loadedFogCanvases = {};
     this.eraserMode = false;
     this.eraserArea = null;
@@ -72,11 +72,9 @@ export class MapRenderer {
     this.deckgl?.updateOnce();
   }
 
-  addFoGFile(filename: string, data: ArrayBuffer, redraw = true): void {
-    const newTile = this.fogMap.addFile(filename, data);
-    if (newTile && redraw) {
-      this.redrawArea(newTile.bbox());
-    }
+  addFoGFiles(files: [string, ArrayBuffer][]): void {
+    this.fogMap = this.fogMap.addFiles(files);
+    this.redrawArea(null);
   }
 
   handleMouseClick(e: mapboxgl.MapMouseEvent): void {
@@ -172,7 +170,7 @@ export class MapRenderer {
       const bbox = new deckgl.Bbox(west, south, east, north);
       console.log(`clearing the bbox ${west} ${north} ${east} ${south}`);
 
-      this.fogMap.clearBbox(bbox);
+      this.fogMap = this.fogMap.clearBbox(bbox);
       this.redrawArea(bbox);
 
       this.eraserArea = null;
@@ -276,7 +274,8 @@ export class MapRenderer {
       for (let fowTileX = fowTileXMin; fowTileX < fowTileXMax; fowTileX++) {
         for (let fowTileY = fowTileYMin; fowTileY < fowTileYMax; fowTileY++) {
           const fowTile =
-            this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)];
+            this.fogMap.tiles[fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)];
+
           if (fowTile) {
             // TODO: what if this < 0?
             const CANVAS_FOW_TILE_SIZE_OFFSET =
@@ -322,9 +321,8 @@ export class MapRenderer {
           ((tile.y & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
 
         const block =
-          this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)]?.blocks[
-            fogMap.Map.makeKeyXY(fowBlockX, fowBlockY)
-          ];
+          this.fogMap.tiles[fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]
+            ?.blocks[fogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)];
 
         if (block) {
           for (
@@ -373,17 +371,16 @@ export class MapRenderer {
           CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_BLOCK_OFFSET;
 
         const blocks =
-          this.fogMap.tiles[fogMap.Map.makeKeyXY(fowTileX, fowTileY)]?.blocks;
+          this.fogMap.tiles[fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]
+            ?.blocks;
         if (blocks) {
-          Object.values(blocks)
-            .filter(
-              (block) =>
-                block.x >= fowBlockXMin &&
-                block.x < fowBlockXMax &&
-                block.y >= fowBlockYMin &&
-                block.y < fowBlockYMax
-            )
-            .forEach((block) => {
+          Object.values(blocks).forEach((block) => {
+            if (
+              block.x >= fowBlockXMin &&
+              block.x < fowBlockXMax &&
+              block.y >= fowBlockYMin &&
+              block.y < fowBlockYMax
+            ) {
               const dx =
                 (block.x - fowBlockXMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
               const dy =
@@ -395,7 +392,8 @@ export class MapRenderer {
                 dx,
                 dy
               );
-            });
+            }
+          });
         }
       }
     }
