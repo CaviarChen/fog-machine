@@ -49,7 +49,10 @@ export class FogMap {
     files.forEach(([filename, data]) => {
       try {
         const tile = Tile.create(filename, data);
-        mutableTiles[FogMap.makeKeyXY(tile.x, tile.y)] = tile;
+        // just in case the imported data doesn't hold this invariant
+        if (Object.entries(tile).length !== 0) {
+          mutableTiles[FogMap.makeKeyXY(tile.x, tile.y)] = tile;
+        }
       } catch (e) {
         // TODO: handle error properly
         console.log(`${filename} is not a valid tile file.`);
@@ -68,7 +71,10 @@ export class FogMap {
       return null;
     }
     Object.values(this.tiles).forEach((tile) => {
-      syncZip.file("Sync/" + tile.filename, tile.dump());
+      // just in case
+      if (Object.entries(tile).length !== 0) {
+        syncZip.file("Sync/" + tile.filename, tile.dump());
+      }
     });
     return syncZip.generateAsync({ type: "blob" });
   }
