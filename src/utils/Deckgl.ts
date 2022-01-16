@@ -8,21 +8,16 @@ import { BitmapLayer } from "@deck.gl/layers";
 import { TileLayer as DeckglTileLayer } from "@deck.gl/geo-layers";
 
 export class TileCanvas {
-  public tile: Tile;
   public canvas: HTMLCanvasElement;
   private texture2d: Texture2D | null;
-  private tileLayer: DeckglTileLayer;
 
-  constructor(tile: Tile, tileLayer: DeckglTileLayer) {
-    this.tile = tile;
+  constructor() {
     this.canvas = document.createElement("canvas");
     this.texture2d = null;
-    this.tileLayer = tileLayer;
   }
 
   updateOnce(): void {
     this.texture2d = null;
-    this.tileLayer.setNeedsRedraw(true);
   }
 
   _getTexture2D(gl: WebGL2RenderingContext) {
@@ -32,6 +27,10 @@ export class TileCanvas {
     }
     return this.texture2d;
   }
+}
+
+export class ITileCanvasProvider {
+  getTileCanvasForRender(): TileCanvas;
 }
 
 export class Bbox {
@@ -62,7 +61,7 @@ export class Deckgl {
   constructor(
     map: mapboxgl.Map,
     deckglContainer: HTMLCanvasElement,
-    onLoadCanvas: (tile: Tile, tileCanvas: TileCanvas) => void,
+    onLoadCanvas: (tile: Tile) => ITileCanvasProvider,
     onUnloadCanvas: (tile: Tile) => void
   ) {
     const tileLayer = new DeckglTileLayer({
@@ -80,13 +79,11 @@ export class Deckgl {
           bbox: { west, south, east, north },
         } = props.tile;
 
-        const tileCanvas = new TileCanvas(tile, tileLayer);
-
-        onLoadCanvas(tile, tileCanvas);
+        const tileCanvasProvider = onLoadCanvas(tile);
 
         const dynamicBitmapLayer = new DynamicBitmapLayer(props, {
           image: null,
-          canvas: tileCanvas,
+          canvas: tileCanvasProvider,
           bounds: [west, south, east, north],
         });
 
@@ -121,12 +118,18 @@ export class Deckgl {
       },
     });
   }
+
+  updateOnce(): void {
+    this.tileLayer.setNeedsRedraw(true);
+  }
 }
 
 class DynamicBitmapLayer extends BitmapLayer {
   draw(opts) {
     const { canvas } = this.props;
-    this.props.image = canvas._getTexture2D(this.context.gl);
+    this.props.image = canvas
+      .getTileCanvasForRender()
+      ._getTexture2D(this.context.gl);
     super.draw(opts);
   }
 }

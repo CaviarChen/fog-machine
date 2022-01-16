@@ -359,7 +359,7 @@ export class Block {
     const checksumDataview = new DataView(this.extraData.buffer, 1, 2);
     checksumDataview.setUint16(
       0,
-      (checksumDataview.getUint16(0, false) & 0xc000) | (count << 1),
+      (checksumDataview.getUint16(0, false) & 0xc000) | ((count << 1) + 1),
       false
     );
 
