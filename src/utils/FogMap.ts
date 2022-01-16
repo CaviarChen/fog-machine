@@ -50,7 +50,7 @@ export class FogMap {
       try {
         const tile = Tile.create(filename, data);
         // just in case the imported data doesn't hold this invariant
-        if (Object.entries(tile).length !== 0) {
+        if (Object.entries(tile.blocks).length !== 0) {
           mutableTiles[FogMap.makeKeyXY(tile.x, tile.y)] = tile;
         }
       } catch (e) {
@@ -72,7 +72,7 @@ export class FogMap {
     }
     Object.values(this.tiles).forEach((tile) => {
       // just in case
-      if (Object.entries(tile).length !== 0) {
+      if (Object.entries(tile.blocks).length !== 0) {
         syncZip.file("Sync/" + tile.filename, tile.dump());
       }
     });
