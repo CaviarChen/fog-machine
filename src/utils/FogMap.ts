@@ -283,16 +283,16 @@ export class Tile {
       }
     }
 
-    if (Object.entries(this.blocks).length === 0) {
-      return null;
-    } else {
-      // Immutable.js avoids creating new objects for updates where no change in value occurred
-      if (mutableBlocks) {
+    // Immutable.js avoids creating new objects for updates where no change in value occurred
+    if (mutableBlocks) {
+      if (Object.entries(mutableBlocks).length === 0) {
+        return null;
+      } else {
         Object.freeze(mutableBlocks);
         return new Tile(this.filename, this.id, this.x, this.y, mutableBlocks);
-      } else {
-        return this;
       }
+    } else {
+      return this;
     }
   }
 }
