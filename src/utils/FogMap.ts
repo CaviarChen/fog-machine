@@ -199,16 +199,9 @@ export class Tile {
         return [i, block] as [number, Block];
       })
       .sort((a, b) => {
-        if (a[0] < b[0]) {
-          return -1;
-        }
-        if (a[0] > b[0]) {
-          return 1;
-        }
-        return 0;
+        return a[0] - b[0];
       })
       .forEach(([i, block]) => {
-        console.log(i);
         headerView.setUint16(i * 2, activeBlockIdx, true);
         blockData.set(block.dump(), (activeBlockIdx - 1) * BLOCK_SIZE);
         activeBlockIdx++;
