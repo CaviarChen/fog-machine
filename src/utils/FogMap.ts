@@ -19,17 +19,20 @@ const BLOCK_SIZE = BLOCK_BITMAP_SIZE + BLOCK_EXTRA_DATA;
 export const BITMAP_WIDTH_OFFSET = 6;
 export const BITMAP_WIDTH = 1 << BITMAP_WIDTH_OFFSET;
 
+// TODO: figure out a better way to imeplement immutable data structure
+//       we encountered performance issue when using `immutable.js`
+
 // SAD: Type Aliases do not seem to give us type safety
 export type TileID = number;
 export type XYKey = string;
 
-export class Map {
-  tiles: { [key: XYKey]: Tile };
-  regionCount: { [key: string]: number };
+export class FogMap {
+  readonly tiles: { [key: XYKey]: Tile };
+  static empty = new FogMap({});
 
-  constructor() {
-    this.tiles = {};
-    this.regionCount = {};
+  private constructor(tiles: { [key: XYKey]: Tile }) {
+    Object.freeze(tiles);
+    this.tiles = tiles;
   }
 
   // It is so silly that tuple cannot be used as key
@@ -38,21 +41,25 @@ export class Map {
   }
 
   // TODO: merge instead of override
-  addFile(filename: string, data: ArrayBuffer): Tile | undefined {
-    try {
-      const tile = new Tile(filename, data);
-
-      this.tiles[Map.makeKeyXY(tile.x, tile.y)] = tile;
-      for (const [region, count] of Object.entries(tile.regionCount)) {
-        this.regionCount[region] = (this.regionCount[region] || 0) + count;
-      }
-      console.log(this.regionCount);
-      return tile;
-    } catch (e) {
-      // TODO: handle error properly
-      console.log(`${filename} is not a valid tile file.`);
-      console.log(e);
+  addFiles(files: [string, ArrayBuffer][]): FogMap {
+    if (files.length === 0) {
+      return this;
     }
+    const mutableTiles = { ...this.tiles };
+    files.forEach(([filename, data]) => {
+      try {
+        const tile = Tile.create(filename, data);
+        // just in case the imported data doesn't hold this invariant
+        if (Object.entries(tile.blocks).length !== 0) {
+          mutableTiles[FogMap.makeKeyXY(tile.x, tile.y)] = tile;
+        }
+      } catch (e) {
+        // TODO: handle error properly
+        console.log(`${filename} is not a valid tile file.`);
+        console.log(e);
+      }
+    });
+    return new FogMap(mutableTiles);
   }
 
   async exportArchive(): Promise<Blob | null> {
@@ -63,14 +70,17 @@ export class Map {
       console.log("unable to create archive");
       return null;
     }
-    for (const tile of Object.values(this.tiles)) {
-      syncZip.file("Sync/" + tile.filename, tile.dump());
-    }
+    Object.values(this.tiles).forEach((tile) => {
+      // just in case
+      if (Object.entries(tile.blocks).length !== 0) {
+        syncZip.file("Sync/" + tile.filename, tile.dump());
+      }
+    });
     return syncZip.generateAsync({ type: "blob" });
   }
 
   // we only provide interface for clearing a bbox, because we think it make no sense to add paths for whole bbox
-  clearBbox(bbox: deckgl.Bbox): void {
+  clearBbox(bbox: deckgl.Bbox): FogMap {
     const nw = Tile.LngLatToXY(bbox.west, bbox.north);
     const se = Tile.LngLatToXY(bbox.east, bbox.south);
 
@@ -85,55 +95,84 @@ export class Map {
     const yMinInt = Math.floor(yMin);
     const yMaxInt = Math.floor(yMax);
 
+    let mutableTiles: { [key: XYKey]: Tile } | null = null;
+
     for (let x = xMinInt; x <= xMaxInt; x++) {
       for (let y = yMinInt; y <= yMaxInt; y++) {
-        const key = Map.makeKeyXY(x, y);
+        const key = FogMap.makeKeyXY(x, y);
         const tile = this.tiles[key];
         if (tile) {
           const xp0 = Math.max(xMin - tile.x, 0) * TILE_WIDTH;
           const yp0 = Math.max(yMin - tile.y, 0) * TILE_WIDTH;
           const xp1 = Math.min(xMax - tile.x, 1) * TILE_WIDTH;
           const yp1 = Math.min(yMax - tile.y, 1) * TILE_WIDTH;
-          tile.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
-          if (tile.isEmpty()) {
-            delete this.tiles[key];
+          const newTile = tile.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+
+          if (tile !== newTile) {
+            if (!mutableTiles) {
+              mutableTiles = { ...this.tiles };
+            }
+            if (newTile) {
+              mutableTiles[key] = newTile;
+            } else {
+              delete mutableTiles[key];
+            }
           }
         }
       }
+    }
+    if (mutableTiles) {
+      return new FogMap(mutableTiles);
+    } else {
+      return this;
     }
   }
 }
 
 export class Tile {
-  filename: string;
-  id: TileID;
-  x: number;
-  y: number;
-  data: Uint8Array;
-  blocks: { [key: XYKey]: Block };
-  regionCount: { [key: string]: number };
+  readonly filename: string;
+  readonly id: TileID;
+  readonly x: number;
+  readonly y: number;
+  readonly blocks: { [key: XYKey]: Block };
 
-  constructor(filename: string, data: ArrayBuffer) {
-    // TODO: try catch
+  private constructor(
+    filename: string,
+    id: TileID,
+    x: number,
+    y: number,
+    blocks: { [key: XYKey]: Block }
+  ) {
+    Object.freeze(blocks);
     this.filename = filename;
-    this.id = Number.parseInt(
+    this.id = id;
+    this.x = x;
+    this.y = y;
+    this.blocks = blocks;
+  }
+
+  static create(filename: string, data: ArrayBuffer): Tile {
+    // TODO: try catch
+    const id = Number.parseInt(
       filename
         .slice(4, -2)
         .split("")
         .map((idMasked) => FILENAME_ENCODING[idMasked])
         .join("")
     );
-    this.x = this.id % MAP_WIDTH;
-    this.y = Math.floor(this.id / MAP_WIDTH);
+    const x = id % MAP_WIDTH;
+    const y = Math.floor(id / MAP_WIDTH);
 
-    console.log(`Loading tile. id: ${this.id}, x: ${this.x}, y: ${this.y}`);
+    console.log(`Loading tile. id: ${id}, x: ${x}, y: ${y}`);
 
     // TODO: try catch
-    this.data = pako.inflate(new Uint8Array(data));
+    const actualData = pako.inflate(new Uint8Array(data));
 
-    const header = new Uint16Array(this.data.slice(0, TILE_HEADER_SIZE).buffer);
-    this.blocks = {};
-    this.regionCount = {};
+    const header = new Uint16Array(
+      actualData.slice(0, TILE_HEADER_SIZE).buffer
+    );
+
+    const blocks = {} as { [key: XYKey]: Block };
 
     for (let i = 0; i < header.length; i++) {
       const blockIdx = header[i];
@@ -142,19 +181,16 @@ export class Tile {
         const blockY = Math.floor(i / TILE_WIDTH);
         const startOffset = TILE_HEADER_SIZE + (blockIdx - 1) * BLOCK_SIZE;
         const endOffset = startOffset + BLOCK_SIZE;
-        const blockData = this.data.slice(startOffset, endOffset);
-        const block = new Block(blockX, blockY, blockData);
+        const blockData = actualData.slice(startOffset, endOffset);
+        const block = Block.create(blockX, blockY, blockData);
         block.check();
-        this.blocks[Map.makeKeyXY(blockX, blockY)] = block;
-        this.regionCount[block.region()] =
-          (this.regionCount[block.region()] || 0) + block.count();
-        this.regionCount["BLK"] = (this.regionCount["BLK"] || 0) + 1;
+        blocks[FogMap.makeKeyXY(blockX, blockY)] = block;
       }
     }
+    return new Tile(filename, id, x, y, blocks);
   }
 
   dump(): Uint8Array {
-    // const header = new Uint16Array(TILE_HEADER_LEN);
     const header = new Uint8Array(TILE_HEADER_SIZE);
     const headerView = new DataView(header.buffer, 0, TILE_HEADER_SIZE);
 
@@ -163,13 +199,19 @@ export class Tile {
     const blockData = new Uint8Array(blockDataSize);
 
     let activeBlockIdx = 1;
-    for (const block of Object.values(this.blocks)) {
-      const i = block.x + block.y * TILE_WIDTH;
-      // header[i] = activeBlockIdx;
-      headerView.setUint16(i * 2, activeBlockIdx, true);
-      blockData.set(block.dump(), (activeBlockIdx - 1) * BLOCK_SIZE);
-      activeBlockIdx++;
-    }
+    Object.values(this.blocks)
+      .map((block) => {
+        const i = block.x + block.y * TILE_WIDTH;
+        return [i, block] as [number, Block];
+      })
+      .sort((a, b) => {
+        return a[0] - b[0];
+      })
+      .forEach(([i, block]) => {
+        headerView.setUint16(i * 2, activeBlockIdx, true);
+        blockData.set(block.dump(), (activeBlockIdx - 1) * BLOCK_SIZE);
+        activeBlockIdx++;
+      });
 
     const data = new Uint8Array(TILE_HEADER_SIZE + blockDataSize);
     data.set(header);
@@ -208,7 +250,7 @@ export class Tile {
     return bbox;
   }
 
-  clearRect(x: number, y: number, width: number, height: number): void {
+  clearRect(x: number, y: number, width: number, height: number): Tile | null {
     const xMin = x;
     const yMin = y;
     const xMax = x + width;
@@ -220,40 +262,69 @@ export class Tile {
     const yMinInt = Math.floor(yMin);
     const yMaxInt = Math.floor(yMax);
 
+    let mutableBlocks: { [key: XYKey]: Block } | null = null;
+
     for (let x = xMinInt; x <= xMaxInt; x++) {
       for (let y = yMinInt; y <= yMaxInt; y++) {
-        const key = Map.makeKeyXY(x, y);
+        const key = FogMap.makeKeyXY(x, y);
         const block = this.blocks[key];
         if (block) {
           const xp0 = Math.round(Math.max(xMin - block.x, 0) * BITMAP_WIDTH);
           const yp0 = Math.round(Math.max(yMin - block.y, 0) * BITMAP_WIDTH);
           const xp1 = Math.round(Math.min(xMax - block.x, 1) * BITMAP_WIDTH);
           const yp1 = Math.round(Math.min(yMax - block.y, 1) * BITMAP_WIDTH);
-          block.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
-          if (block.isEmpty()) {
-            delete this.blocks[key];
+          const newBlock = block.clearRect(xp0, yp0, xp1 - xp0, yp1 - yp0);
+
+          if (newBlock !== block) {
+            if (!mutableBlocks) {
+              mutableBlocks = { ...this.blocks };
+            }
+            if (newBlock) {
+              mutableBlocks[key] = newBlock;
+            } else {
+              delete mutableBlocks[key];
+            }
           }
         }
       }
     }
-  }
 
-  isEmpty(): boolean {
-    return Object.keys(this.blocks).length === 0;
+    // Immutable.js avoids creating new objects for updates where no change in value occurred
+    if (mutableBlocks) {
+      if (Object.entries(mutableBlocks).length === 0) {
+        return null;
+      } else {
+        Object.freeze(mutableBlocks);
+        return new Tile(this.filename, this.id, this.x, this.y, mutableBlocks);
+      }
+    } else {
+      return this;
+    }
   }
 }
 
 export class Block {
-  x: number;
-  y: number;
-  bitmap: Uint8Array;
-  extraData: Uint8Array;
+  readonly x: number;
+  readonly y: number;
+  readonly bitmap: Uint8Array;
+  readonly extraData: Uint8Array;
 
-  constructor(x: number, y: number, data: Uint8Array) {
+  private constructor(
+    x: number,
+    y: number,
+    bitmap: Uint8Array,
+    extraData: Uint8Array
+  ) {
     this.x = x;
     this.y = y;
-    this.bitmap = data.slice(0, BLOCK_BITMAP_SIZE);
-    this.extraData = data.slice(BLOCK_BITMAP_SIZE, BLOCK_SIZE);
+    this.bitmap = bitmap;
+    this.extraData = extraData;
+  }
+
+  static create(x: number, y: number, data: Uint8Array): Block {
+    const bitmap = data.slice(0, BLOCK_BITMAP_SIZE);
+    const extraData = data.slice(BLOCK_BITMAP_SIZE, BLOCK_SIZE);
+    return new Block(x, y, bitmap, extraData);
   }
 
   check(): boolean {
@@ -287,7 +358,7 @@ export class Block {
     const checksumDataview = new DataView(this.extraData.buffer, 1, 2);
     checksumDataview.setUint16(
       0,
-      (checksumDataview.getUint16(0, false) & 0xc000) | (count << 1),
+      (checksumDataview.getUint16(0, false) & 0xc000) | ((count << 1) + 1),
       false
     );
 
@@ -323,24 +394,47 @@ export class Block {
     return (this.bitmap[i + j * 8] & (1 << bitOffset)) !== 0;
   }
 
-  setPoint(x: number, y: number, val: boolean): void {
+  private static setPoint(
+    mutableBitmap: Uint8Array,
+    x: number,
+    y: number,
+    val: boolean
+  ): void {
     const bitOffset = 7 - (x % 8);
     const i = Math.floor(x / 8);
     const j = y;
     const valNumber = val ? 1 : 0;
-    this.bitmap[i + j * 8] =
-      (this.bitmap[i + j * 8] & ~(1 << bitOffset)) | (valNumber << bitOffset);
+    mutableBitmap[i + j * 8] =
+      (mutableBitmap[i + j * 8] & ~(1 << bitOffset)) | (valNumber << bitOffset);
   }
 
-  clearRect(x: number, y: number, width: number, height: number): void {
-    for (let i = 0; i < width; i++) {
-      for (let j = 0; j < height; j++) {
-        this.setPoint(x + i, y + j, false);
+  private static bitmapEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.byteLength !== b.byteLength) {
+      return false;
+    }
+    for (let i = 0; i != a.byteLength; i++) {
+      if (a[i] !== b[i]) {
+        return false;
       }
     }
+    return true;
   }
 
-  isEmpty(): boolean {
-    return this.bitmap.every((v) => v === 0);
+  clearRect(x: number, y: number, width: number, height: number): Block | null {
+    const mutableBitmap = new Uint8Array(this.bitmap);
+
+    for (let i = 0; i < width; i++) {
+      for (let j = 0; j < height; j++) {
+        Block.setPoint(mutableBitmap, x + i, y + j, false);
+      }
+    }
+    if (mutableBitmap.every((v) => v === 0)) {
+      return null;
+    }
+    if (Block.bitmapEqual(mutableBitmap, this.bitmap)) {
+      return this;
+    } else {
+      return new Block(this.x, this.y, mutableBitmap, this.extraData);
+    }
   }
 }

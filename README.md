@@ -36,6 +36,8 @@ To understand the internal sync format of FoW App, you may refer to [Fog-of-Worl
 
 ---
 
+Before running FogMachine, you need to have a Mapbox access token. You may register a token at [Mapbox Docs](https://docs.mapbox.com/help/getting-started/access-tokens/), then save the it to `.env.local` file at the repo's root directory. You may refer to `.env.local.example` file as an example.
+
 Install required dependency and run the web App:
 
 ```bash

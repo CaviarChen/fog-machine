@@ -33,22 +33,26 @@ export default function MyModal(props: Props): JSX.Element {
     let done = false;
     const mapRenderer = MapRenderer.get();
     if (files.every((file) => parsePath(file.name).ext === "")) {
-      for (const file of files) {
-        const data = await readFileAsync(file);
-        if (data instanceof ArrayBuffer) {
-          mapRenderer.addFoGFile(file.name, data, false);
-        }
-      }
+      const tileFiles = await Promise.all(
+        files.map(async (file) => {
+          const data = await readFileAsync(file);
+          return [file.name, data] as [string, ArrayBuffer];
+        })
+      );
+      mapRenderer.addFoGFiles(tileFiles);
       done = true;
     } else {
       if (files.length === 1 && parsePath(files[0].name).ext === ".zip") {
         const data = await readFileAsync(files[0]);
         if (data instanceof ArrayBuffer) {
           const zip = await new JSZip().loadAsync(data);
-          for (const filename in zip.files) {
-            const data = await zip.files[filename].async("arraybuffer");
-            mapRenderer.addFoGFile(filename, data, false);
-          }
+          const tileFiles = await Promise.all(
+            Object.entries(zip.files).map(async ([filename, file]) => {
+              const data = await file.async("arraybuffer");
+              return [filename, data] as [string, ArrayBuffer];
+            })
+          );
+          mapRenderer.addFoGFiles(tileFiles);
         }
         done = true;
       }
