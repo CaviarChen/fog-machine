@@ -50,8 +50,22 @@ function Map(): JSX.Element {
   });
 
   const toolButtons = [
-    { icon: iconUndo, clickable: true, enabled: false, onClick: () => {return;} },
-    { icon: iconRedo, clickable: false, enabled: false, onClick: () => {return;}},
+    {
+      icon: iconUndo,
+      clickable: true,
+      enabled: false,
+      onClick: () => {
+        return;
+      },
+    },
+    {
+      icon: iconRedo,
+      clickable: false,
+      enabled: false,
+      onClick: () => {
+        return;
+      },
+    },
     null,
     {
       icon: iconEraserSolid,
