@@ -3,6 +3,7 @@ import mapboxgl from "mapbox-gl";
 import * as fogMap from "./FogMap";
 import * as deckgl from "./Deckgl";
 import { CANVAS_SIZE_OFFSET, FogCanvas } from "./FogCanvas";
+import { HistoryManager } from "./HistoryManager";
 
 const FOW_TILE_ZOOM = 9;
 const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + fogMap.TILE_WIDTH_OFFSET;
@@ -28,9 +29,11 @@ export class MapRenderer {
   private map: mapboxgl.Map | null;
   private deckgl: deckgl.Deckgl | null;
   public fogMap: fogMap.FogMap;
+  public historyManager: HistoryManager;
   private loadedFogCanvases: { [key: string]: FogCanvas };
   private eraserMode: boolean;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
+  private onChange: (() => void) | null;
 
   private constructor() {
     this.map = null;
@@ -39,13 +42,19 @@ export class MapRenderer {
     this.loadedFogCanvases = {};
     this.eraserMode = false;
     this.eraserArea = null;
+    this.historyManager = new HistoryManager(this.fogMap);
+    this.onChange = null;
   }
 
   static get(): MapRenderer {
     return MapRenderer.instance;
   }
 
-  registerMap(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement): void {
+  registerMap(
+    map: mapboxgl.Map,
+    deckglContainer: HTMLCanvasElement,
+    onChange: () => void
+  ): void {
     this.map = map;
     this.deckgl = new deckgl.Deckgl(
       map,
@@ -57,6 +66,8 @@ export class MapRenderer {
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
     this.setEraserMod(this.eraserMode);
+    this.onChange = onChange;
+    this.onChange();
   }
 
   unregisterMap(_map: mapboxgl.Map): void {
@@ -72,9 +83,41 @@ export class MapRenderer {
     this.deckgl?.updateOnce();
   }
 
+  private applyFogMapUpdate(
+    newMap: fogMap.FogMap,
+    areaChanged: deckgl.Bbox | null
+  ) {
+    this.fogMap = newMap;
+    this.redrawArea(areaChanged);
+
+    if (this.onChange) {
+      this.onChange();
+    }
+  }
+
+  private updateFogMap(
+    newMap: fogMap.FogMap,
+    areaChanged: deckgl.Bbox | null
+  ): void {
+    if (this.fogMap !== newMap) {
+      this.historyManager.append(newMap, areaChanged);
+      this.applyFogMapUpdate(newMap, areaChanged);
+    }
+  }
+
+  undo(): void {
+    this.historyManager.undo(this.applyFogMapUpdate.bind(this));
+  }
+
+  redo(): void {
+    this.historyManager.redo(this.applyFogMapUpdate.bind(this));
+  }
+
   addFoGFiles(files: [string, ArrayBuffer][]): void {
-    this.fogMap = this.fogMap.addFiles(files);
-    this.redrawArea(null);
+    const newMap = this.fogMap.addFiles(files);
+
+    // NOTE: areaChanged = null means all area
+    this.updateFogMap(newMap, null);
   }
 
   handleMouseClick(e: mapboxgl.MapMouseEvent): void {
@@ -170,8 +213,8 @@ export class MapRenderer {
       const bbox = new deckgl.Bbox(west, south, east, north);
       console.log(`clearing the bbox ${west} ${north} ${east} ${south}`);
 
-      this.fogMap = this.fogMap.clearBbox(bbox);
-      this.redrawArea(bbox);
+      const newMap = this.fogMap.clearBbox(bbox);
+      this.updateFogMap(newMap, bbox);
 
       this.eraserArea = null;
     }

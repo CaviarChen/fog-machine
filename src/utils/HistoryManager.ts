@@ -45,11 +45,12 @@ export class HistoryManager {
     apply: (map: fogMap.FogMap, areaChanged: deckgl.Bbox | null) => void
   ): void {
     if (this.canUndo()) {
-      apply(
-        this.history[this.pos - 1].fogMap,
-        this.history[this.pos].areaChanged
-      );
       this.pos -= 1;
+      // `apply` should be called after the pos update
+      apply(
+        this.history[this.pos].fogMap,
+        this.history[this.pos+1].areaChanged
+      );
     }
   }
 

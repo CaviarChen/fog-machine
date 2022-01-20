@@ -15,6 +15,10 @@ function Map(): JSX.Element {
   const map = useRef<mapboxgl.Map | null>(null);
   const mapRenderer = MapRenderer.get();
   const [eraserMode, setEraserMode] = useState(false);
+  const [historyStatus, setHistoryStatus] = useState({
+    canRedo: false,
+    canUndo: false,
+  });
 
   useEffect(() => {
     mapRenderer.setEraserMod(eraserMode);
@@ -35,7 +39,12 @@ function Map(): JSX.Element {
     );
 
     mapboxMap.on("load", () => {
-      mapRenderer.registerMap(mapboxMap, deckglContainer.current!);
+      mapRenderer.registerMap(mapboxMap, deckglContainer.current!, () => {
+        setHistoryStatus({
+          canRedo: mapRenderer.historyManager.canRedo(),
+          canUndo: mapRenderer.historyManager.canUndo(),
+        });
+      });
       setMapboxLanguage(i18n.resolvedLanguage);
       i18n.on("languageChanged", (_) => {
         setMapboxLanguage(i18n.resolvedLanguage);
@@ -52,18 +61,18 @@ function Map(): JSX.Element {
   const toolButtons = [
     {
       icon: iconUndo,
-      clickable: true,
+      clickable: historyStatus.canUndo,
       enabled: false,
       onClick: () => {
-        return;
+        mapRenderer.undo();
       },
     },
     {
       icon: iconRedo,
-      clickable: false,
+      clickable: historyStatus.canRedo,
       enabled: false,
       onClick: () => {
-        return;
+        mapRenderer.redo();
       },
     },
     null,
