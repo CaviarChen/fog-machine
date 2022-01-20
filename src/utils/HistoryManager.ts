@@ -49,7 +49,7 @@ export class HistoryManager {
       // `apply` should be called after the pos update
       apply(
         this.history[this.pos].fogMap,
-        this.history[this.pos+1].areaChanged
+        this.history[this.pos + 1].areaChanged
       );
     }
   }
