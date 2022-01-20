@@ -5,6 +5,7 @@ import mapboxgl from "mapbox-gl";
 import { MapRenderer } from "./utils/MapRenderer";
 import { useTranslation } from "react-i18next";
 import { initLanguageControl } from "./utils/MapLanguage";
+import Mousetrap from "mousetrap";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
 
@@ -51,6 +52,12 @@ function Map(): JSX.Element {
       });
     });
     map.current = mapboxMap;
+    Mousetrap.bind(["mod+z"], (_) => {
+      mapRenderer.undo();
+    });
+    Mousetrap.bind(["mod+shift+z"], (_) => {
+      mapRenderer.redo();
+    });
 
     return function cleanup() {
       // TODO: This clean up seems wrong
