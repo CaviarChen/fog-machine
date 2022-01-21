@@ -6,6 +6,7 @@ import { useDropzone } from "react-dropzone";
 import JSZip from "jszip";
 import parsePath from "parse-filepath";
 import { useTranslation } from "react-i18next";
+import { FogMap } from "./utils/FogMap";
 
 type Props = {
   isOpen: boolean;
@@ -13,15 +14,16 @@ type Props = {
   msgboxShow(title: string, msg: string): void;
 };
 
-let isImported = false;
 
 export default function MyModal(props: Props): JSX.Element {
   const { t } = useTranslation();
   const { isOpen, setIsOpen, msgboxShow } = props;
 
   async function importFiles(files: File[]) {
+    const mapRenderer = MapRenderer.get();
     closeModal();
-    if (isImported) {
+    if (mapRenderer.fogMap !== FogMap.empty) {
+      // we need this because we do not support overriding in `mapRenderer.addFoGFile`
       msgboxShow("error", "error-already-imported");
       return;
     }
@@ -31,7 +33,6 @@ export default function MyModal(props: Props): JSX.Element {
     // TODO: progress bar
     // TODO: improve file checking
     let done = false;
-    const mapRenderer = MapRenderer.get();
     if (files.every((file) => parsePath(file.name).ext === "")) {
       const tileFiles = await Promise.all(
         files.map(async (file) => {
@@ -59,9 +60,6 @@ export default function MyModal(props: Props): JSX.Element {
     }
 
     if (done) {
-      mapRenderer.redrawArea(null);
-      // we need this because we do not support overriding in `mapRenderer.addFoGFile`
-      isImported = true;
       // TODO: move to center?
     } else {
       msgboxShow("error", "error-invalid-format");
