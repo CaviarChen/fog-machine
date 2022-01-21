@@ -14,7 +14,6 @@ type Props = {
   msgboxShow(title: string, msg: string): void;
 };
 
-
 export default function MyModal(props: Props): JSX.Element {
   const { t } = useTranslation();
   const { isOpen, setIsOpen, msgboxShow } = props;
