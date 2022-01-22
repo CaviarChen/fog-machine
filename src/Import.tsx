@@ -4,7 +4,6 @@ import { readFileAsync } from "./Utils";
 import { MapRenderer } from "./utils/MapRenderer";
 import { useDropzone } from "react-dropzone";
 import JSZip from "jszip";
-import parsePath from "parse-filepath";
 import { useTranslation } from "react-i18next";
 import { FogMap } from "./utils/FogMap";
 
@@ -13,6 +12,12 @@ type Props = {
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   msgboxShow(title: string, msg: string): void;
 };
+
+function getFileExtension(filename: string): string {
+  return filename.slice(
+    (Math.max(0, filename.lastIndexOf(".")) || Infinity) + 1
+  );
+}
 
 export default function MyModal(props: Props): JSX.Element {
   const { t } = useTranslation();
@@ -32,7 +37,8 @@ export default function MyModal(props: Props): JSX.Element {
     // TODO: progress bar
     // TODO: improve file checking
     let done = false;
-    if (files.every((file) => parsePath(file.name).ext === "")) {
+    files.forEach((file) => console.log(getFileExtension(file.name)));
+    if (files.every((file) => getFileExtension(file.name) === "")) {
       const tileFiles = await Promise.all(
         files.map(async (file) => {
           const data = await readFileAsync(file);
@@ -42,7 +48,7 @@ export default function MyModal(props: Props): JSX.Element {
       mapRenderer.addFoGFiles(tileFiles);
       done = true;
     } else {
-      if (files.length === 1 && parsePath(files[0].name).ext === ".zip") {
+      if (files.length === 1 && getFileExtension(files[0].name) === "zip") {
         const data = await readFileAsync(files[0]);
         if (data instanceof ArrayBuffer) {
           const zip = await new JSZip().loadAsync(data);

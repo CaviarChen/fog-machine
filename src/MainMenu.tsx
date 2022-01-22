@@ -70,19 +70,19 @@ export default function MainMenu(props: Props): JSX.Element {
               <Popover.Button
                 className={`
                 ${open ? "" : "text-opacity-90"}
-                text-black group bg-orange-700 px-3 py-2 rounded-md inline-flex items-center text-base font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`}
+                text-black group px-3 py-2 rounded-md inline-flex items-center text-base font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`}
               >
                 <div className="p-0.5">
                   <span>{t("main-title")}</span>
                 </div>
                 {open ? (
                   <ChevronUpIcon
-                    className="ml-2 h-5 w-5 text-orange-300 group-hover:text-opacity-80 transition ease-in-out duration-150"
+                    className="ml-2 h-5 w-5 group-hover:text-opacity-80 transition ease-in-out duration-150"
                     aria-hidden="true"
                   />
                 ) : (
                   <ChevronDownIcon
-                    className="ml-2 h-5 w-5 text-orange-300 group-hover:text-opacity-80 transition ease-in-out duration-150"
+                    className="ml-2 h-5 w-5 group-hover:text-opacity-80 transition ease-in-out duration-150"
                     aria-hidden="true"
                   />
                 )}
