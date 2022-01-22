@@ -13,8 +13,10 @@ type Props = {
   msgboxShow(title: string, msg: string): void;
 };
 
-function getFileExtension(filename: string) : string {
-  return filename.slice((Math.max(0, filename.lastIndexOf(".")) || Infinity) + 1);
+function getFileExtension(filename: string): string {
+  return filename.slice(
+    (Math.max(0, filename.lastIndexOf(".")) || Infinity) + 1
+  );
 }
 
 export default function MyModal(props: Props): JSX.Element {
@@ -35,7 +37,7 @@ export default function MyModal(props: Props): JSX.Element {
     // TODO: progress bar
     // TODO: improve file checking
     let done = false;
-    files.forEach((file) => console.log(getFileExtension(file.name)) );
+    files.forEach((file) => console.log(getFileExtension(file.name)));
     if (files.every((file) => getFileExtension(file.name) === "")) {
       const tileFiles = await Promise.all(
         files.map(async (file) => {
