@@ -38,6 +38,7 @@ function Map(): JSX.Element {
       mapboxMap,
       i18n.resolvedLanguage
     );
+    mapboxMap.resize();
 
     mapboxMap.on("load", () => {
       mapRenderer.registerMap(mapboxMap, deckglContainer.current!, () => {
