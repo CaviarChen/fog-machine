@@ -50,6 +50,7 @@ function Map(): JSX.Element {
       i18n.on("languageChanged", (_) => {
         setMapboxLanguage(i18n.resolvedLanguage);
       });
+      mapboxMap.resize();
     });
     map.current = mapboxMap;
     Mousetrap.bind(["mod+z"], (_) => {
