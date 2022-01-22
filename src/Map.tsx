@@ -9,7 +9,11 @@ import Mousetrap from "mousetrap";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
 
-function Map(): JSX.Element {
+type Props = {
+  setLoaded(isLoaded: boolean): void;
+};
+
+function Map(props: Props): JSX.Element {
   const { i18n } = useTranslation();
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const deckglContainer = useRef<HTMLCanvasElement | null>(null);
@@ -51,6 +55,7 @@ function Map(): JSX.Element {
         setMapboxLanguage(i18n.resolvedLanguage);
       });
       mapboxMap.resize();
+      props.setLoaded(true);
     });
     map.current = mapboxMap;
     Mousetrap.bind(["mod+z"], (_) => {

@@ -17,6 +17,7 @@ function App(): JSX.Element {
     }
   };
 
+  const [loaded, setLoaded] = useState(false);
   const [importDialog, setImportDialog] = useState(false);
   const [msgboxState, setMsgboxState] = useState<{
     isOpen: boolean;
@@ -110,47 +111,75 @@ function App(): JSX.Element {
     </Transition>
   );
 
-  return (
-    <div>
-      <Import
-        isOpen={importDialog}
-        setIsOpen={setImportDialog}
-        msgboxShow={msgboxShow}
-      />
-      <GithubCorner />
-      <MainMenu
-        onAction={async (action: Actions) => {
-          if (action === Actions.Import) {
-            setImportDialog(true);
-          } else if (action === Actions.Export) {
-            // TODO: seems pretty fast, but we should consider handle this async properly
-            const blob = await MapRenderer.get().fogMap.exportArchive();
-            if (blob) {
-              const name = "Sync.zip";
-              const blobUrl = URL.createObjectURL(blob);
-              const link = document.createElement("a");
-
-              link.href = blobUrl;
-              link.download = name;
-
-              document.body.appendChild(link);
-              // This is necessary as link.click() does not work on the latest firefox
-              link.dispatchEvent(
-                new MouseEvent("click", {
-                  bubbles: true,
-                  cancelable: true,
-                  view: window,
-                })
-              );
-              document.body.removeChild(link);
-              msgboxShow("info", "export-done-message");
-            }
-          }
-        }}
-      />
-      {msgbox}
-      <Map />
+  const loadingSpinner = (
+    <div className="flex h-screen">
+      <svg
+        className="animate-spin h-12 w-12 m-auto text-black"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
     </div>
+  );
+
+  return (
+    <>
+      <GithubCorner />
+      <div className={loaded ? "" : "invisible"}>
+        <Import
+          isOpen={importDialog}
+          setIsOpen={setImportDialog}
+          msgboxShow={msgboxShow}
+        />
+        <MainMenu
+          onAction={async (action: Actions) => {
+            if (action === Actions.Import) {
+              setImportDialog(true);
+            } else if (action === Actions.Export) {
+              // TODO: seems pretty fast, but we should consider handle this async properly
+              const blob = await MapRenderer.get().fogMap.exportArchive();
+              if (blob) {
+                const name = "Sync.zip";
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+
+                link.href = blobUrl;
+                link.download = name;
+
+                document.body.appendChild(link);
+                // This is necessary as link.click() does not work on the latest firefox
+                link.dispatchEvent(
+                  new MouseEvent("click", {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                  })
+                );
+                document.body.removeChild(link);
+                msgboxShow("info", "export-done-message");
+              }
+            }
+          }}
+        />
+        {msgbox}
+        <Map setLoaded={setLoaded} />
+      </div>
+      {loaded ? <></> : loadingSpinner}
+    </>
   );
 }
 
