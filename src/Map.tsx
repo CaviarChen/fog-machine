@@ -55,7 +55,11 @@ function Map(props: Props): JSX.Element {
         setMapboxLanguage(i18n.resolvedLanguage);
       });
       mapboxMap.resize();
-      props.setLoaded(true);
+
+      // give deckgl a little bit of time
+      setTimeout(() => {
+        props.setLoaded(true);
+      }, 200);
     });
     map.current = mapboxMap;
     Mousetrap.bind(["mod+z"], (_) => {
