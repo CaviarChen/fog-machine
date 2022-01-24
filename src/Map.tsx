@@ -55,7 +55,11 @@ function Map(props: Props): JSX.Element {
         setMapboxLanguage(i18n.resolvedLanguage);
       });
       mapboxMap.resize();
-      props.setLoaded(true);
+
+      // give deckgl a little bit of time
+      setTimeout(() => {
+        props.setLoaded(true);
+      }, 200);
     });
     map.current = mapboxMap;
     Mousetrap.bind(["mod+z"], (_) => {
@@ -164,10 +168,10 @@ const iconRedo = (
     focusable="false"
     data-prefix="fas"
     data-icon="redo"
-    className="svg-inline--fa fa-redo fa-w-16"
     role="img"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
+    className="w-full h-full"
   >
     <path
       fill="currentColor"
@@ -182,10 +186,10 @@ const iconUndo = (
     focusable="false"
     data-prefix="fas"
     data-icon="undo"
-    className="svg-inline--fa fa-undo fa-w-16"
     role="img"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
+    className="w-full h-full"
   >
     <path
       fill="currentColor"
