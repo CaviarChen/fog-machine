@@ -5,6 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[workspace]
+members = [".", "entity", "migration"]
+
 [dependencies]
 serde = "1.0"
 serde_json = "1.0"
@@ -13,3 +16,9 @@ rocket = { version = "0.5.0-rc.1", features = ["json"] }
 envconfig = "0.10"
 dotenv = "0.15"
 anyhow = "1.0"
+entity = { path = "entity" }
+migration = { path = "migration" }
+async-trait = { version = "0.1" }
+
+[dependencies.sea-orm-rocket]
+git = "https://github.com/SeaQL/sea-orm"

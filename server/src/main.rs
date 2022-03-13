@@ -1,15 +1,25 @@
 #[macro_use]
 extern crate rocket;
 use envconfig::Envconfig;
+use migration::MigratorTrait;
+use rocket::fairing::{self, AdHoc};
 use rocket::http::ContentType;
 use rocket::http::Status;
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
+use rocket::{Build, Rocket};
+use sea_orm_rocket::Database;
 use std::error::Error;
 use std::io::Cursor;
 
+mod pool;
+use pool::Db;
+
 #[derive(Envconfig)]
 pub struct Config {
+    #[envconfig(from = "DATABASE_URL")]
+    pub database_url: String,
+
     #[envconfig(from = "GITHUB_CLIENT_ID")]
     pub github_client_id: String,
 
@@ -46,12 +56,30 @@ where
 
 mod user_handler;
 
+async fn run_migrations(rocket: Rocket<Build>) -> fairing::Result {
+    let conn = &Db::fetch(&rocket).unwrap().conn;
+    let _ = migration::Migrator::up(conn, None).await;
+    Ok(rocket)
+}
+
 #[launch]
 fn rocket() -> _ {
     dotenv::dotenv().ok();
-
     let config = Config::init_from_env().unwrap();
-    rocket::build()
+    let figment = rocket::Config::figment().merge((
+        "databases.main",
+        sea_orm_rocket::Config {
+            url: String::clone(&config.database_url),
+            min_connections: None,
+            max_connections: 1024,
+            connect_timeout: 3,
+            idle_timeout: None,
+        },
+    ));
+
+    rocket::custom(figment)
+        .attach(Db::init())
+        .attach(AdHoc::try_on_ignite("Migrations", run_migrations))
         .manage(config)
         .mount("/api/v1/user", user_handler::routes())
 }

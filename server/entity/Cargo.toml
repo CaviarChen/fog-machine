@@ -1,0 +1,18 @@
+[package]
+name = "entity"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "entity"
+path = "src/lib.rs"
+
+[dependencies.sea-orm]
+version = "^0.6.0"
+features = [
+  "macros",
+  "runtime-tokio-native-tls",
+  "sqlx-postgres",
+]
+default-features = false
