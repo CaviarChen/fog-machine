@@ -19,6 +19,10 @@ anyhow = "1.0"
 entity = { path = "entity" }
 migration = { path = "migration" }
 async-trait = { version = "0.1" }
+chrono = "0.4"
+hmac = "0.12"
+sha2 = "0.10"
+jwt = "0.16"
 
 [dependencies.sea-orm-rocket]
 git = "https://github.com/SeaQL/sea-orm"

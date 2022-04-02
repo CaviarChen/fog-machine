@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate rocket;
 use envconfig::Envconfig;
+use hmac::{Hmac, Mac};
 use migration::MigratorTrait;
 use rocket::fairing::{self, AdHoc};
 use rocket::http::ContentType;
@@ -9,6 +10,7 @@ use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
 use rocket::{Build, Rocket};
 use sea_orm_rocket::Database;
+use sha2::Sha256;
 use std::error::Error;
 use std::io::Cursor;
 
@@ -25,6 +27,20 @@ pub struct Config {
 
     #[envconfig(from = "GITHUB_CLIENT_SECRET")]
     pub github_client_secret: String,
+
+    #[envconfig(from = "JWT_SECRET")]
+    pub jwt_secret: String,
+}
+
+pub struct ServerState {
+    pub config: Config,
+    pub jwt_key: Hmac<Sha256>,
+}
+impl ServerState {
+    pub fn from_config(config: Config) -> Self {
+        let jwt_key = Hmac::new_from_slice(&config.jwt_secret.as_bytes()).unwrap();
+        ServerState { config, jwt_key }
+    }
 }
 
 pub type APIResponse = Result<(Status, serde_json::Value), InternalError>;
@@ -77,9 +93,10 @@ fn rocket() -> _ {
         },
     ));
 
+    let server_state = ServerState::from_config(config);
     rocket::custom(figment)
         .attach(Db::init())
         .attach(AdHoc::try_on_ignite("Migrations", run_migrations))
-        .manage(config)
+        .manage(server_state)
         .mount("/api/v1/user", user_handler::routes())
 }

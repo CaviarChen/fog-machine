@@ -1,18 +1,32 @@
 use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq, EnumIter, DeriveActiveEnum)]
+#[sea_orm(rs_type = "String", db_type = "Text")]
+pub enum Language {
+    #[serde(alias = "zh-cn")]
+    #[sea_orm(string_value = "zh-cn")]
+    ZhCn,
+    #[serde(alias = "en-us")]
+    #[sea_orm(string_value = "en-us")]
+    EnUs,
+}
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "users")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    #[sea_orm(column_type = "Text")]
+    #[sea_orm(column_type = "Text", unique, index)]
     pub email: String,
     #[sea_orm(column_type = "Text", nullable)]
     pub password: Option<String>,
+    #[sea_orm(nullable, unique, index)]
     pub github_sso_uid: Option<i32>,
-    #[sea_orm(column_type = "Text")]
-    pub language: String,
-    pub create_at: DateTimeUtc,
+    #[sea_orm(nullable, column_type = "Text")]
+    pub language: Option<Language>,
+    pub created_at: DateTimeUtc,
+    pub updated_at: DateTimeUtc,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
