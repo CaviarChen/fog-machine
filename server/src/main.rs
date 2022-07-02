@@ -38,6 +38,7 @@ pub struct ServerState {
 }
 impl ServerState {
     pub fn from_config(config: Config) -> Self {
+        // TODO: move this to user handler state
         let jwt_key = Hmac::new_from_slice(&config.jwt_secret.as_bytes()).unwrap();
         ServerState { config, jwt_key }
     }
@@ -98,5 +99,7 @@ fn rocket() -> _ {
         .attach(Db::init())
         .attach(AdHoc::try_on_ignite("Migrations", run_migrations))
         .manage(server_state)
+        // user handler
+        .manage(user_handler::State::create())
         .mount("/api/v1/user", user_handler::routes())
 }
