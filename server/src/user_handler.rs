@@ -88,11 +88,11 @@ impl State {
 #[derive(Serialize, Deserialize)]
 struct JwtData {
     ver: i8,
-    sub: i32,
+    sub: i64,
     exp: i64,
 }
 
-fn generate_user_token(server_state: &ServerState, user_id: i32) -> String {
+fn generate_user_token(server_state: &ServerState, user_id: i64) -> String {
     let exp = chrono::Utc::now()
         .checked_add_signed(chrono::Duration::seconds(60))
         .expect("valid timestamp")
@@ -211,9 +211,43 @@ async fn sso(
     state: &rocket::State<State>,
     data: Json<SSOData>,
 ) -> APIResponse {
-    panic!("TODO")
+    let contact_email = data.contact_email.to_lowercase();
+    if !email_address::EmailAddress::is_valid(&contact_email) {
+        return Ok((Status::BadRequest, json!({"error": "invalid_email"})));
+    }
+    let pending_registration = match state.get_pending_registration(&data.registration_token) {
+        None => {
+            return Ok((
+                Status::Unauthorized,
+                json!({"error": "invalid_registration_token"}),
+            ))
+        }
+        Some(pending_registration) => pending_registration,
+    };
+    let db = conn.into_inner();
+    match pending_registration {
+        Github { uid } => {
+            let new_user = entity::user::ActiveModel {
+                id: NotSet,
+                email: Set(None),
+                password: Set(None),
+                contact_email: Set(contact_email),
+                github_uid: Set(Some(uid)),
+                language: Set(data.language),
+                created_at: Set(chrono::offset::Utc::now()),
+                updated_at: Set(chrono::offset::Utc::now()),
+            };
+            // we have unique contrain on `github_uid` and I don't think we need a
+            // proper error message here
+            let new_user = new_user.insert(db).await?;
+            Ok((
+                Status::Ok,
+                json!({"token": generate_user_token(server_state, new_user.id)}),
+            ))
+        }
+    }
 }
 
 pub fn routes() -> Vec<rocket::Route> {
-    routes![sso_github, sso_github_redirect,]
+    routes![sso_github, sso_github_redirect, sso]
 }

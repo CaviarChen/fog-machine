@@ -25,6 +25,7 @@ hmac = "0.12"
 sha2 = "0.10"
 jwt = "0.16"
 rand = "0.8.5"
+email_address = "0.2.1"
 
 [dependencies.sea-orm-rocket]
 git = "https://github.com/SeaQL/sea-orm"
