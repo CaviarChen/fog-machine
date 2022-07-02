@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "String", db_type = "Text")]
 pub enum Language {
-    #[serde(alias = "zh-cn")]
+    #[serde(rename = "zh-cn")]
     #[sea_orm(string_value = "zh-cn")]
     ZhCn,
-    #[serde(alias = "en-us")]
+    #[serde(rename = "en-us")]
     #[sea_orm(string_value = "en-us")]
     EnUs,
 }

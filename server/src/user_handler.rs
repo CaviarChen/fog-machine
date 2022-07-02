@@ -6,6 +6,7 @@ use chrono;
 use entity::sea_orm;
 use jwt::SignWithKey;
 use rocket::http::Status;
+use rocket::request::{FromRequest, Outcome, Request};
 use rocket::response::Redirect;
 use rocket::serde::{json::Json, Deserialize, Serialize};
 use sea_orm::{entity::*, query::*};
@@ -34,6 +35,67 @@ use std::vec::Vec;
   it doesn't have an unique constrain.
 */
 
+#[derive(Serialize, Deserialize)]
+struct JwtData {
+    ver: i8,
+    sub: i64,
+    exp: i64,
+}
+
+fn generate_user_token(server_state: &ServerState, user_id: i64) -> String {
+    let exp = chrono::Utc::now()
+        .checked_add_signed(chrono::Duration::days(7))
+        .expect("valid timestamp")
+        .timestamp();
+
+    let jwt_data = JwtData {
+        ver: 1,
+        sub: user_id,
+        exp,
+    };
+    return jwt_data.sign_with_key(&server_state.jwt_key).unwrap();
+}
+
+struct User {
+    uid: i64,
+}
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for User {
+    type Error = ();
+
+    async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        use jwt::VerifyWithKey;
+        // https://jwt.io/introduction/
+
+        let user = match req.headers().get_one("Authorization") {
+            None => None,
+            Some(authorization) => match authorization.strip_prefix("Bearer ") {
+                None => None,
+                Some(jwt_token) => {
+                    let server_state = req.rocket().state::<ServerState>().unwrap();
+                    let jwt_data: Result<JwtData, _> =
+                        jwt_token.verify_with_key(&server_state.jwt_key);
+                    match jwt_data {
+                        Err(_) => None,
+                        Ok(jwt_data) => {
+                            let now = chrono::Utc::now().timestamp();
+                            if now < jwt_data.exp {
+                                Some(User { uid: jwt_data.sub })
+                            } else {
+                                None
+                            }
+                        }
+                    }
+                }
+            },
+        };
+        match user {
+            None => Outcome::Failure((Status::Forbidden, ())),
+            Some(user) => Outcome::Success(user),
+        }
+    }
+}
+
 fn random_token(validate_token: impl Fn(&str) -> bool) -> String {
     use rand::distributions::{Alphanumeric, DistString};
     loop {
@@ -46,7 +108,7 @@ fn random_token(validate_token: impl Fn(&str) -> bool) -> String {
 
 #[derive(Clone)]
 enum PendingRegistration {
-    Github { uid: i64 },
+    Github { github_uid: i64 },
 }
 
 pub struct State {
@@ -83,27 +145,6 @@ impl State {
         let pending_registrations = self.pending_registrations.lock().unwrap();
         pending_registrations.get(token).map(|x| x.clone())
     }
-}
-
-#[derive(Serialize, Deserialize)]
-struct JwtData {
-    ver: i8,
-    sub: i64,
-    exp: i64,
-}
-
-fn generate_user_token(server_state: &ServerState, user_id: i64) -> String {
-    let exp = chrono::Utc::now()
-        .checked_add_signed(chrono::Duration::seconds(60))
-        .expect("valid timestamp")
-        .timestamp();
-
-    let jwt_data = JwtData {
-        ver: 1,
-        sub: user_id,
-        exp,
-    };
-    return jwt_data.sign_with_key(&server_state.jwt_key).unwrap();
 }
 
 #[derive(Deserialize)]
@@ -179,7 +220,7 @@ async fn sso_github(
         None => {
             // this email cannot be trusted
             let email: Option<&str> = res["email"].as_str();
-            let registration_token = state.add_pending_registration(Github { uid: github_uid });
+            let registration_token = state.add_pending_registration(Github { github_uid });
             Ok((
                 Status::Ok,
                 json!({"login": false, "default_email":email , "registration_token": registration_token }),
@@ -226,13 +267,13 @@ async fn sso(
     };
     let db = conn.into_inner();
     match pending_registration {
-        Github { uid } => {
+        Github { github_uid } => {
             let new_user = entity::user::ActiveModel {
                 id: NotSet,
                 email: Set(None),
                 password: Set(None),
                 contact_email: Set(contact_email),
-                github_uid: Set(Some(uid)),
+                github_uid: Set(Some(github_uid)),
                 language: Set(data.language),
                 created_at: Set(chrono::offset::Utc::now()),
                 updated_at: Set(chrono::offset::Utc::now()),
@@ -248,6 +289,21 @@ async fn sso(
     }
 }
 
+#[get("/")]
+async fn user(conn: Connection<'_, Db>, user: User) -> APIResponse {
+    let db = conn.into_inner();
+    let user = entity::user::Entity::find()
+        .filter(entity::user::Column::Id.eq(user.uid))
+        .one(db)
+        .await?
+        .unwrap();
+
+    Ok((
+        Status::Ok,
+        json!({"email": user.email, "contact_email": user.contact_email, "language": user.language, "created_at": user.created_at, "updated_at": user.updated_at }),
+    ))
+}
+
 pub fn routes() -> Vec<rocket::Route> {
-    routes![sso_github, sso_github_redirect, sso]
+    routes![sso_github, sso_github_redirect, sso, user]
 }
