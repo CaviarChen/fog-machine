@@ -109,11 +109,10 @@ fn generate_user_token(server_state: &ServerState, user_id: i32) -> String {
 #[derive(Deserialize)]
 struct GithubSSOData {
     code: String,
-    //language: Option<entity::user::Language>,
 }
 
-// create user if not exists
-// when creating the user, make sure there is a valid email without conflict.
+// try login with github sso, if there isn't a connected user, then a `registration_token` will be
+// retruned, which can be used at `/sso` to create a new user.
 #[post("/sso/github", data = "<data>")]
 async fn sso_github(
     conn: Connection<'_, Db>,
@@ -169,7 +168,7 @@ async fn sso_github(
     };
     let db = conn.into_inner();
     let user = entity::user::Entity::find()
-        .filter(entity::user::Column::GithubSsoUid.eq(github_uid))
+        .filter(entity::user::Column::GithubUid.eq(github_uid))
         .one(db)
         .await?;
     match user {
@@ -195,6 +194,24 @@ async fn sso_github_redirect(server_state: &rocket::State<ServerState>) -> Redir
         "https://github.com/login/oauth/authorize?client_id={}",
         server_state.config.github_client_id
     ))
+}
+
+#[derive(Deserialize)]
+struct SSOData {
+    registration_token: String,
+    contact_email: String,
+    language: entity::user::Language,
+}
+
+// create a new user by sso.
+#[post("/sso", data = "<data>")]
+async fn sso(
+    conn: Connection<'_, Db>,
+    server_state: &rocket::State<ServerState>,
+    state: &rocket::State<State>,
+    data: Json<SSOData>,
+) -> APIResponse {
+    panic!("TODO")
 }
 
 pub fn routes() -> Vec<rocket::Route> {

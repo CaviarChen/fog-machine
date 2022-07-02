@@ -17,14 +17,15 @@ pub enum Language {
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    #[sea_orm(column_type = "Text", unique, index)]
-    pub email: String,
+    #[sea_orm(column_type = "Text", unique, nullable, index)]
+    pub email: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
     pub password: Option<String>,
+    #[sea_orm(column_type = "Text")]
+    pub contact_email: String,
     #[sea_orm(nullable, unique, index)]
-    pub github_sso_uid: Option<i32>,
-    #[sea_orm(nullable, column_type = "Text")]
-    pub language: Option<Language>,
+    pub github_uid: Option<i32>,
+    pub language: Language,
     pub created_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }
