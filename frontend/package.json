@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "fog-machine-frontend",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -20,7 +20,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "cicheck": "prettier --check . && eslint . --ext .js,.jsx,.ts,.tsx",
+    "autofix": "prettier --write . && eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
   "eslintConfig": {
     "extends": [
@@ -39,5 +41,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "eslint": "^8.19.0",
+    "prettier": "^2.7.1"
   }
 }
