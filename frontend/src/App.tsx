@@ -1,11 +1,19 @@
 import React, { useState } from "react";
 import { Container, Panel, Content, Divider, Stack } from "rsuite";
 import EditIcon from "@rsuite/icons/Edit";
-import HistoryIcon from '@rsuite/icons/History';
+import HistoryIcon from "@rsuite/icons/History";
 import { IconProps } from "@rsuite/icons/lib/Icon";
+import GithubCorner from "./GithubCorner";
 import "./App.css";
 
-function Item(title: string, Icon: React.FC<IconProps>, description: string) {
+// TODO: use `react-router`
+
+function Item(
+  title: string,
+  Icon: React.FC<IconProps>,
+  description: string,
+  onClick: () => void
+) {
   const [hover, setHover] = useState(false);
   return (
     <Panel
@@ -13,8 +21,13 @@ function Item(title: string, Icon: React.FC<IconProps>, description: string) {
       bordered
       bodyFill
       className="main-item"
-      style={{ display: "inline-block", width: "100%", cursor: "pointer", marginTop: "2vh" }}
-      onClick={() => console.log("AAA")}
+      style={{
+        display: "inline-block",
+        width: "100%",
+        cursor: "pointer",
+        marginTop: "2vh",
+      }}
+      onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -32,28 +45,37 @@ function Item(title: string, Icon: React.FC<IconProps>, description: string) {
 
 function App() {
   return (
-    <Container>
-      <Content>
-        <div className="main-body">
-          <div className="main-title">
-            <h1>Fog Machine</h1>
-            <h4>A 3rd extension tool for the app Fog of World</h4>
-          </div>
+    <>
+      <GithubCorner />
+      <Container>
+        <Content>
+          <div className="main-body">
+            <div className="main-title">
+              <h1>Fog Machine</h1>
+              <h4>A 3rd party extension tool for the app Fog of World</h4>
+            </div>
 
-          <Divider />
-          {Item(
-            "Editor",
-            EditIcon,
-            "A tool for visualizing and editing the data of Fog of World App."
-          )}
-          {Item(
-            "Time Machine",
-            HistoryIcon,
-            "A service for backup and preserve history of the data of Fog of World App."
-          )}
-        </div>
-      </Content>
-    </Container>
+            <Divider />
+            {Item(
+              "Editor",
+              EditIcon,
+              "A tool for visualizing and editing the data of Fog of World App.",
+              () => {
+                location.href = "/editor";
+              }
+            )}
+            {Item(
+              "Time Machine",
+              HistoryIcon,
+              "A service for backup and preserve history of the data of Fog of World App.",
+              () => {
+                console.log("A");
+              }
+            )}
+          </div>
+        </Content>
+      </Container>
+    </>
   );
 }
 
