@@ -40,8 +40,6 @@ function Home() {
   return (
     <Container>
       <Content>
-        <LoginOrRegister />
-
         <div className="home-body">
           <div className="home-title">
             <h1>Fog Machine</h1>

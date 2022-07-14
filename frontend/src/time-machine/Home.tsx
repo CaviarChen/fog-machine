@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import GithubIcon from "@rsuite/icons/legacy/Github";
 import {
@@ -21,19 +21,21 @@ type LoginStatus = {
 };
 
 function Home() {
-  const [loginStatus, setLoginStatus] = useState<LoginStatus | null>(null);
+  const [loginStatus, setLoginStatus] = useState<LoginStatus>({
+    loading: true,
+    loggedIn: false,
+  });
 
-  const init = async () => {
-    if (!loginStatus) {
+  useEffect(() => {
+    (async () => {
       const userInfo = await Api.getUserInfo();
       if (userInfo) {
         setLoginStatus({ loading: false, loggedIn: true });
       } else {
         setLoginStatus({ loading: false, loggedIn: false });
       }
-    }
-  };
-  init();
+    })();
+  }, []);
 
   const renderContent = () => {
     if (!loginStatus || loginStatus.loading) {
@@ -70,7 +72,6 @@ function Home() {
   return (
     <Container>
       <Content>
-        let [searchParams, setSearchParams] = useSearchParams();
         <div className="time-machine-body">
           <Breadcrumb
             style={{ marginTop: "5vh", marginBottom: "0", fontSize: "19px" }}
