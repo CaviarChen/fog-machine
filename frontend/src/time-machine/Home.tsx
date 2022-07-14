@@ -26,6 +26,8 @@ type RegistrationState = {
   defaultEmail?: string;
 };
 
+let initingLoginStatus = false;
+
 function Home() {
   const [loginStatus, setLoginStatus] = useState<LoginStatus | null>(null);
 
@@ -64,9 +66,23 @@ function Home() {
       }
     };
 
+    // The whole `initingLoginStatus` "lock" is horrible, but I don't have better idea.
+    // So in dev mode, react have this `StrictMode`, and starting from react 18, it will
+    // call all effect twice to make it easier to spot race conditions etc in dev.
+    // https://beta.reactjs.org/learn/synchronizing-with-effects#how-to-handle-the-effect-firing-twice-in-development
+    // I'm no expert in frontend / react, I think they are saying that effect should be used to fetch data which
+    // should be idempotent. Sadly that's not the case here, the github sso login is not. The sso code can only be used
+    // once. I don't have a better solution here (maybe we should open github in a new tab for sso and close it, the
+    // react app will do a long polling to wait for it?). But I think the thing I am doing now is totally safe.
+    // let's worry about this when I know react more.
     if (!loginStatus) {
-      setLoginStatus({ loading: true, loggedIn: false });
-      initLoginStatus();
+      if (!initingLoginStatus) {
+        initingLoginStatus = true;
+        setLoginStatus({ loading: true, loggedIn: false });
+        initLoginStatus().finally(() => {
+          initingLoginStatus = false;
+        });
+      }
     }
   }, [loginStatus]);
 
