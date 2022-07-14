@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import GithubIcon from "@rsuite/icons/legacy/Github";
 import {
   Button,
   Breadcrumb,
   Container,
-  Panel,
+  Form,
+  ButtonToolbar,
+  Schema,
   Content,
   Divider,
   Loader,
-  Stack,
 } from "rsuite";
 import "./Home.css";
 import Api from "./api";
@@ -20,26 +21,34 @@ type LoginStatus = {
   loggedIn: boolean;
 };
 
+type RegistrationState = {
+  registrationToken: string;
+  defaultEmail?: string;
+};
+
 function Home() {
-  const [loginStatus, setLoginStatus] = useState<LoginStatus>({
-    loading: true,
-    loggedIn: false,
-  });
+  const [loginStatus, setLoginStatus] = useState<LoginStatus | null>(null);
+
+  const [registrationState, setRegistrationState] =
+    useState<RegistrationState | null>(null);
 
   useEffect(() => {
-    (async () => {
+    const initLoginStatus = async () => {
       let userInfo = await Api.getUserInfo();
       if (!userInfo) {
         // github sso
         const githubSsoCode = sessionStorage.getItem("github-sso-code");
+        sessionStorage.removeItem("github-sso-code");
         if (githubSsoCode) {
-          sessionStorage.removeItem("github-sso-code");
           const result = await Api.githubSso(githubSsoCode);
           if (result.ok) {
             if (result.ok.login) {
               userInfo = await Api.getUserInfo();
             } else {
-              //TODO: register
+              setRegistrationState({
+                registrationToken: result.ok.registrationToken!,
+                defaultEmail: result.ok.defaultEmail,
+              });
             }
           } else {
             // TODO: error handling
@@ -53,10 +62,16 @@ function Home() {
       } else {
         setLoginStatus({ loading: false, loggedIn: false });
       }
-    })();
-  }, []);
+    };
+
+    if (!loginStatus) {
+      setLoginStatus({ loading: true, loggedIn: false });
+      initLoginStatus();
+    }
+  }, [loginStatus]);
 
   const renderContent = () => {
+    const [loading, setLoading] = useState(false);
     if (!loginStatus || loginStatus.loading) {
       return (
         <div style={{ display: "flex", height: "80vh" }}>
@@ -67,27 +82,83 @@ function Home() {
       if (loginStatus.loggedIn) {
         return <></>;
       } else {
-        return (
-          <>
-            <h3>Login</h3>
-            <div style={{ marginTop: "8vh" }}></div>
-            <div
-              style={{
-                width: "100%",
-                display: "flex",
-                justifyContent: "center",
-              }}
-            >
-              <Button
-                onClick={() => {
-                  location.href = Api.backendUrl + "user/sso/github";
+        if (registrationState) {
+          const handleSubmit = async (
+            checkStatus: boolean,
+            event: any // eslint-disable-line @typescript-eslint/no-explicit-any
+          ) => {
+            setLoading(true);
+            if (checkStatus) {
+              const contactEmail: string = event.target["contact-email"].value;
+              // TODO: handle `language`
+              const result = await Api.register(
+                registrationState.registrationToken,
+                contactEmail,
+                "en-us"
+              );
+              if (result.ok == "ok") {
+                // re-init loginStatus
+                setLoginStatus(null);
+              } else {
+                // TODO: handle error
+                console.error(result);
+              }
+            }
+            setLoading(false);
+          };
+
+          return (
+            <>
+              <h3>Register</h3>
+              <div style={{ marginTop: "2vh" }}></div>
+
+              <Form fluid onSubmit={handleSubmit}>
+                <Form.Group>
+                  <Form.ControlLabel>Contact Email</Form.ControlLabel>
+                  <Form.Control
+                    name="contact-email"
+                    rule={Schema.Types.StringType()
+                      .isRequired("This field is required.")
+                      .isEmail("Please enter a valid email address.")}
+                  />
+                </Form.Group>
+                <Form.Group>
+                  <ButtonToolbar style={{ float: "right" }}>
+                    <Button
+                      appearance="primary"
+                      type="submit"
+                      loading={loading}
+                    >
+                      Submit
+                    </Button>
+                  </ButtonToolbar>
+                </Form.Group>
+              </Form>
+            </>
+          );
+        } else {
+          return (
+            <>
+              <h3>Login</h3>
+              <div style={{ marginTop: "8vh" }}></div>
+              <div
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "center",
                 }}
               >
-                <GithubIcon style={{ fontSize: "2em" }} /> Sign in with Github
-              </Button>
-            </div>
-          </>
-        );
+                <Button
+                  onClick={() => {
+                    location.href = Api.backendUrl + "user/sso/github";
+                  }}
+                >
+                  <GithubIcon style={{ fontSize: "2em" }} /> Sign in with Github
+                </Button>
+              </div>
+            </>
+          );
+        }
       }
     }
   };

@@ -1,5 +1,8 @@
-import axios from 'axios';
+// TODO: our api is not camelcase, let's do this first before I figured out what's the right way to solve this
 // TODO: type safe?
+/* eslint-disable camelcase, @typescript-eslint/no-explicit-any */
+
+import axios from "axios";
 
 // I really want ADT x2
 type Ok<T> = {
@@ -22,19 +25,18 @@ type UnknownError = {
 
 type Result<T> = Ok<T> | Error | UnknownError;
 
-type UserInfo =
-  { "language": "zh-cn" | "en-us" }
-
+type UserInfo = { language: "zh-cn" | "en-us" };
 
 type GithubSsoResponse = {
   login: boolean;
   token?: string;
-  default_email?: string;
-  registration_token?: string;
+  defaultEmail?: string;
+  registrationToken?: string;
 };
 
 export default class Api {
-  public static readonly backendUrl = process.env.REACT_APP_BACKEND_URL + "/api/v1/";
+  public static readonly backendUrl =
+    process.env.REACT_APP_BACKEND_URL + "/api/v1/";
   private static readonly tokenKey = "user-token";
 
   private static getToken(): string | null {
@@ -61,11 +63,11 @@ export default class Api {
         return null;
       }
       const { data, status } = await axios.get<UserInfo>(
-        this.backendUrl + 'user',
+        this.backendUrl + "user",
         {
           headers: {
-            'Authorization': 'Bearer ' + token,
-          }
+            Authorization: "Bearer " + token,
+          },
         }
       );
       const _ = status;
@@ -75,19 +77,57 @@ export default class Api {
     }
   }
 
-  public static async githubSso(code: string): Promise<Result<GithubSsoResponse>> {
+  public static async githubSso(
+    code: string
+  ): Promise<Result<GithubSsoResponse>> {
     try {
-      const { data, status } = await axios.post<GithubSsoResponse>(
-        this.backendUrl + 'user/sso/github',
+      const { data: rawData, status: _ } = await axios.post(
+        this.backendUrl + "user/sso/github",
         { code: code },
         {}
       );
-      const _ = status;
+      const data = {
+        login: rawData.login,
+        token: rawData.token,
+        defaultEmail: rawData.default_email,
+        registrationToken: rawData.registration_token,
+      };
+
       if (data.login && data.token) {
         // TODO: only put the token to session storage if the user doesn't want to keep logged in
         localStorage.setItem(this.tokenKey, data.token);
       }
       return { ok: data };
+    } catch (error: any) {
+      const status = error.response?.status;
+      const knownError = error.response?.data?.error;
+      if (status && knownError) {
+        return { error: [status, knownError] };
+      } else {
+        return { unknownError: String(error) };
+      }
+    }
+  }
+
+  public static async register(
+    registrationToken: string,
+    contactEmail: string,
+    language: "zh-cn" | "en-us"
+  ): Promise<Result<"ok">> {
+    try {
+      const { data: rawData, status: _ } = await axios.post(
+        this.backendUrl + "user/sso",
+        {
+          registration_token: registrationToken,
+          contact_email: contactEmail,
+          language: language,
+        },
+        {}
+      );
+
+      // TODO: only put the token to session storage if the user doesn't want to keep logged in
+      localStorage.setItem(this.tokenKey, rawData.token);
+      return { ok: "ok" };
     } catch (error: any) {
       const status = error.response?.status;
       const knownError = error.response?.data?.error;

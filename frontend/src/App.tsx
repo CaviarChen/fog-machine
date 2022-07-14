@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { Routes, Route, Link, Navigate, useSearchParams } from "react-router-dom";
+import { Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import GithubCorner from "./GithubCorner";
 import Home from "./Home";
 import TimeMachineHome from "./time-machine/Home";
@@ -8,7 +7,7 @@ function GithubSsoRedirect() {
   const [searchParams, _] = useSearchParams();
   // this is ugly
   sessionStorage.setItem("github-sso-code", searchParams.get("code") || "");
-  return <Navigate to="/time-machine" replace />
+  return <Navigate to="/time-machine" replace />;
 }
 
 function App() {
