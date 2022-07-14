@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
 import GithubIcon from "@rsuite/icons/legacy/Github";
 import {
   Button,
@@ -28,7 +28,26 @@ function Home() {
 
   useEffect(() => {
     (async () => {
-      const userInfo = await Api.getUserInfo();
+      let userInfo = await Api.getUserInfo();
+      if (!userInfo) {
+        // github sso
+        const githubSsoCode = sessionStorage.getItem("github-sso-code");
+        if (githubSsoCode) {
+          sessionStorage.removeItem("github-sso-code");
+          const result = await Api.githubSso(githubSsoCode);
+          if (result.ok) {
+            if (result.ok.login) {
+              userInfo = await Api.getUserInfo();
+            } else {
+              //TODO: register
+            }
+          } else {
+            // TODO: error handling
+            console.log("ERROR", result);
+          }
+        }
+      }
+
       if (userInfo) {
         setLoginStatus({ loading: false, loggedIn: true });
       } else {
@@ -59,7 +78,11 @@ function Home() {
                 justifyContent: "center",
               }}
             >
-              <Button>
+              <Button
+                onClick={() => {
+                  location.href = Api.backendUrl + "user/sso/github";
+                }}
+              >
                 <GithubIcon style={{ fontSize: "2em" }} /> Sign in with Github
               </Button>
             </div>
@@ -69,6 +92,8 @@ function Home() {
     }
   };
 
+  const navigate = useNavigate();
+
   return (
     <Container>
       <Content>
@@ -76,10 +101,14 @@ function Home() {
           <Breadcrumb
             style={{ marginTop: "5vh", marginBottom: "0", fontSize: "19px" }}
           >
-            {/* TODO: `Link` below is causing warning, not sure what's the right way to do this */}
-            <Link to="/">
-              <Breadcrumb.Item href="/">Fog Machine</Breadcrumb.Item>
-            </Link>
+            <Breadcrumb.Item
+              onClick={() => {
+                navigate("/", { replace: false });
+              }}
+              href="/"
+            >
+              Fog Machine
+            </Breadcrumb.Item>
             <Breadcrumb.Item active>Time Machine</Breadcrumb.Item>
           </Breadcrumb>
 
