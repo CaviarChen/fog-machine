@@ -9,6 +9,7 @@ use rocket::http::Status;
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
 use rocket::{Build, Rocket};
+use rocket_cors::AllowedOrigins;
 use sea_orm_rocket::Database;
 use sha2::Sha256;
 use std::error::Error;
@@ -30,6 +31,9 @@ pub struct Config {
 
     #[envconfig(from = "JWT_SECRET")]
     pub jwt_secret: String,
+
+    #[envconfig(from = "CORS_ALLOWED_ORIGINS")]
+    pub cors_allowed_origins: String,
 }
 
 pub struct ServerState {
@@ -94,10 +98,25 @@ fn rocket() -> _ {
         },
     ));
 
+    let allowed_origins = if config.cors_allowed_origins == "*" {
+        AllowedOrigins::All
+    } else {
+        let exact: Vec<&str> = (&config.cors_allowed_origins).split(',').collect();
+        AllowedOrigins::some_exact(&exact)
+    };
+
+    let cors = rocket_cors::CorsOptions {
+        allowed_origins,
+        ..Default::default()
+    }
+    .to_cors()
+    .unwrap();
+
     let server_state = ServerState::from_config(config);
     rocket::custom(figment)
         .attach(Db::init())
         .attach(AdHoc::try_on_ignite("Migrations", run_migrations))
+        .attach(cors)
         .manage(server_state)
         // user handler
         .manage(user_handler::State::create())
