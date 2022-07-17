@@ -56,8 +56,8 @@ fn generate_user_token(server_state: &ServerState, user_id: i64) -> String {
     return jwt_data.sign_with_key(&server_state.jwt_key).unwrap();
 }
 
-struct User {
-    uid: i64,
+pub struct User {
+    pub uid: i64,
 }
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for User {
