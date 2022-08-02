@@ -1,4 +1,3 @@
-use crate::data_fetcher::SnapshotResult::Locked;
 use crate::file_storage;
 use crate::limit;
 use crate::user_handler::User;
@@ -84,9 +83,6 @@ mod tests {
     }
 }
 
-pub enum Source {
-    OneDrive { share_url: String },
-}
 pub enum ValidationError {
     InvalidShare,
     InvalidFolderStructure,
@@ -167,7 +163,7 @@ pub async fn snapshot(
             for child in resp["value"].as_array().ok_or("invalid api response")? {
                 let name = child["name"].as_str().ok_or("invalid api response")?;
                 if name == "FoW-Sync-Lock" {
-                    return Ok(Locked);
+                    return Ok(SnapshotResult::Locked);
                 }
                 if child["file"].is_null() {
                     logs.push(format!("unexpected folder: {}", name));

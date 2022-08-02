@@ -76,6 +76,7 @@ where
 }
 
 mod user_handler;
+mod snapshot_task_handler;
 
 async fn run_migrations(rocket: Rocket<Build>) -> fairing::Result {
     let conn = &Db::fetch(&rocket).unwrap().conn;
@@ -121,4 +122,5 @@ fn rocket() -> _ {
         // user handler
         .manage(user_handler::State::create())
         .mount("/api/v1/user", user_handler::routes())
+        .mount("/api/v1/snapshot_task", snapshot_task_handler::routes())
 }
