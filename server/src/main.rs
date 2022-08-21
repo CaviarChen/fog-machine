@@ -51,7 +51,7 @@ pub struct ServerState {
 impl ServerState {
     pub fn from_config(config: Config) -> Self {
         // TODO: move this to user handler state
-        let jwt_key = Hmac::new_from_slice(&config.jwt_secret.as_bytes()).unwrap();
+        let jwt_key = Hmac::new_from_slice(config.jwt_secret.as_bytes()).unwrap();
         ServerState { config, jwt_key }
     }
 }

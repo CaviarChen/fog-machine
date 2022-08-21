@@ -2,7 +2,6 @@ use crate::pool::Db;
 use crate::user_handler::PendingRegistration::Github;
 use crate::{APIResponse, InternalError, ServerState};
 use anyhow::anyhow;
-use chrono;
 use entity::sea_orm;
 use jwt::SignWithKey;
 use rocket::http::Status;
@@ -53,7 +52,7 @@ fn generate_user_token(server_state: &ServerState, user_id: i64) -> String {
         sub: user_id,
         exp,
     };
-    return jwt_data.sign_with_key(&server_state.jwt_key).unwrap();
+    jwt_data.sign_with_key(&server_state.jwt_key).unwrap()
 }
 
 pub struct User {
@@ -143,7 +142,7 @@ impl State {
 
     fn get_pending_registration(&self, token: &str) -> Option<PendingRegistration> {
         let pending_registrations = self.pending_registrations.lock().unwrap();
-        pending_registrations.get(token).map(|x| x.clone())
+        pending_registrations.get(token).cloned()
     }
 }
 
