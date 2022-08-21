@@ -26,7 +26,8 @@ sha2 = "0.10"
 jwt = "0.16"
 rand = "0.8.5"
 email_address = "0.2.1"
-rocket_cors = "0.6.0-alpha1"
+# Change back to crates.io version when https://github.com/lawliet89/rocket_cors/pull/108 is published
+rocket_cors = { git = "https://github.com/lawliet89/rocket_cors.git", rev = "54fae070"  }
 base64 = "0.13.0"
 byte-unit = "4.0.14"
 tempfile = "3.3.0"
