@@ -42,7 +42,7 @@ impl SyncFileStorage {
             .join("sync_files")
     }
 
-    pub fn init(data_base_dir: &str) -> io::Result<SyncFileStorage> {
+    pub fn _init(data_base_dir: &str) -> io::Result<SyncFileStorage> {
         let data_base_dir = String::from(data_base_dir);
         let tmp_dir = Path::new(&data_base_dir).join("tmp");
         if tmp_dir.exists() {

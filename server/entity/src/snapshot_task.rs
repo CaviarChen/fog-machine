@@ -16,12 +16,12 @@ pub enum Status {
     Stopped,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 pub enum Source {
     OneDrive { share_url: String },
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, DeriveEntityModel)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
 #[sea_orm(table_name = "snapshot_tasks")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]

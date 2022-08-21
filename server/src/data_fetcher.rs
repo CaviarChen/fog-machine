@@ -1,3 +1,6 @@
+// TODO: remove this
+#![allow(dead_code)]
+
 use crate::file_storage;
 use crate::limit;
 use crate::user_handler::User;
