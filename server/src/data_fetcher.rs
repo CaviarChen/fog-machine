@@ -58,7 +58,7 @@ impl SyncFile {
         for c in id_part.chars() {
             let v = SyncFile::FILENAME_MASK1
                 .find(c)
-                .ok_or(anyhow!("invalid filename"))? as u32;
+                .ok_or_else(|| anyhow!("invalid filename"))? as u32;
             id = id * 10 + v;
         }
         if SyncFile::id_to_filename(id) == filename {
@@ -103,14 +103,13 @@ async fn onedrive_find_sync_folder_link(url: &str) -> Result<Option<String>, Err
         .await?;
     for child in resp["value"]
         .as_array()
-        .ok_or(anyhow!("invalid api response"))?
+        .ok_or_else(|| anyhow!("invalid api response"))?
     {
-        match child["name"].as_str() {
-            Some("Sync") => return Ok(child["webUrl"].as_str().map(String::from)),
-            _ => (),
+        if let Some("Sync") = child["name"].as_str() {
+            return Ok(child["webUrl"].as_str().map(String::from));
         }
     }
-    return Ok(None);
+    Ok(None)
 }
 
 pub async fn validate(source: &Source) -> Result<Result<(), ValidationError>, Error> {
@@ -126,8 +125,8 @@ pub async fn validate(source: &Source) -> Result<Result<(), ValidationError>, Er
                 _ => return Ok(Err(ValidationError::InvalidFolderStructure)),
             }
             match onedrive_find_sync_folder_link(share_url).await? {
-                Some(_) => return Ok(Ok(())),
-                None => return Ok(Err(ValidationError::InvalidFolderStructure)),
+                Some(_) => Ok(Ok(())),
+                None => Ok(Err(ValidationError::InvalidFolderStructure)),
             }
         }
     }
@@ -153,7 +152,7 @@ pub async fn snapshot(
             // we trust the hash provided by onedrive for deduping, but we recompute it after download.
             let link_for_sync_folder = onedrive_find_sync_folder_link(share_url)
                 .await?
-                .ok_or(anyhow!("missing sync folder"))?;
+                .ok_or_else(|| anyhow!("missing sync folder"))?;
             let resp = reqwest::get(onedrive_api_of_link(&link_for_sync_folder) + "/root/children")
                 .await?
                 .error_for_status()?
@@ -165,11 +164,11 @@ pub async fn snapshot(
             let mut total_size: u64 = 0;
             for child in resp["value"]
                 .as_array()
-                .ok_or(anyhow!("invalid api response"))?
+                .ok_or_else(|| anyhow!("invalid api response"))?
             {
                 let name = child["name"]
                     .as_str()
-                    .ok_or(anyhow!("invalid api response"))?;
+                    .ok_or_else(|| anyhow!("invalid api response"))?;
                 if name == "FoW-Sync-Lock" {
                     return Ok(SnapshotResult::Locked);
                 }
@@ -178,14 +177,14 @@ pub async fn snapshot(
                 } else {
                     let sha256_lowercase = child["file"]["hashes"]["sha256Hash"]
                         .as_str()
-                        .ok_or(anyhow!("invalid api response"))?
+                        .ok_or_else(|| anyhow!("invalid api response"))?
                         .to_lowercase();
                     let download_url = child["@content.downloadUrl"]
                         .as_str()
-                        .ok_or(anyhow!("invalid api response"))?;
+                        .ok_or_else(|| anyhow!("invalid api response"))?;
                     let file_size = child["size"]
                         .as_i64()
-                        .ok_or(anyhow!("invalid api response"))?;
+                        .ok_or_else(|| anyhow!("invalid api response"))?;
                     match SyncFile::create_from_filename(name, &sha256_lowercase) {
                         Err(_) => {
                             logs.push(format!("unexpected file: {}", name));
@@ -232,11 +231,11 @@ pub async fn snapshot(
             for (sync_file, _) in files {
                 sync_files.push(sync_file);
             }
-            return Ok(SnapshotResult::Ok {
+            Ok(SnapshotResult::Ok {
                 sync_files,
                 logs,
                 time,
-            });
+            })
         }
     }
 }

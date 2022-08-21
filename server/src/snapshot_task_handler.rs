@@ -42,7 +42,7 @@ async fn validate_input(
     match source {
         None => (),
         Some(source) => {
-            let res = data_fetcher::validate(&source).await?;
+            let res = data_fetcher::validate(source).await?;
             match res {
                 Ok(()) => (),
                 Err(data_fetcher::ValidationError::InvalidShare) => {

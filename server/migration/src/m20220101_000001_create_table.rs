@@ -1,4 +1,3 @@
-use entity;
 use sea_orm::schema::Schema;
 use sea_orm::DbBackend;
 use sea_orm_migration::prelude::*;
