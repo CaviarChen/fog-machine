@@ -1,8 +1,6 @@
 use sea_orm::{DbBackend, Schema};
 use sea_schema::migration::{sea_query::*, *};
 
-use entity;
-
 pub struct Migration;
 
 impl MigrationName for Migration {
