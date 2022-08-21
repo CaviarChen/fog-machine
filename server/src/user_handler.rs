@@ -152,10 +152,6 @@ struct GithubSSOData {
     code: String,
 }
 
-fn foo() -> Result<(), Box<dyn std::error::Error>> {
-    Err("aaa".into())
-}
-
 // try login with github sso, if there isn't a connected user, then a `registration_token` will be
 // retruned, which can be used at `/sso` to create a new user.
 #[post("/sso/github", data = "<data>")]
