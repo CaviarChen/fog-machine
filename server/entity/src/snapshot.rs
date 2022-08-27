@@ -1,32 +1,27 @@
 use sea_orm::entity::prelude::*;
+use sea_orm::sea_query;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+// Sadly currently sea-orm doesn't array etc, so we save is as json
+// u32: SyncFile id, String: sha256
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+pub struct SyncFiles(pub HashMap<u32, String>);
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "snapshots")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i32,
-    pub user_id: i32,
+    pub id: i64,
+    #[sea_orm(indexed)]
+    pub user_id: i64,
+    #[sea_orm(indexed)]
     pub timestamp: DateTimeUtc,
-    // TODO
-    // pub files: Vec<String>,
+    pub sync_files: SyncFiles,
+    // TODO: record level? area?
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::user::Entity",
-        from = "Column::UserId",
-        to = "super::user::Column::Id"
-    )]
-    User,
-    #[sea_orm(has_many = "super::snapshot_share::Entity")]
-    SnapshotShare,
-}
-
-impl Related<super::user::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::User.def()
-    }
-}
+pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 // NOTE: sea_orm doesn't seem to support `u16`
 
 #[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
-#[sea_orm(rs_type = "i16", db_type = "Integer")]
+#[sea_orm(rs_type = "i32", db_type = "Integer")]
 /// `Paused` is requested by human and `Stopped` is caused by things like too many errors.
 pub enum Status {
     #[sea_orm(num_value = 0)]
@@ -26,6 +26,7 @@ pub enum Source {
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub user_id: i64,
+    #[sea_orm(indexed)]
     pub status: Status,
     // unit: mintue
     pub interval: i16,
@@ -38,24 +39,12 @@ pub struct Model {
     //    It is very likely that users have some patterns about when they sync data from their devices to the cloud.
     // 2. Sycning (and maybe retrying) takes a while, so the current naive approach will make the schedule shift a bit
     //    every single time.
+    #[sea_orm(indexed)]
     pub next_sync: DateTimeUtc,
-    pub last_error_count: i16,
+    pub error_count: i16,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::user::Entity",
-        from = "Column::UserId",
-        to = "super::user::Column::Id"
-    )]
-    User,
-}
-
-impl Related<super::user::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::User.def()
-    }
-}
+pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}

@@ -17,13 +17,13 @@ pub enum Language {
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    #[sea_orm(column_type = "Text", unique, nullable, index)]
+    #[sea_orm(column_type = "Text", unique, nullable, indexed)]
     pub email: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
     pub password: Option<String>,
     #[sea_orm(column_type = "Text")]
     pub contact_email: String,
-    #[sea_orm(nullable, unique, index)]
+    #[sea_orm(nullable, unique, indexed)]
     pub github_uid: Option<i64>,
     pub language: Language,
     pub created_at: DateTimeUtc,
@@ -31,13 +31,6 @@ pub struct Model {
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {
-    #[sea_orm(has_one = "super::snapshot_task::Entity")]
-    SnapshotTask,
-    #[sea_orm(has_many = "super::snapshot::Entity")]
-    Snapshot,
-    #[sea_orm(has_many = "super::snapshot_log::Entity")]
-    SnapshotLog,
-}
+pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}

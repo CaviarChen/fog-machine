@@ -20,20 +20,10 @@ impl MigrationTrait for Migration {
             .await?;
         manager
             .create_table(schema.create_table_from_entity(entity::snapshot_task::Entity))
-            .await?;
-        manager
-            .create_table(schema.create_table_from_entity(entity::snapshot_share::Entity))
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager
-            .drop_table(
-                Table::drop()
-                    .table(entity::snapshot_share::Entity)
-                    .to_owned(),
-            )
-            .await?;
         manager
             .drop_table(
                 Table::drop()
