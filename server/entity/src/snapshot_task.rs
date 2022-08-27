@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 // NOTE: sea_orm doesn't seem to support `u16`
 
 #[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
-#[sea_orm(rs_type = "i32", db_type = "Integer")]
+#[sea_orm(rs_type = "i16", db_type = "TinyInteger")]
 /// `Paused` is requested by human and `Stopped` is caused by things like too many errors.
 pub enum Status {
     #[sea_orm(num_value = 0)]
