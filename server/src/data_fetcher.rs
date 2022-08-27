@@ -1,9 +1,12 @@
-use crate::data_fetcher::SnapshotResult::Locked;
+// TODO: remove this
+#![allow(dead_code)]
+
 use crate::file_storage;
 use crate::limit;
 use crate::user_handler::User;
+use anyhow::Error;
 use chrono::prelude::*;
-use std::error::Error;
+use entity::snapshot_task::Source;
 
 #[derive(Debug)]
 pub struct SyncFile {
@@ -39,12 +42,12 @@ impl SyncFile {
         prefix.to_owned() + &id_part + &suffix
     }
 
-    pub fn create_from_id(id: u32, sha256_lowercase: &str) -> Result<SyncFile, Box<dyn Error>> {
+    pub fn create_from_id(id: u32, sha256_lowercase: &str) -> Result<SyncFile, Error> {
         if id > 512 * 512 {
-            return Err("invalid id".into());
+            return Err(anyhow!("invalid id"));
         }
         if sha256_lowercase.chars().any(char::is_uppercase) {
-            return Err("sha256 must be lower case".into());
+            return Err(anyhow!("sha256 must be lower case"));
         }
         Ok(SyncFile {
             id,
@@ -52,20 +55,19 @@ impl SyncFile {
         })
     }
 
-    pub fn create_from_filename(
-        filename: &str,
-        sha256_lowercase: &str,
-    ) -> Result<SyncFile, Box<dyn Error>> {
+    pub fn create_from_filename(filename: &str, sha256_lowercase: &str) -> Result<SyncFile, Error> {
         let id_part = &filename[4..(filename.len() - 2)];
         let mut id: u32 = 0;
         for c in id_part.chars() {
-            let v = SyncFile::FILENAME_MASK1.find(c).ok_or("invalid filename")? as u32;
+            let v = SyncFile::FILENAME_MASK1
+                .find(c)
+                .ok_or_else(|| anyhow!("invalid filename"))? as u32;
             id = id * 10 + v;
         }
         if SyncFile::id_to_filename(id) == filename {
             SyncFile::create_from_id(id, sha256_lowercase)
         } else {
-            Err("invalid filename".into())
+            Err(anyhow!("invalid filename"))
         }
     }
 }
@@ -84,9 +86,6 @@ mod tests {
     }
 }
 
-pub enum Source {
-    OneDrive { share_url: String },
-}
 pub enum ValidationError {
     InvalidShare,
     InvalidFolderStructure,
@@ -99,22 +98,24 @@ fn onedrive_api_of_link(url: &str) -> String {
     )
 }
 
-async fn onedrive_find_sync_folder_link(url: &str) -> Result<Option<String>, Box<dyn Error>> {
+async fn onedrive_find_sync_folder_link(url: &str) -> Result<Option<String>, Error> {
     let resp = reqwest::get(onedrive_api_of_link(url) + "/root/children")
         .await?
         .error_for_status()?
         .json::<serde_json::Value>()
         .await?;
-    for child in resp["value"].as_array().ok_or("invalid api response")? {
-        match child["name"].as_str() {
-            Some("Sync") => return Ok(child["webUrl"].as_str().map(String::from)),
-            _ => (),
+    for child in resp["value"]
+        .as_array()
+        .ok_or_else(|| anyhow!("invalid api response"))?
+    {
+        if let Some("Sync") = child["name"].as_str() {
+            return Ok(child["webUrl"].as_str().map(String::from));
         }
     }
-    return Ok(None);
+    Ok(None)
 }
 
-pub async fn validate(source: &Source) -> Result<Result<(), ValidationError>, Box<dyn Error>> {
+pub async fn validate(source: &Source) -> Result<Result<(), ValidationError>, Error> {
     match source {
         Source::OneDrive { share_url } => {
             let resp = reqwest::get(onedrive_api_of_link(share_url) + "/root").await?;
@@ -127,8 +128,8 @@ pub async fn validate(source: &Source) -> Result<Result<(), ValidationError>, Bo
                 _ => return Ok(Err(ValidationError::InvalidFolderStructure)),
             }
             match onedrive_find_sync_folder_link(share_url).await? {
-                Some(_) => return Ok(Ok(())),
-                None => return Ok(Err(ValidationError::InvalidFolderStructure)),
+                Some(_) => Ok(Ok(())),
+                None => Ok(Err(ValidationError::InvalidFolderStructure)),
             }
         }
     }
@@ -148,13 +149,13 @@ pub async fn snapshot(
     mut logs: Vec<String>,
     user: &User,
     sync_file_storage: &file_storage::SyncFileStorage,
-) -> Result<SnapshotResult, Box<dyn Error>> {
+) -> Result<SnapshotResult, Error> {
     match source {
         Source::OneDrive { share_url } => {
             // we trust the hash provided by onedrive for deduping, but we recompute it after download.
             let link_for_sync_folder = onedrive_find_sync_folder_link(share_url)
                 .await?
-                .ok_or("missing sync folder")?;
+                .ok_or_else(|| anyhow!("missing sync folder"))?;
             let resp = reqwest::get(onedrive_api_of_link(&link_for_sync_folder) + "/root/children")
                 .await?
                 .error_for_status()?
@@ -164,22 +165,29 @@ pub async fn snapshot(
 
             let mut files = Vec::new();
             let mut total_size: u64 = 0;
-            for child in resp["value"].as_array().ok_or("invalid api response")? {
-                let name = child["name"].as_str().ok_or("invalid api response")?;
+            for child in resp["value"]
+                .as_array()
+                .ok_or_else(|| anyhow!("invalid api response"))?
+            {
+                let name = child["name"]
+                    .as_str()
+                    .ok_or_else(|| anyhow!("invalid api response"))?;
                 if name == "FoW-Sync-Lock" {
-                    return Ok(Locked);
+                    return Ok(SnapshotResult::Locked);
                 }
                 if child["file"].is_null() {
                     logs.push(format!("unexpected folder: {}", name));
                 } else {
                     let sha256_lowercase = child["file"]["hashes"]["sha256Hash"]
                         .as_str()
-                        .ok_or("invalid api response")?
+                        .ok_or_else(|| anyhow!("invalid api response"))?
                         .to_lowercase();
                     let download_url = child["@content.downloadUrl"]
                         .as_str()
-                        .ok_or("invalid api response")?;
-                    let file_size = child["size"].as_i64().ok_or("invalid api response")?;
+                        .ok_or_else(|| anyhow!("invalid api response"))?;
+                    let file_size = child["size"]
+                        .as_i64()
+                        .ok_or_else(|| anyhow!("invalid api response"))?;
                     match SyncFile::create_from_filename(name, &sha256_lowercase) {
                         Err(_) => {
                             logs.push(format!("unexpected file: {}", name));
@@ -193,12 +201,11 @@ pub async fn snapshot(
             }
             // validate size
             if total_size > limit::SYNC_FILE_LIMIT_PER_SNAPSHOT {
-                return Err(format!(
+                return Err(anyhow!(
                     "snapshot is too big. size: {}, limit: {}",
                     file_storage::byte_unit_to_string_hum(total_size),
                     file_storage::byte_unit_to_string_hum(limit::SYNC_FILE_LIMIT_PER_SNAPSHOT)
-                )
-                .into());
+                ));
             }
 
             // download file
@@ -227,11 +234,11 @@ pub async fn snapshot(
             for (sync_file, _) in files {
                 sync_files.push(sync_file);
             }
-            return Ok(SnapshotResult::Ok {
+            Ok(SnapshotResult::Ok {
                 sync_files,
                 logs,
                 time,
-            });
+            })
         }
     }
 }

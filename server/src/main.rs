@@ -1,5 +1,9 @@
 #[macro_use]
 extern crate rocket;
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate anyhow;
 use envconfig::Envconfig;
 use hmac::{Hmac, Mac};
 use migration::MigratorTrait;
@@ -12,10 +16,14 @@ use rocket::{Build, Rocket};
 use rocket_cors::AllowedOrigins;
 use sea_orm_rocket::Database;
 use sha2::Sha256;
-use std::error::Error;
 use std::io::Cursor;
 
+mod data_fetcher;
+mod file_storage;
+mod limit;
 mod pool;
+mod snapshot_task_handler;
+mod user_handler;
 use pool::Db;
 
 #[derive(Envconfig)]
@@ -68,14 +76,12 @@ impl<'r> Responder<'r, 'static> for InternalError {
 
 impl<E> From<E> for InternalError
 where
-    E: Error + Sync + Send + 'static,
+    E: Into<anyhow::Error>,
 {
     fn from(error: E) -> Self {
-        InternalError(anyhow::Error::from(error))
+        InternalError(error.into())
     }
 }
-
-mod user_handler;
 
 async fn run_migrations(rocket: Rocket<Build>) -> fairing::Result {
     let conn = &Db::fetch(&rocket).unwrap().conn;
@@ -121,4 +127,5 @@ fn rocket() -> _ {
         // user handler
         .manage(user_handler::State::create())
         .mount("/api/v1/user", user_handler::routes())
+        .mount("/api/v1/snapshot_task", snapshot_task_handler::routes())
 }

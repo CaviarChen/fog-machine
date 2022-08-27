@@ -4,6 +4,8 @@ use sea_orm::ConnectOptions;
 use sea_orm_rocket::{rocket::figment::Figment, Config, Database};
 use std::time::Duration;
 
+// TODO: refactor to enforce we handle transaction correctly.
+
 #[derive(Database, Debug)]
 #[database("main")]
 pub struct Db(SeaOrmPool);
