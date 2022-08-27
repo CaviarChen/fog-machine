@@ -1,5 +1,9 @@
 #[macro_use]
 extern crate rocket;
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate anyhow;
 use envconfig::Envconfig;
 use hmac::{Hmac, Mac};
 use migration::MigratorTrait;
@@ -9,12 +13,17 @@ use rocket::http::Status;
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
 use rocket::{Build, Rocket};
+use rocket_cors::AllowedOrigins;
 use sea_orm_rocket::Database;
 use sha2::Sha256;
-use std::error::Error;
 use std::io::Cursor;
 
+mod data_fetcher;
+mod file_storage;
+mod limit;
 mod pool;
+mod snapshot_task_handler;
+mod user_handler;
 use pool::Db;
 
 #[derive(Envconfig)]
@@ -30,6 +39,9 @@ pub struct Config {
 
     #[envconfig(from = "JWT_SECRET")]
     pub jwt_secret: String,
+
+    #[envconfig(from = "CORS_ALLOWED_ORIGINS")]
+    pub cors_allowed_origins: String,
 }
 
 pub struct ServerState {
@@ -39,7 +51,7 @@ pub struct ServerState {
 impl ServerState {
     pub fn from_config(config: Config) -> Self {
         // TODO: move this to user handler state
-        let jwt_key = Hmac::new_from_slice(&config.jwt_secret.as_bytes()).unwrap();
+        let jwt_key = Hmac::new_from_slice(config.jwt_secret.as_bytes()).unwrap();
         ServerState { config, jwt_key }
     }
 }
@@ -64,14 +76,12 @@ impl<'r> Responder<'r, 'static> for InternalError {
 
 impl<E> From<E> for InternalError
 where
-    E: Error + Sync + Send + 'static,
+    E: Into<anyhow::Error>,
 {
     fn from(error: E) -> Self {
-        InternalError(anyhow::Error::from(error))
+        InternalError(error.into())
     }
 }
-
-mod user_handler;
 
 async fn run_migrations(rocket: Rocket<Build>) -> fairing::Result {
     let conn = &Db::fetch(&rocket).unwrap().conn;
@@ -94,12 +104,28 @@ fn rocket() -> _ {
         },
     ));
 
+    let allowed_origins = if config.cors_allowed_origins == "*" {
+        AllowedOrigins::All
+    } else {
+        let exact: Vec<&str> = (&config.cors_allowed_origins).split(',').collect();
+        AllowedOrigins::some_exact(&exact)
+    };
+
+    let cors = rocket_cors::CorsOptions {
+        allowed_origins,
+        ..Default::default()
+    }
+    .to_cors()
+    .unwrap();
+
     let server_state = ServerState::from_config(config);
     rocket::custom(figment)
         .attach(Db::init())
         .attach(AdHoc::try_on_ignite("Migrations", run_migrations))
+        .attach(cors)
         .manage(server_state)
         // user handler
         .manage(user_handler::State::create())
         .mount("/api/v1/user", user_handler::routes())
+        .mount("/api/v1/snapshot_task", snapshot_task_handler::routes())
 }

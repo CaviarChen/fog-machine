@@ -1,21 +1,14 @@
-use sea_orm::{DbBackend, Schema};
-use sea_schema::migration::{sea_query::*, *};
+use sea_orm::schema::Schema;
+use sea_orm::DbBackend;
+use sea_orm_migration::prelude::*;
 
-use entity;
-
+#[derive(DeriveMigrationName)]
 pub struct Migration;
-
-impl MigrationName for Migration {
-    fn name(&self) -> &str {
-        "m20220101_000001_create_table"
-    }
-}
 
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        let db_postgres = DbBackend::Postgres;
-        let schema = Schema::new(db_postgres);
+        let schema = Schema::new(DbBackend::Postgres);
         manager
             .create_table(schema.create_table_from_entity(entity::user::Entity))
             .await?;

@@ -4,6 +4,8 @@ use sea_orm::ConnectOptions;
 use sea_orm_rocket::{rocket::figment::Figment, Config, Database};
 use std::time::Duration;
 
+// TODO: refactor to enforce we handle transaction correctly.
+
 #[derive(Database, Debug)]
 #[database("main")]
 pub struct Db(SeaOrmPool);
@@ -15,9 +17,9 @@ pub struct SeaOrmPool {
 
 #[async_trait]
 impl sea_orm_rocket::Pool for SeaOrmPool {
-    type Error = sea_orm::DbErr;
-
     type Connection = sea_orm::DatabaseConnection;
+
+    type Error = sea_orm::DbErr;
 
     async fn init(figment: &Figment) -> Result<Self, Self::Error> {
         let config = figment.extract::<Config>().unwrap();
