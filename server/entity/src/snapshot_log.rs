@@ -1,30 +1,21 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
-#[sea_orm(table_name = "snapshot_error_logs")]
+#[sea_orm(table_name = "snapshot_logs")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i32,
-    pub user_id: i32,
+    pub id: i64,
+    #[sea_orm(indexed)]
+    pub user_id: i64,
+    // `snapshot_id` set to None means the task failed.
+    #[sea_orm(indexed)]
+    pub snapshot_id: Option<i64>,
     pub timestamp: DateTimeUtc,
     #[sea_orm(column_type = "Text", nullable)]
-    pub detail: Option<String>,
+    pub details: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::user::Entity",
-        from = "Column::UserId",
-        to = "super::user::Column::Id"
-    )]
-    User,
-}
-
-impl Related<super::user::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::User.def()
-    }
-}
+pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}

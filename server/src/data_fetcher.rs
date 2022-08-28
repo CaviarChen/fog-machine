@@ -1,12 +1,12 @@
-// TODO: remove this
-#![allow(dead_code)]
-
 use crate::file_storage;
 use crate::limit;
 use crate::user_handler::User;
 use anyhow::Error;
 use chrono::prelude::*;
+use entity::snapshot::SyncFiles;
 use entity::snapshot_task::Source;
+use std::collections::HashMap;
+use tokio::time::sleep;
 
 #[derive(Debug)]
 pub struct SyncFile {
@@ -135,21 +135,17 @@ pub async fn validate(source: &Source) -> Result<Result<(), ValidationError>, Er
     }
 }
 
-pub enum SnapshotResult {
-    Ok {
-        sync_files: Vec<SyncFile>,
-        logs: Vec<String>,
-        time: DateTime<Utc>,
-    },
+enum SnapshotResultInternal {
+    Ok(SyncFiles, DateTime<Utc>),
     Locked,
 }
 
-pub async fn snapshot(
+async fn snapshot_internal(
     source: &Source,
-    mut logs: Vec<String>,
+    logs: &mut Vec<String>,
     user: &User,
     sync_file_storage: &file_storage::SyncFileStorage,
-) -> Result<SnapshotResult, Error> {
+) -> Result<SnapshotResultInternal, Error> {
     match source {
         Source::OneDrive { share_url } => {
             // we trust the hash provided by onedrive for deduping, but we recompute it after download.
@@ -173,7 +169,7 @@ pub async fn snapshot(
                     .as_str()
                     .ok_or_else(|| anyhow!("invalid api response"))?;
                 if name == "FoW-Sync-Lock" {
-                    return Ok(SnapshotResult::Locked);
+                    return Ok(SnapshotResultInternal::Locked);
                 }
                 if child["file"].is_null() {
                     logs.push(format!("unexpected folder: {}", name));
@@ -230,15 +226,53 @@ pub async fn snapshot(
             // save files
             sync_file_storage.add_files(user, &downloaded[..])?;
 
-            let mut sync_files = Vec::new();
+            let mut sync_files: HashMap<u32, String> = HashMap::new();
             for (sync_file, _) in files {
-                sync_files.push(sync_file);
+                sync_files.insert(sync_file.id, sync_file.sha256);
             }
-            Ok(SnapshotResult::Ok {
-                sync_files,
-                logs,
-                time,
-            })
+            Ok(SnapshotResultInternal::Ok(SyncFiles(sync_files), time))
         }
+    }
+}
+
+pub struct SnapshotResult {
+    pub result: Result<(SyncFiles, DateTime<Utc>), ()>,
+    pub logs: Vec<String>,
+}
+
+pub async fn snapshot(
+    source: &Source,
+    user: &User,
+    sync_file_storage: &file_storage::SyncFileStorage,
+) -> SnapshotResult {
+    let mut logs = Vec::new();
+
+    for n in 1..=3 {
+        match snapshot_internal(source, &mut logs, user, sync_file_storage).await {
+            Ok(SnapshotResultInternal::Ok(sync_files, time)) => {
+                return SnapshotResult {
+                    result: Ok((sync_files, time)),
+                    logs,
+                }
+            }
+            Ok(SnapshotResultInternal::Locked) => {
+                if n < 3 {
+                    logs.push("Locked, trying again in 1 min.".into());
+                    sleep(std::time::Duration::from_secs(60)).await;
+                }
+            }
+            Err(error) => {
+                logs.push(error.to_string());
+                return SnapshotResult {
+                    result: Err(()),
+                    logs,
+                };
+            }
+        }
+    }
+    logs.push("Still locked, failed to sync.".into());
+    SnapshotResult {
+        result: Err(()),
+        logs,
     }
 }

@@ -23,7 +23,9 @@ mod file_storage;
 mod limit;
 mod pool;
 mod snapshot_task_handler;
+mod task_runner;
 mod user_handler;
+
 use pool::Db;
 
 #[derive(Envconfig)]
@@ -42,6 +44,9 @@ pub struct Config {
 
     #[envconfig(from = "CORS_ALLOWED_ORIGINS")]
     pub cors_allowed_origins: String,
+
+    #[envconfig(from = "DATA_BASE_DIR")]
+    pub data_base_dir: String,
 }
 
 pub struct ServerState {
@@ -118,11 +123,16 @@ fn rocket() -> _ {
     .to_cors()
     .unwrap();
 
+    let file_storage = file_storage::SyncFileStorage::init(&config.data_base_dir).unwrap();
+
     let server_state = ServerState::from_config(config);
     rocket::custom(figment)
         .attach(Db::init())
         .attach(AdHoc::try_on_ignite("Migrations", run_migrations))
         .attach(cors)
+        .attach(AdHoc::on_liftoff("Task Runner", |rocket| {
+            Box::pin(async move { task_runner::run(rocket, file_storage).await })
+        }))
         .manage(server_state)
         // user handler
         .manage(user_handler::State::create())

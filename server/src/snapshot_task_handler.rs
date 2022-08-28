@@ -76,7 +76,7 @@ async fn create(conn: Connection<'_, Db>, user: User, data: Json<CreateData>) ->
         interval: Set(data.interval),
         source: Set(data.source.clone()),
         next_sync: Set(Utc::now()),
-        last_error_count: Set(0),
+        error_count: Set(0),
     };
 
     let db = conn.into_inner();
@@ -132,7 +132,7 @@ async fn update(conn: Connection<'_, Db>, user: User, data: Json<UpdateData>) ->
             let mut task_mut: entity::snapshot_task::ActiveModel = task.into();
             if need_reset {
                 task_mut.next_sync = Set(Utc::now());
-                task_mut.last_error_count = Set(0);
+                task_mut.error_count = Set(0);
             }
             match data.status {
                 None => (),
