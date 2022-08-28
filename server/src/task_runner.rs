@@ -59,7 +59,7 @@ pub async fn do_one_task(
         }
         Some(task) => {
             let user = user_handler::User { uid: task.user_id };
-            let sanpshot_result =
+            let snapshot_result =
                 data_fetcher::snapshot(&task.source, &user, sync_file_storage).await;
 
             let txn = conn.begin().await?;
@@ -75,7 +75,7 @@ pub async fn do_one_task(
                     if current_task.source != task.source {
                         false
                     } else {
-                        let snapshot_id = match sanpshot_result.result {
+                        let snapshot_id = match snapshot_result.result {
                             Err(()) => {
                                 let error_count = current_task.error_count + 1;
                                 snapshot_task::Entity::update(snapshot_task::ActiveModel {
@@ -120,7 +120,7 @@ pub async fn do_one_task(
                             user_id: Set(task.user_id),
                             snapshot_id: Set(snapshot_id),
                             timestamp: Set(Utc::now()),
-                            details: Set(sanpshot_result.logs.join("\n")),
+                            details: Set(snapshot_result.logs.join("\n")),
                         }
                         .insert(&txn)
                         .await?;
