@@ -128,7 +128,13 @@ function Home() {
               <h3>Register</h3>
               <div style={{ marginTop: "2vh" }}></div>
 
-              <Form fluid onSubmit={handleSubmit} formDefaultValue={{ "contact-email": registrationState.defaultEmail }}>
+              <Form
+                fluid
+                onSubmit={handleSubmit}
+                formDefaultValue={{
+                  "contact-email": registrationState.defaultEmail,
+                }}
+              >
                 <Form.Group>
                   <Form.ControlLabel>Contact Email</Form.ControlLabel>
                   <Form.Control
