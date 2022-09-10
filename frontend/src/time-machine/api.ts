@@ -1,8 +1,8 @@
-// TODO: our api is not camelcase, let's do this first before I figured out what's the right way to solve this
 // TODO: type safe?
-/* eslint-disable camelcase, @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import axios from "axios";
+import lodash from "lodash";
 
 // I really want ADT x2
 type Ok<T> = {
@@ -33,6 +33,18 @@ type GithubSsoResponse = {
   defaultEmail?: string;
   registrationToken?: string;
 };
+
+function snakeToCamel(x: any): any {
+  return lodash.mapKeys(x, function (_value, key) {
+    return lodash.camelCase(key);
+  });
+}
+
+function camelToSnake(x: any): any {
+  return lodash.mapKeys(x, function (_value, key) {
+    return lodash.snakeCase(key);
+  });
+}
 
 export default class Api {
   public static readonly backendUrl =
@@ -86,12 +98,7 @@ export default class Api {
         { code: code },
         {}
       );
-      const data = {
-        login: rawData.login,
-        token: rawData.token,
-        defaultEmail: rawData.default_email,
-        registrationToken: rawData.registration_token,
-      };
+      const data = snakeToCamel(rawData);
 
       if (data.login && data.token) {
         // TODO: only put the token to session storage if the user doesn't want to keep logged in
@@ -117,11 +124,11 @@ export default class Api {
     try {
       const { data: rawData, status: _ } = await axios.post(
         this.backendUrl + "user/sso",
-        {
-          registration_token: registrationToken,
-          contact_email: contactEmail,
-          language: language,
-        },
+        camelToSnake({
+          registrationToken,
+          contactEmail,
+          language,
+        }),
         {}
       );
 
