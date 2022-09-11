@@ -6,21 +6,21 @@ import lodash from "lodash";
 
 // I really want ADT x2
 type Ok<T> = {
-  status: number
+  status: number;
   ok: T;
   error?: never;
   unknownError?: never;
 };
 
 type Error = {
-  status: number
+  status: number;
   ok?: never;
   error: string;
   unknownError?: never;
 };
 
 type UnknownError = {
-  status: number | null
+  status: number | null;
   ok?: never;
   error?: never;
   unknownError: string;
@@ -171,7 +171,9 @@ export default class Api {
     if (result.ok) {
       result.ok = snakeToCamel(result.ok);
       if (result.ok.source["OneDrive"]) {
-        result.ok.source["OneDrive"] = snakeToCamel(result.ok.source["OneDrive"]);
+        result.ok.source["OneDrive"] = snakeToCamel(
+          result.ok.source["OneDrive"]
+        );
       }
     } else if (result.status == 404) {
       result = { ok: null, status: 404 };
@@ -201,7 +203,7 @@ export default class Api {
 
     const result = await this.requestApi("snapshot_task", "patch", true, data);
     if (result.ok) {
-      result.ok = "ok"
+      result.ok = "ok";
     }
     return result;
   }
