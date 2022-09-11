@@ -1,6 +1,8 @@
 // TODO: type safe?
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// TODO: too many duplicated code, refactor!
+
 import axios from "axios";
 import lodash from "lodash";
 
@@ -34,7 +36,17 @@ type GithubSsoResponse = {
   registrationToken?: string;
 };
 
+export type SnapshotTask = {
+  errorCount: number;
+  interval: number;
+  nextSync: Date;
+  source: { OneDrive: { shareUrl: string } };
+  status: "Running" | "Paused" | "Stopped";
+};
+
+// TODO: [snakeToCamel] and [camelToSnake] are very silly.
 function snakeToCamel(x: any): any {
+  lodash.map;
   return lodash.mapKeys(x, function (_value, key) {
     return lodash.camelCase(key);
   });
@@ -145,4 +157,68 @@ export default class Api {
       }
     }
   }
+
+  public static async getSnapshotTask(): Promise<Result<SnapshotTask>> {
+    try {
+      const { data: rawData, status: _ } = await axios.get(
+        this.backendUrl + "snapshot_task",
+        {
+          headers: { Authorization: "Bearer " + this.getToken() },
+        }
+      );
+
+      const data = snakeToCamel(rawData);
+      if (data.source["OneDrive"]) {
+        data.source["OneDrive"] = snakeToCamel(data.source["OneDrive"]);
+      }
+      return { ok: data };
+    } catch (error: any) {
+      const status = error.response?.status;
+      const knownError = error.response?.data?.error;
+      if (status && knownError) {
+        return { error: [status, knownError] };
+      } else {
+        return { unknownError: String(error) };
+      }
+    }
+  }
+
+  public static async updateSnapshotTask(interval: number | null, status: "Running" | "Paused" | null, oneDriveShareUrl: string | null): Promise<Result<"ok">> {
+    try {
+
+      const body: any = {};
+      if (interval) {
+        body["interval"] = interval;
+      }
+      if (status) {
+        body["status"] = status;
+      }
+      if (oneDriveShareUrl) {
+        body["source"] = {
+          "OneDrive": {
+            "share_url": oneDriveShareUrl,
+          }
+        }
+      }
+
+      const _ = await axios.patch(
+        this.backendUrl + "snapshot_task",
+        body,
+        {
+          headers: { Authorization: "Bearer " + this.getToken() },
+        }
+      );
+
+      return { ok: "ok" };
+    } catch (error: any) {
+      const status = error.response?.status;
+      const knownError = error.response?.data?.error;
+      if (status && knownError) {
+        return { error: [status, knownError] };
+      } else {
+        return { unknownError: String(error) };
+      }
+    }
+  }
+
 }
