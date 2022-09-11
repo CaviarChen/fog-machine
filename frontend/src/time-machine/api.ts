@@ -183,9 +183,12 @@ export default class Api {
     }
   }
 
-  public static async updateSnapshotTask(interval: number | null, status: "Running" | "Paused" | null, oneDriveShareUrl: string | null): Promise<Result<"ok">> {
+  public static async updateSnapshotTask(
+    interval: number | null,
+    status: "Running" | "Paused" | null,
+    oneDriveShareUrl: string | null
+  ): Promise<Result<"ok">> {
     try {
-
       const body: any = {};
       if (interval) {
         body["interval"] = interval;
@@ -195,19 +198,15 @@ export default class Api {
       }
       if (oneDriveShareUrl) {
         body["source"] = {
-          "OneDrive": {
-            "share_url": oneDriveShareUrl,
-          }
-        }
+          OneDrive: camelToSnake({
+            shareUrl: oneDriveShareUrl,
+          }),
+        };
       }
 
-      const _ = await axios.patch(
-        this.backendUrl + "snapshot_task",
-        body,
-        {
-          headers: { Authorization: "Bearer " + this.getToken() },
-        }
-      );
+      const _ = await axios.patch(this.backendUrl + "snapshot_task", body, {
+        headers: { Authorization: "Bearer " + this.getToken() },
+      });
 
       return { ok: "ok" };
     } catch (error: any) {
@@ -220,5 +219,4 @@ export default class Api {
       }
     }
   }
-
 }
