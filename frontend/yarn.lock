@@ -7700,23 +7700,23 @@ rollup@^2.43.1:
   optionalDependencies:
     fsevents "~2.3.2"
 
-rsuite-table@^5.6.0:
-  version "5.6.0"
-  resolved "https://registry.yarnpkg.com/rsuite-table/-/rsuite-table-5.6.0.tgz#f4fc385448a8b764c13e049c99ac46b16881f9f3"
-  integrity sha512-UWljBH/NKwUNv0260XCACUP9NnKqfKbF7NMKr1EQ/HpOlTLYU+kJO85/v7rNHq5fcuLl6p8xesgObbi35LWThg==
+rsuite-table@^5.7.1:
+  version "5.7.1"
+  resolved "https://registry.yarnpkg.com/rsuite-table/-/rsuite-table-5.7.1.tgz#daaeb36ecab4bb1d9006fc2e565a690b869a5c80"
+  integrity sha512-TD38Dm1qYwnPHzYr8enZa36WEymElKyRG1qtnaf9aBtWyEROEsHh1xOU8btHy7+nxZFqh/Jr6gw3dQ1KIGX5Uw==
   dependencies:
     "@babel/runtime" "^7.12.5"
     "@juggle/resize-observer" "^3.3.1"
     "@rsuite/icons" "^1.0.0"
-    classnames "^2.2.5"
+    classnames "^2.3.1"
     dom-lib "^3.1.2"
     lodash "^4.17.21"
     react-is "^17.0.2"
 
-rsuite@^5.15.2:
-  version "5.15.2"
-  resolved "https://registry.yarnpkg.com/rsuite/-/rsuite-5.15.2.tgz#c49558d3f080a55264acd22c9988b9f567b288d1"
-  integrity sha512-y1NyggwjTMEzPqm6KaW6n59GGGN/z+Po69NF197YhUx3QwROzWgSlZMFVJ9+LIgA6vVcpkYFtzDyXqR2BCmInQ==
+rsuite@^5.18.0:
+  version "5.18.0"
+  resolved "https://registry.yarnpkg.com/rsuite/-/rsuite-5.18.0.tgz#e90787e4eca65f35558bff05d1e3f81ae67ca8e2"
+  integrity sha512-L+aBWz0GnShWgDUnbXQAVNK0W+TKkpWS7o0vMab7KljD0sWMp/I4v9V8WDBgYYPRaeTAfUHM1j6miOOdu02iYg==
   dependencies:
     "@babel/runtime" "^7.8.4"
     "@juggle/resize-observer" "^3.3.1"
@@ -7731,8 +7731,8 @@ rsuite@^5.15.2:
     lodash "^4.17.11"
     prop-types "^15.7.2"
     react-virtualized "^9.22.3"
-    rsuite-table "^5.6.0"
-    schema-typed "^2.0.2"
+    rsuite-table "^5.7.1"
+    schema-typed "^2.0.3"
 
 run-parallel@^1.1.9:
   version "1.2.0"
@@ -7788,7 +7788,7 @@ scheduler@^0.23.0:
   dependencies:
     loose-envify "^1.1.0"
 
-schema-typed@^2.0.2:
+schema-typed@^2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/schema-typed/-/schema-typed-2.0.3.tgz#bfd84b31fbb2d13e748736637281032d8bcb2be8"
   integrity sha512-4KckVnJjTtVugYpSAoQrcH4quE4yIVTvI/nHEqtwdceBr/ZCuH2LfV8/gaZFrYU7cwwyufLKaswt28aqQ1T9ww==

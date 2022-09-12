@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
 import moment from "moment";
 import {
+  Button,
+  Modal,
   Panel,
   Placeholder,
   ButtonToolbar,
   Stack,
   Tag,
   IconButton,
+  Form,
+  SelectPicker,
+  InputGroup,
+  Message,
 } from "rsuite";
 import Api, { SnapshotTask } from "./api";
 import PauseIcon from "@rsuite/icons/legacy/Pause";
@@ -16,6 +22,7 @@ import PlayOutlineIcon from "@rsuite/icons/PlayOutline";
 import PauseOutlineIcon from "@rsuite/icons/PauseOutline";
 import CloseOutlineIcon from "@rsuite/icons/CloseOutline";
 import EditIcon from "@rsuite/icons/Edit";
+import AddOutlineIcon from "@rsuite/icons/AddOutline";
 
 function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
@@ -35,12 +42,37 @@ function Dashboard() {
     loadData();
   }, []);
 
+  const [editModelState, setEditModelState] = useState<unknown | null>(null);
+
   const renderDetail = () => {
     if (isLoading) {
       return;
       <Placeholder.Paragraph />;
     } else {
-      if (snapshotTask) {
+      if (!snapshotTask) {
+        return (
+          <div
+            style={{
+              height: "100%",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <IconButton
+              icon={<AddOutlineIcon />}
+              appearance="primary"
+              color="green"
+              placement="left"
+              onClick={() => {
+                setEditModelState({});
+              }}
+            >
+              Add data source
+            </IconButton>
+          </div>
+        );
+      } else {
         let StatusIcon = PlayOutlineIcon;
         let statusIconColor = "#53B13A";
         let statusText = "Running";
@@ -131,10 +163,65 @@ function Dashboard() {
     }
   };
 
+  const allowedInterval = ([
+    ['6 hours', 6 * 60],
+    ['8 hours', 8 * 60],
+    ['12 hours', 12 * 60],
+    ['1 day', 24 * 60],
+    ['2 days', 2 * 24 * 60],
+    ['1 week', 7 * 24 * 60],
+  ]).map(([label, value]) => ({ label, value: value }));
+
+  const sourceType = ([
+    ['OneDrive', "onedrive"],
+  ]
+  ).map(([label, value]) => ({ label, value: value }));
+
   return (
-    <Panel bordered style={{ height: "160px" }}>
-      {renderDetail()}
-    </Panel>
+    <>
+      <Panel bordered>
+        <div style={{ height: "120px" }}>{renderDetail()}</div>
+      </Panel>
+
+      <Modal
+        open={editModelState != null}
+        onClose={() => {
+          setEditModelState(null);
+        }}
+      >
+        <Modal.Header>
+          <Modal.Title>Add data source</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form fluid>
+            <Form.Group controlId="data-source">
+              <Form.ControlLabel>Data source</Form.ControlLabel>
+              <SelectPicker name="source-type" data={sourceType} cleanable={false} searchable={false} defaultValue={sourceType[0].value} />
+              <InputGroup style={{ marginTop: '8px' }}>
+                <InputGroup.Addon>Share link</InputGroup.Addon>
+                <Form.Control name="input-group" />
+              </InputGroup>
+            </Form.Group>
+            <Form.Group controlId="interval">
+              <Form.ControlLabel>Sync interval</Form.ControlLabel>
+              <SelectPicker label="every" name="interval" data={allowedInterval} cleanable={false} searchable={false} defaultValue={allowedInterval[2].value} />
+            </Form.Group>
+
+            <Message showIcon type="info" header="Disclaimer">
+              TODO
+            </Message>
+
+            <Modal.Footer style={{ marginTop: '16px' }}>
+              <Form.Group>
+                <ButtonToolbar>
+                  <Button appearance="primary">Submit</Button>
+                </ButtonToolbar>
+              </Form.Group>
+            </Modal.Footer>
+          </Form>
+        </Modal.Body>
+      </Modal>
+    </>
   );
 }
 
