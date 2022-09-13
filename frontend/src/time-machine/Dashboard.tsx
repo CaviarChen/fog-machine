@@ -13,6 +13,8 @@ import {
   SelectPicker,
   InputGroup,
   Message,
+  useToaster,
+  Notification,
 } from "rsuite";
 import Api, { SnapshotTask } from "./api";
 import PauseIcon from "@rsuite/icons/legacy/Pause";
@@ -23,6 +25,7 @@ import PauseOutlineIcon from "@rsuite/icons/PauseOutline";
 import CloseOutlineIcon from "@rsuite/icons/CloseOutline";
 import EditIcon from "@rsuite/icons/Edit";
 import AddOutlineIcon from "@rsuite/icons/AddOutline";
+import HelpOutlineIcon from '@rsuite/icons/HelpOutline';
 
 function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +45,7 @@ function Dashboard() {
     loadData();
   }, []);
 
-  const [editModelState, setEditModelState] = useState<unknown | null>(null);
+  const [editModelState, setEditModelState] = useState<{ [key: string]: string } | null>(null);
 
   const renderDetail = () => {
     if (isLoading) {
@@ -163,22 +166,59 @@ function Dashboard() {
     }
   };
 
-  const allowedInterval = ([
-    ['6 hours', 6 * 60],
-    ['8 hours', 8 * 60],
-    ['12 hours', 12 * 60],
-    ['1 day', 24 * 60],
-    ['2 days', 2 * 24 * 60],
-    ['1 week', 7 * 24 * 60],
-  ]).map(([label, value]) => ({ label, value: value }));
+  const allowedInterval = [
+    ["6 hours", 6 * 60],
+    ["8 hours", 8 * 60],
+    ["12 hours", 12 * 60],
+    ["1 day", 24 * 60],
+    ["2 days", 2 * 24 * 60],
+    ["1 week", 7 * 24 * 60],
+  ].map(([label, value]) => ({ label, value: value }));
 
-  const sourceType = ([
-    ['OneDrive', "onedrive"],
-  ]
-  ).map(([label, value]) => ({ label, value: value }));
+  const sourceType = [["OneDrive", "onedrive"]].map(([label, value]) => ({
+    label,
+    value: value,
+  }));
+
+  const [editFormValue, setEditFormValue] = useState({ 'shareLink': '', 'interval': 720, 'sourceType': 'onedrive' });
+
+  const errorToaster = useToaster();
+  const errorNotification = (msg: string) => {
+    return (
+      <Notification type={"error"} header={"Error"} closable duration={0}>
+        {msg}
+      </Notification>
+    )
+  }
+
+  const [editButtonLoading, setEditButtonLoading] = useState(false);
+
+  const handleSubmit = async (
+    checkStatus: boolean,
+  ) => {
+    setEditButtonLoading(true);
+    if (checkStatus) {
+      console.log(editFormValue);
+      const res = await Api.createSnapshotTask(editFormValue.interval, editFormValue.shareLink);
+      if (res.ok) {
+        setEditModelState(null);
+        await loadData();
+      } else {
+        if (res.error == "invalid_share") {
+          errorToaster.push(errorNotification("The given share link is invalid"), { placement: "topCenter" })
+        } else if (res.error == "invalid_folder_structure") {
+          errorToaster.push(errorNotification("Cannot found the Sync folder created by Fog of World"), { placement: "topCenter" })
+        } else {
+          errorToaster.push(errorNotification("Unknown error: " + String(res.unknownError)), { placement: "topCenter" })
+        }
+      }
+    }
+    setEditButtonLoading(false);
+  };
 
   return (
     <>
+
       <Panel bordered>
         <div style={{ height: "120px" }}>{renderDetail()}</div>
       </Panel>
@@ -193,28 +233,48 @@ function Dashboard() {
           <Modal.Title>Add data source</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form fluid>
-            <Form.Group controlId="data-source">
+          <Form fluid
+            onSubmit={handleSubmit}
+            formDefaultValue={editFormValue}
+            onChange={(formValue: any) => { setEditFormValue(formValue) }}
+          >
+            <Form.Group controlId="group-data-source" >
               <Form.ControlLabel>Data source</Form.ControlLabel>
-              <SelectPicker name="source-type" data={sourceType} cleanable={false} searchable={false} defaultValue={sourceType[0].value} />
-              <InputGroup style={{ marginTop: '8px' }}>
+              <Form.Control
+                name="sourceType"
+                accepter={SelectPicker}
+                data={sourceType}
+                cleanable={false}
+                searchable={false}
+              />
+              <InputGroup style={{ marginTop: "8px" }}>
                 <InputGroup.Addon>Share link</InputGroup.Addon>
-                <Form.Control name="input-group" />
+                <Form.Control name="shareLink" />
               </InputGroup>
+              <div style={{ textAlign: 'right' }}>
+                <HelpOutlineIcon style={{ fontSize: "1.1em" }} /> How to get share link
+              </div>
             </Form.Group>
-            <Form.Group controlId="interval">
+            <Form.Group controlId="group-interval">
               <Form.ControlLabel>Sync interval</Form.ControlLabel>
-              <SelectPicker label="every" name="interval" data={allowedInterval} cleanable={false} searchable={false} defaultValue={allowedInterval[2].value} />
+              <Form.Control
+                name="interval"
+                accepter={SelectPicker}
+                label="every"
+                data={allowedInterval}
+                cleanable={false}
+                searchable={false}
+              />
             </Form.Group>
 
             <Message showIcon type="info" header="Disclaimer">
               TODO
             </Message>
 
-            <Modal.Footer style={{ marginTop: '16px' }}>
+            <Modal.Footer style={{ marginTop: "16px" }}>
               <Form.Group>
                 <ButtonToolbar>
-                  <Button appearance="primary">Submit</Button>
+                  <Button type="submit" appearance="primary" loading={editButtonLoading}>Submit</Button>
                 </ButtonToolbar>
               </Form.Group>
             </Modal.Footer>

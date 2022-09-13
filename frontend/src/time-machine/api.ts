@@ -207,4 +207,23 @@ export default class Api {
     }
     return result;
   }
+
+  public static async createSnapshotTask(
+    interval: number,
+    oneDriveShareUrl: string
+  ): Promise<Result<"ok">> {
+    const data: any = {};
+    data["interval"] = interval;
+    data["source"] = {
+      OneDrive: camelToSnake({
+        shareUrl: oneDriveShareUrl,
+      }),
+    };
+
+    const result = await this.requestApi("snapshot_task", "post", true, data);
+    if (result.ok) {
+      result.ok = "ok";
+    }
+    return result;
+  }
 }
