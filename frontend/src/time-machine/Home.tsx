@@ -14,6 +14,7 @@ import {
 } from "rsuite";
 import "./Home.css";
 import Api from "./api";
+import Dashboard from "./Dashboard";
 
 // I really want ADT
 type LoginStatus = {
@@ -86,8 +87,8 @@ function Home() {
     }
   }, [loginStatus]);
 
+  const [loading, setLoading] = useState(false);
   const renderContent = () => {
-    const [loading, setLoading] = useState(false);
     if (!loginStatus || loginStatus.loading) {
       return (
         <div style={{ display: "flex", height: "80vh" }}>
@@ -96,7 +97,7 @@ function Home() {
       );
     } else {
       if (loginStatus.loggedIn) {
-        return <></>;
+        return <Dashboard />;
       } else {
         if (registrationState) {
           const handleSubmit = async (
@@ -127,7 +128,7 @@ function Home() {
             <>
               <h3>Register</h3>
               <div style={{ marginTop: "2vh" }}></div>
-
+              {/* TODO: The current implementation is wrong, we should use the Form in the correct way  */}
               <Form
                 fluid
                 onSubmit={handleSubmit}
