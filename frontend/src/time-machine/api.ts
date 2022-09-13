@@ -88,6 +88,7 @@ export default class Api {
     data?: { [key: string]: any }
   ): Promise<Result<any>> {
     try {
+      console.log("requesting api:", method, " ", url);
       const headers = needToken
         ? { Authorization: "Bearer " + this.getToken() }
         : undefined;
@@ -166,7 +167,7 @@ export default class Api {
     return result;
   }
 
-  public static async getSnapshotTask(): Promise<Result<SnapshotTask | null>> {
+  public static async getSnapshotTask(): Promise<Result<SnapshotTask | "none">> {
     let result = await this.requestApi("snapshot_task", "get", true);
     if (result.ok) {
       result.ok = snakeToCamel(result.ok);
@@ -176,7 +177,7 @@ export default class Api {
         );
       }
     } else if (result.status == 404) {
-      result = { ok: null, status: 404 };
+      result = { ok: "none", status: 404 };
     }
     return result;
   }
@@ -221,6 +222,14 @@ export default class Api {
     };
 
     const result = await this.requestApi("snapshot_task", "post", true, data);
+    if (result.ok) {
+      result.ok = "ok";
+    }
+    return result;
+  }
+
+  public static async deleteSnapshotTask(): Promise<Result<"ok">> {
+    const result = await this.requestApi("snapshot_task", "delete", true, {});
     if (result.ok) {
       result.ok = "ok";
     }

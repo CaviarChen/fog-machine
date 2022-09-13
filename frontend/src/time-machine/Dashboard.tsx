@@ -25,7 +25,7 @@ import PauseOutlineIcon from "@rsuite/icons/PauseOutline";
 import CloseOutlineIcon from "@rsuite/icons/CloseOutline";
 import EditIcon from "@rsuite/icons/Edit";
 import AddOutlineIcon from "@rsuite/icons/AddOutline";
-import HelpOutlineIcon from '@rsuite/icons/HelpOutline';
+import HelpOutlineIcon from "@rsuite/icons/HelpOutline";
 
 function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +34,7 @@ function Dashboard() {
     setIsLoading(true);
     const result = await Api.getSnapshotTask();
     if (result.ok) {
-      setSnapshotTask(result.ok);
+      setSnapshotTask((result.ok == "none") ? null : result.ok);
     } else {
       console.log(result);
     }
@@ -45,7 +45,13 @@ function Dashboard() {
     loadData();
   }, []);
 
-  const [editModelState, setEditModelState] = useState<{ [key: string]: string } | null>(null);
+  const [editModelState, setEditModelState] = useState<{
+    mode: "edit" | "create";
+    shareLink?: string;
+    interval?: number;
+  }>({ mode: "create" });
+
+  const [openEditModel, setOpenEditModel] = useState(false);
 
   const renderDetail = () => {
     if (isLoading) {
@@ -68,7 +74,8 @@ function Dashboard() {
               color="green"
               placement="left"
               onClick={() => {
-                setEditModelState({});
+                setOpenEditModel(true);
+                setEditModelState({ mode: "create" });
               }}
             >
               Add data source
@@ -153,7 +160,18 @@ function Dashboard() {
                     <IconButton icon={<FileTextIcon />} placement="left">
                       View Log
                     </IconButton>
-                    <IconButton icon={<EditIcon />} placement="left">
+                    <IconButton
+                      icon={<EditIcon />}
+                      placement="left"
+                      onClick={() => {
+                        setOpenEditModel(true);
+                        setEditModelState({
+                          mode: "edit",
+                          shareLink: snapshotTask.source.OneDrive.shareUrl,
+                          interval: snapshotTask.interval,
+                        });
+                      }}
+                    >
                       Edit
                     </IconButton>
                   </ButtonToolbar>
@@ -180,7 +198,11 @@ function Dashboard() {
     value: value,
   }));
 
-  const [editFormValue, setEditFormValue] = useState({ 'shareLink': '', 'interval': 720, 'sourceType': 'onedrive' });
+  const [editFormValue, setEditFormValue] = useState({
+    shareLink: "",
+    interval: 720,
+    sourceType: "onedrive",
+  });
 
   const errorToaster = useToaster();
   const errorNotification = (msg: string) => {
@@ -188,57 +210,128 @@ function Dashboard() {
       <Notification type={"error"} header={"Error"} closable duration={0}>
         {msg}
       </Notification>
-    )
-  }
+    );
+  };
 
   const [editButtonLoading, setEditButtonLoading] = useState(false);
+  let editFormDefaultValue: {
+    interval: number;
+    shareLink: string;
+    sourceType: string;
+  };
+  if (editModelState.mode == "edit") {
+    editFormDefaultValue = {
+      interval: editModelState.interval!,
+      shareLink: editModelState.shareLink!,
+      sourceType: "onedrive",
+    };
+  } else {
+    editFormDefaultValue = {
+      interval: editFormValue.interval!,
+      shareLink: editFormValue.shareLink!,
+      sourceType: "onedrive",
+    };
+  }
 
-  const handleSubmit = async (
-    checkStatus: boolean,
-  ) => {
+  const handleSubmit = async (checkStatus: boolean) => {
     setEditButtonLoading(true);
     if (checkStatus) {
-      console.log(editFormValue);
-      const res = await Api.createSnapshotTask(editFormValue.interval, editFormValue.shareLink);
+      let res;
+      if (editModelState.mode == "create") {
+        res = await Api.createSnapshotTask(
+          editFormValue.interval,
+          editFormValue.shareLink
+        );
+      } else {
+        const interval =
+          editFormDefaultValue.interval == editFormValue.interval
+            ? null
+            : editFormValue.interval;
+        const shareLink =
+          editFormDefaultValue.shareLink == editFormValue.shareLink
+            ? null
+            : editFormValue.shareLink;
+        console.log(interval, shareLink);
+        if (interval == null && shareLink == null) {
+          res = { ok: "ok" };
+        } else {
+          res = await Api.updateSnapshotTask(interval, null, shareLink);
+        }
+      }
       if (res.ok) {
-        setEditModelState(null);
+        setOpenEditModel(false);
         await loadData();
       } else {
         if (res.error == "invalid_share") {
-          errorToaster.push(errorNotification("The given share link is invalid"), { placement: "topCenter" })
+          errorToaster.push(
+            errorNotification("The given share link is invalid"),
+            { placement: "topCenter" }
+          );
         } else if (res.error == "invalid_folder_structure") {
-          errorToaster.push(errorNotification("Cannot found the Sync folder created by Fog of World"), { placement: "topCenter" })
+          errorToaster.push(
+            errorNotification(
+              "Cannot found the Sync folder created by Fog of World"
+            ),
+            { placement: "topCenter" }
+          );
         } else {
-          errorToaster.push(errorNotification("Unknown error: " + String(res.unknownError)), { placement: "topCenter" })
+          errorToaster.push(
+            errorNotification("Unknown error: " + String(res.unknownError)),
+            { placement: "topCenter" }
+          );
         }
       }
     }
     setEditButtonLoading(false);
   };
 
+  const handleDelete = async () => {
+    setEditButtonLoading(true);
+    const res = await Api.deleteSnapshotTask();
+    if (res.ok) {
+      setOpenEditModel(false);
+      await loadData();
+    } else {
+      errorToaster.push(
+        errorNotification("Unknown error: " + String(res.unknownError)),
+        { placement: "topCenter" }
+      );
+    }
+    setEditButtonLoading(false);
+  };
+
   return (
     <>
-
       <Panel bordered>
         <div style={{ height: "120px" }}>{renderDetail()}</div>
       </Panel>
 
       <Modal
-        open={editModelState != null}
+        open={openEditModel}
         onClose={() => {
-          setEditModelState(null);
+          setOpenEditModel(false);
         }}
+        backdrop={"static"}
       >
         <Modal.Header>
-          <Modal.Title>Add data source</Modal.Title>
+          <Modal.Title>
+            {editModelState.mode == "edit"
+              ? "Edit data source"
+              : "Add data source"}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form fluid
+          <Form
+            fluid
             onSubmit={handleSubmit}
-            formDefaultValue={editFormValue}
-            onChange={(formValue: any) => { setEditFormValue(formValue) }}
+            formDefaultValue={editFormDefaultValue}
+            onChange={(formValue: any) => {
+              // eslint-disable-line @typescript-eslint/no-explicit-any
+              console.log(formValue);
+              setEditFormValue(formValue);
+            }}
           >
-            <Form.Group controlId="group-data-source" >
+            <Form.Group controlId="group-data-source">
               <Form.ControlLabel>Data source</Form.ControlLabel>
               <Form.Control
                 name="sourceType"
@@ -251,8 +344,9 @@ function Dashboard() {
                 <InputGroup.Addon>Share link</InputGroup.Addon>
                 <Form.Control name="shareLink" />
               </InputGroup>
-              <div style={{ textAlign: 'right' }}>
-                <HelpOutlineIcon style={{ fontSize: "1.1em" }} /> How to get share link
+              <div style={{ textAlign: "right" }}>
+                <HelpOutlineIcon style={{ fontSize: "1.1em" }} /> How to get
+                share link
               </div>
             </Form.Group>
             <Form.Group controlId="group-interval">
@@ -267,14 +361,33 @@ function Dashboard() {
               />
             </Form.Group>
 
-            <Message showIcon type="info" header="Disclaimer">
-              TODO
-            </Message>
+            {editModelState.mode == "create" && (
+              <Message showIcon type="info" header="Disclaimer">
+                TODO
+              </Message>
+            )}
 
             <Modal.Footer style={{ marginTop: "16px" }}>
               <Form.Group>
                 <ButtonToolbar>
-                  <Button type="submit" appearance="primary" loading={editButtonLoading}>Submit</Button>
+                  <Button
+                    type="submit"
+                    appearance="primary"
+                    loading={editButtonLoading}
+                  >
+                    Submit
+                  </Button>
+
+                  {editModelState.mode == "edit" && (
+                    <Button
+                      appearance="primary"
+                      color="red"
+                      loading={editButtonLoading}
+                      onClick={handleDelete}
+                    >
+                      Delete
+                    </Button>
+                  )}
                 </ButtonToolbar>
               </Form.Group>
             </Modal.Footer>

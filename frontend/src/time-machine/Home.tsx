@@ -129,7 +129,9 @@ function Home() {
               <h3>Register</h3>
               <div style={{ marginTop: "2vh" }}></div>
               {/* TODO: The current implementation is wrong, we should use the Form in the correct way  */}
-              <Form fluid onSubmit={handleSubmit}
+              <Form
+                fluid
+                onSubmit={handleSubmit}
                 formDefaultValue={{
                   "contact-email": registrationState.defaultEmail,
                 }}
