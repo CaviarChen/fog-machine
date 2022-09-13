@@ -34,7 +34,7 @@ function Dashboard() {
     setIsLoading(true);
     const result = await Api.getSnapshotTask();
     if (result.ok) {
-      setSnapshotTask((result.ok == "none") ? null : result.ok);
+      setSnapshotTask(result.ok == "none" ? null : result.ok);
     } else {
       console.log(result);
     }
@@ -325,9 +325,9 @@ function Dashboard() {
             fluid
             onSubmit={handleSubmit}
             formDefaultValue={editFormDefaultValue}
-            onChange={(formValue: any) => {
-              // eslint-disable-line @typescript-eslint/no-explicit-any
-              console.log(formValue);
+            onChange={(
+              formValue: any // eslint-disable-line @typescript-eslint/no-explicit-any
+            ) => {
               setEditFormValue(formValue);
             }}
           >

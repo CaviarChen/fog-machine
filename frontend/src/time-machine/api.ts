@@ -167,7 +167,9 @@ export default class Api {
     return result;
   }
 
-  public static async getSnapshotTask(): Promise<Result<SnapshotTask | "none">> {
+  public static async getSnapshotTask(): Promise<
+    Result<SnapshotTask | "none">
+  > {
     let result = await this.requestApi("snapshot_task", "get", true);
     if (result.ok) {
       result.ok = snakeToCamel(result.ok);
