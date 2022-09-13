@@ -1,5 +1,9 @@
+// need typed definitions from @mapbox/mapbox-gl-draw
+/* eslint-disable */
+// @ts-nocheck
 // TODO: consider reactify this?
 import mapboxgl from "mapbox-gl";
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import * as fogMap from "./FogMap";
 import * as deckgl from "./Deckgl";
 import { CANVAS_SIZE_OFFSET, FogCanvas } from "./FogCanvas";
@@ -32,7 +36,11 @@ export class MapRenderer {
   public historyManager: HistoryManager;
   private loadedFogCanvases: { [key: string]: FogCanvas };
   private eraserMode: boolean;
+  private paintMode: boolean;
+  private lineMode: boolean;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
+  private mapglDraw: MapboxDraw;
+  private paintEnabled: boolean;
   private onChange: (() => void) | null;
 
   private constructor() {
@@ -41,7 +49,14 @@ export class MapRenderer {
     this.fogMap = fogMap.FogMap.empty;
     this.loadedFogCanvases = {};
     this.eraserMode = false;
+    this.paintMode = false;
+    this.lineMode = false;
     this.eraserArea = null;
+    this.mapglDraw = new MapboxDraw({
+      displayControlsDefault: false,
+      defaultMode: "draw_line_string",
+    });
+    this.paintEnabled = false;
     this.historyManager = new HistoryManager(this.fogMap);
     this.onChange = null;
   }
@@ -65,6 +80,7 @@ export class MapRenderer {
     this.map.on("mousedown", this.handleMouseClick.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
+    this.map.on("draw.create", this.handleDrawComplete.bind(this));
     this.setEraserMod(this.eraserMode);
     this.onChange = onChange;
     this.onChange();
@@ -220,6 +236,36 @@ export class MapRenderer {
     }
   }
 
+  handleDrawComplete(e: GeoJSON): void {
+    // parse each line segments, apply to fogmap
+    console.log(e.features);
+    for (const geo of e.features) {
+      if (geo.geometry.type == "LineString") {
+        const coordinates = geo.geometry.coordinates;
+
+        let [startLng, startLat] = coordinates[0];
+        let newMap = this.fogMap;
+        const bounds = new mapboxgl.LngLatBounds(
+          coordinates[0],
+          coordinates[0]
+        );
+        for (let j = 1; j < coordinates.length; ++j) {
+          const [endLng, endLat] = coordinates[j];
+          newMap = newMap.addLine(startLng, startLat, endLng, endLat);
+          bounds.extend(coordinates[j]);
+          [startLng, startLat] = [endLng, endLat];
+        }
+        const bbox = new deckgl.Bbox(
+          bounds.getWest(),
+          bounds.getSouth(),
+          bounds.getEast(),
+          bounds.getNorth()
+        );
+        this.updateFogMap(newMap, bbox);
+      }
+    }
+  }
+
   setEraserMod(isActivated: boolean): void {
     this.eraserMode = isActivated;
     const mapboxCanvas = this.map?.getCanvasContainer();
@@ -238,6 +284,38 @@ export class MapRenderer {
         this.map?.removeSource("eraser");
         this.eraserArea = null;
       }
+    }
+  }
+
+  setPaintMod(isActivated: boolean): void {
+    this.paintMode = isActivated;
+    const mapboxCanvas = this.map?.getCanvasContainer();
+    if (!mapboxCanvas) {
+      return;
+    }
+    if (this.paintMode) {
+      mapboxCanvas.style.cursor = "crosshair";
+      this.map?.dragPan.disable();
+    } else {
+      mapboxCanvas.style.cursor = "";
+      this.map?.dragPan.enable();
+    }
+  }
+
+  setLineMod(isActivated: boolean): void {
+    this.lineMode = isActivated;
+    const mapboxCanvas = this.map?.getCanvasContainer();
+    if (!mapboxCanvas) {
+      return;
+    }
+    if (this.lineMode) {
+      mapboxCanvas.style.cursor = "crosshair";
+      this.map?.dragPan.disable();
+      this.map?.addControl(this.mapglDraw, "bottom-left");
+    } else {
+      mapboxCanvas.style.cursor = "";
+      this.map?.dragPan.enable();
+      this.map?.removeControl(this.mapglDraw);
     }
   }
 

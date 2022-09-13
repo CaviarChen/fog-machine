@@ -20,6 +20,9 @@ function Map(props: Props): JSX.Element {
   const map = useRef<mapboxgl.Map | null>(null);
   const mapRenderer = MapRenderer.get();
   const [eraserMode, setEraserMode] = useState(false);
+  const [paintMode, setPaintMode] = useState(false);
+  const [lineMode, setLineMode] = useState(false);
+  // const []
   const [historyStatus, setHistoryStatus] = useState({
     canRedo: false,
     canUndo: false,
@@ -28,6 +31,14 @@ function Map(props: Props): JSX.Element {
   useEffect(() => {
     mapRenderer.setEraserMod(eraserMode);
   }, [eraserMode]);
+
+  useEffect(() => {
+    mapRenderer.setPaintMod(paintMode);
+  }, [paintMode]);
+
+  useEffect(() => {
+    mapRenderer.setLineMod(lineMode);
+  }, [lineMode]);
 
   useEffect(() => {
     if (map.current) return;
@@ -99,6 +110,22 @@ function Map(props: Props): JSX.Element {
       enabled: eraserMode,
       onClick: () => {
         setEraserMode(!eraserMode);
+      },
+    },
+    {
+      icon: iconPaint,
+      clickable: true,
+      enabled: paintMode,
+      onClick: () => {
+        setPaintMode(!paintMode);
+      },
+    },
+    {
+      icon: iconLine,
+      clickable: true,
+      enabled: lineMode,
+      onClick: () => {
+        setLineMode(!lineMode);
       },
     },
   ];
@@ -197,3 +224,6 @@ const iconUndo = (
     ></path>
   </svg>
 );
+
+const iconPaint = <p>P</p>;
+const iconLine = <p>L</p>;
