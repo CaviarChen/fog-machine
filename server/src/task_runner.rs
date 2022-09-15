@@ -75,7 +75,7 @@ pub async fn do_one_task(
                     if current_task.source != task.source {
                         false
                     } else {
-                        let snapshot_id = match snapshot_result.result {
+                        let (succeed, snapshot_id) = match snapshot_result.result {
                             Err(()) => {
                                 let error_count = current_task.error_count + 1;
                                 snapshot_task::Entity::update(snapshot_task::ActiveModel {
@@ -90,7 +90,7 @@ pub async fn do_one_task(
                                 })
                                 .exec(&txn)
                                 .await?;
-                                None
+                                (false, None)
                             }
                             Ok((sync_files, snapshot_time)) => {
                                 snapshot_task::Entity::update(snapshot_task::ActiveModel {
@@ -103,16 +103,30 @@ pub async fn do_one_task(
                                 .exec(&txn)
                                 .await?;
 
-                                let snapshot = snapshot::ActiveModel {
-                                    id: NotSet,
-                                    user_id: Set(task.user_id),
-                                    timestamp: Set(snapshot_time),
-                                    sync_files: Set(sync_files),
-                                }
-                                .insert(&txn)
-                                .await?;
+                                let last_snapshot = snapshot::Entity::find()
+                                    .filter(snapshot_task::Column::UserId.eq(task.user_id))
+                                    .order_by_desc(snapshot::Column::Timestamp)
+                                    .one(&txn)
+                                    .await?;
 
-                                Some(snapshot.id)
+                                let changed = match last_snapshot {
+                                    None => true,
+                                    Some(last_snapshot) => last_snapshot.sync_files != sync_files,
+                                };
+
+                                if changed {
+                                    let snapshot = snapshot::ActiveModel {
+                                        id: NotSet,
+                                        user_id: Set(task.user_id),
+                                        timestamp: Set(snapshot_time),
+                                        sync_files: Set(sync_files),
+                                    }
+                                    .insert(&txn)
+                                    .await?;
+                                    (true, Some(snapshot.id))
+                                } else {
+                                    (true, None)
+                                }
                             }
                         };
                         snapshot_log::ActiveModel {
@@ -120,6 +134,7 @@ pub async fn do_one_task(
                             user_id: Set(task.user_id),
                             snapshot_id: Set(snapshot_id),
                             timestamp: Set(Utc::now()),
+                            succeed: Set(succeed),
                             details: Set(snapshot_result.logs.join("\n")),
                         }
                         .insert(&txn)
