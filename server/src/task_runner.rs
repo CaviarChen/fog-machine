@@ -120,6 +120,8 @@ pub async fn do_one_task(
                                         user_id: Set(task.user_id),
                                         timestamp: Set(snapshot_time),
                                         sync_files: Set(sync_files),
+                                        source_kind: Set(snapshot::SourceKind::Snapshot),
+                                        note: Set(None),
                                     }
                                     .insert(&txn)
                                     .await?;
