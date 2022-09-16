@@ -3,17 +3,19 @@ use crate::pool::Db;
 use crate::user_handler::User;
 use crate::APIResponse;
 use anyhow::Error;
+use anyhow::Result;
 use chrono::prelude::*;
 use entity::sea_orm;
+use entity::{snapshot_log, snapshot_task};
 use rocket::http::Status;
-use rocket::serde::{json::Json, Deserialize};
-use sea_orm::{entity::*, query::*};
+use rocket::serde::json::Json;
+use sea_orm::{entity::*, query::*, DatabaseTransaction};
 use sea_orm_rocket::Connection;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::cmp;
 use std::collections::HashSet;
 
-// TODO: we have a minimum interval, but user can bypass that by recreating or using
-// the update api. We might need a rate limiter.
 // TODO: we might also need a rate limiter for validating source, it is an expensive
 // task.
 
@@ -57,6 +59,37 @@ async fn validate_input(
     Ok(Ok(()))
 }
 
+async fn get_last_sync_time(
+    txn: &DatabaseTransaction,
+    user: &User,
+    succeed_only: bool,
+) -> Result<Option<DateTime<Utc>>> {
+    let query = snapshot_log::Entity::find()
+        .filter(snapshot_log::Column::UserId.eq(user.uid))
+        .order_by_desc(snapshot_log::Column::Timestamp);
+
+    let query = if succeed_only {
+        query.filter(snapshot_log::Column::Succeed.eq(true))
+    } else {
+        query
+    };
+
+    match query.one(txn).await? {
+        None => Ok(None),
+        Some(snapshot_log) => Ok(Some(snapshot_log.timestamp)),
+    }
+}
+
+async fn get_min_next_sync_time(txn: &DatabaseTransaction, user: &User) -> Result<DateTime<Utc>> {
+    match get_last_sync_time(txn, user, false).await? {
+        None => Ok(Utc::now()),
+        Some(last_time) => Ok(cmp::max(
+            last_time + chrono::Duration::minutes(20),
+            Utc::now(),
+        )),
+    }
+}
+
 #[derive(Deserialize)]
 struct CreateData {
     interval: i16,
@@ -70,31 +103,69 @@ async fn create(conn: Connection<'_, Db>, user: User, data: Json<CreateData>) ->
         Err(error) => return Ok((Status::BadRequest, json!({ "error": error }))),
     }
 
-    let task = entity::snapshot_task::ActiveModel {
+    let db = conn.into_inner();
+    let txn = db.begin().await?;
+
+    let task = snapshot_task::ActiveModel {
         user_id: Set(user.uid),
         status: Set(entity::snapshot_task::Status::Running),
         interval: Set(data.interval),
         source: Set(data.source.clone()),
-        next_sync: Set(Utc::now()),
+        next_sync: Set(get_min_next_sync_time(&txn, &user).await?),
         error_count: Set(0),
     };
 
-    let db = conn.into_inner();
-    task.insert(db).await?;
+    task.insert(&txn).await?;
+
+    txn.commit().await?;
 
     Ok((Status::Ok, json!({})))
+}
+
+#[derive(Serialize)]
+pub struct TaskJson {
+    pub status: snapshot_task::Status,
+    pub interval: i16,
+    pub source: snapshot_task::Source,
+    pub last_success_sync: Option<DateTime<Utc>>,
+    pub error_count: i16,
 }
 
 #[get("/")]
 async fn get(conn: Connection<'_, Db>, user: User) -> APIResponse {
     let db = conn.into_inner();
-    let task = entity::snapshot_task::Entity::find()
-        .filter(entity::snapshot_task::Column::UserId.eq(user.uid))
-        .one(db)
+    let txn = db.begin().await?;
+
+    let task = snapshot_task::Entity::find()
+        .filter(snapshot_task::Column::UserId.eq(user.uid))
+        .one(&txn)
         .await?;
     match task {
         None => Ok((Status::NotFound, json!({}))),
-        Some(task) => Ok((Status::Ok, json!(task))),
+        Some(task) => {
+            let snapshot_task::Model {
+                user_id: _,
+                status,
+                interval,
+                source,
+                next_sync,
+                error_count,
+            } = task;
+            let last_success_sync = get_last_sync_time(&txn, &user, true).await?;
+
+            txn.commit().await?;
+
+            Ok((
+                Status::Ok,
+                json!(TaskJson {
+                    status,
+                    interval,
+                    source,
+                    last_success_sync,
+                    error_count,
+                }),
+            ))
+        }
     }
 }
 
@@ -131,7 +202,7 @@ async fn update(conn: Connection<'_, Db>, user: User, data: Json<UpdateData>) ->
 
             let mut task_mut: entity::snapshot_task::ActiveModel = task.into();
             if need_reset {
-                task_mut.next_sync = Set(Utc::now());
+                task_mut.next_sync = Set(get_min_next_sync_time(&txn, &user).await?);
                 task_mut.error_count = Set(0);
             }
             match data.status {

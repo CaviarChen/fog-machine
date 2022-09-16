@@ -104,7 +104,7 @@ pub async fn do_one_task(
                                 .await?;
 
                                 let last_snapshot = snapshot::Entity::find()
-                                    .filter(snapshot_task::Column::UserId.eq(task.user_id))
+                                    .filter(snapshot::Column::UserId.eq(task.user_id))
                                     .order_by_desc(snapshot::Column::Timestamp)
                                     .one(&txn)
                                     .await?;
