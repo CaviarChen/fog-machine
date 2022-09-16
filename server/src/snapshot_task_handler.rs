@@ -148,7 +148,7 @@ async fn get(conn: Connection<'_, Db>, user: User) -> APIResponse {
                 status,
                 interval,
                 source,
-                next_sync,
+                next_sync: _,
                 error_count,
             } = task;
             let last_success_sync = get_last_sync_time(&txn, &user, true).await?;
