@@ -40,7 +40,7 @@ type GithubSsoResponse = {
 export type SnapshotTask = {
   errorCount: number;
   interval: number;
-  nextSync: Date;
+  lastSuccessSync: Date | null;
   source: { OneDrive: { shareUrl: string } };
   status: "Running" | "Paused" | "Stopped";
 };

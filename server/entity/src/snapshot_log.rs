@@ -7,10 +7,10 @@ pub struct Model {
     pub id: i64,
     #[sea_orm(indexed)]
     pub user_id: i64,
-    // `snapshot_id` set to None means the task failed.
     #[sea_orm(indexed)]
     pub snapshot_id: Option<i64>,
     pub timestamp: DateTimeUtc,
+    pub succeed: bool,
     #[sea_orm(column_type = "Text", nullable)]
     pub details: String,
 }

@@ -87,18 +87,19 @@ function Dashboard() {
         let statusIconColor = "#53B13A";
         let statusText = "Running";
         /* TODO: moment i18n */
-        let nextSyncMsg =
-          "Next sync: " + moment(snapshotTask.nextSync).fromNow();
+        const nextSyncMsg =
+          "Last success sync: " +
+          (snapshotTask.lastSuccessSync
+            ? moment(snapshotTask.lastSuccessSync).fromNow()
+            : "none");
         if (snapshotTask.status == "Paused") {
           StatusIcon = PauseOutlineIcon;
           statusIconColor = "#575657";
           statusText = "Paused";
-          nextSyncMsg = "\u00A0";
         } else if (snapshotTask.status == "Stopped") {
           StatusIcon = CloseOutlineIcon;
           statusIconColor = "#D0342C";
           statusText = "Stopped";
-          nextSyncMsg = "\u00A0";
         }
 
         const updateStatus = async (status: "Running" | "Paused") => {
