@@ -87,8 +87,12 @@ function Home() {
     }
   }, [loginStatus]);
 
-  const [loading, setLoading] = useState(false);
-  const renderContent = () => {
+  const RenderContent = () => {
+    const [loading, setLoading] = useState(false);
+    const [registerFormValue, setRegisterFormValue] = useState({
+      "contact-email": registrationState?.defaultEmail,
+    });
+
     if (!loginStatus || loginStatus.loading) {
       return (
         <div style={{ display: "flex", height: "80vh" }}>
@@ -100,13 +104,12 @@ function Home() {
         return <Dashboard />;
       } else {
         if (registrationState) {
-          const handleSubmit = async (
-            checkStatus: boolean,
-            event: any // eslint-disable-line @typescript-eslint/no-explicit-any
-          ) => {
+          const handleSubmit = async (checkStatus: boolean) => {
             setLoading(true);
             if (checkStatus) {
-              const contactEmail: string = event.target["contact-email"].value;
+              const contactEmail: string =
+                registerFormValue["contact-email"] || "";
+              console.log(registerFormValue);
               // TODO: handle `language`
               const result = await Api.register(
                 registrationState.registrationToken,
@@ -128,12 +131,17 @@ function Home() {
             <>
               <h3>Register</h3>
               <div style={{ marginTop: "2vh" }}></div>
-              {/* TODO: The current implementation is wrong, we should use the Form in the correct way  */}
               <Form
                 fluid
                 onSubmit={handleSubmit}
                 formDefaultValue={{
                   "contact-email": registrationState.defaultEmail,
+                }}
+                onChange={(
+                  formValue: any // eslint-disable-line @typescript-eslint/no-explicit-any
+                ) => {
+                  setRegisterFormValue(formValue);
+                  console.log(registerFormValue);
                 }}
               >
                 <Form.Group>
@@ -208,7 +216,7 @@ function Home() {
 
           <Divider style={{ marginTop: "1vh" }} />
 
-          {renderContent()}
+          <RenderContent />
         </div>
       </Content>
     </Container>
