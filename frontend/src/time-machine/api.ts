@@ -45,6 +45,13 @@ export type SnapshotTask = {
   status: "Running" | "Paused" | "Stopped";
 };
 
+export type Snapshot = {
+  id: number;
+  timestamp: Date;
+  sourceKind: "Sync" | "Upload";
+  note: string | null;
+};
+
 // TODO: [snakeToCamel] and [camelToSnake] are very silly.
 function snakeToCamel(x: any): any {
   lodash.map;
@@ -234,6 +241,14 @@ export default class Api {
     const result = await this.requestApi("snapshot_task", "delete", true, {});
     if (result.ok) {
       result.ok = "ok";
+    }
+    return result;
+  }
+
+  public static async listSnapshots(): Promise<Result<Snapshot[]>> {
+    const result = await this.requestApi("snapshot", "get", true);
+    if (result.ok) {
+      result.ok = result.ok.map((x: any) => snakeToCamel(x));
     }
     return result;
   }

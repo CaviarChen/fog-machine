@@ -22,6 +22,7 @@ mod data_fetcher;
 mod file_storage;
 mod limit;
 mod pool;
+mod snapshot_handler;
 mod snapshot_task_handler;
 mod task_runner;
 mod user_handler;
@@ -138,4 +139,5 @@ fn rocket() -> _ {
         .manage(user_handler::State::create())
         .mount("/api/v1/user", user_handler::routes())
         .mount("/api/v1/snapshot_task", snapshot_task_handler::routes())
+        .mount("/api/v1/snapshot", snapshot_handler::routes())
 }
