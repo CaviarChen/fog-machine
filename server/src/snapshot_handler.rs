@@ -1,12 +1,14 @@
 use crate::data_fetcher;
+use crate::misc_handler;
 use crate::pool::Db;
 use crate::user_handler::User;
-use crate::APIResponse;
+use crate::{APIResponse, ServerState};
 use anyhow::Error;
 use anyhow::Result;
 use chrono::prelude::*;
 use entity::sea_orm;
 use entity::{snapshot, snapshot_log};
+use jwt::SignWithKey;
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use sea_orm::{entity::*, query::*, DatabaseTransaction};
@@ -23,7 +25,6 @@ struct SnapshotJson {
     pub source_kind: snapshot::SourceKind,
     pub note: Option<String>,
 }
-
 // TODO: pagination
 #[get("/")]
 async fn list_all(conn: Connection<'_, Db>, user: User) -> APIResponse {
@@ -53,6 +54,33 @@ async fn list_all(conn: Connection<'_, Db>, user: User) -> APIResponse {
     Ok((Status::Ok, json!(snapshot_list)))
 }
 
+#[post("/<snapshot_id>/download_token")]
+async fn create_download_token(
+    conn: Connection<'_, Db>,
+    server_state: &rocket::State<ServerState>,
+    user: User,
+    snapshot_id: i64,
+) -> APIResponse {
+    let db = conn.into_inner();
+
+    if snapshot::Entity::find()
+        .filter(snapshot::Column::UserId.eq(user.uid))
+        .filter(snapshot::Column::Id.eq(snapshot_id))
+        .count(db)
+        .await?
+        == 1
+    {
+        Ok((
+            Status::Ok,
+            json!({
+                "token": misc_handler::generate_snapshot_download_token(server_state, snapshot_id)
+            }),
+        ))
+    } else {
+        Ok((Status::NotFound, json!({})))
+    }
+}
+
 pub fn routes() -> Vec<rocket::Route> {
-    routes![list_all]
+    routes![list_all, create_download_token]
 }

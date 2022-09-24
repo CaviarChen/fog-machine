@@ -30,6 +30,7 @@ fn dir_size(path: impl Into<PathBuf>) -> io::Result<u64> {
 
 /// we use SHA-256 (lower case!!!) as the key of a file. We don't share file between users (I don't
 /// think different users will have a same file) so we don't really need to worry about hash collision.
+#[derive(Clone)]
 pub struct SyncFileStorage {
     data_base_dir: String,
 }
@@ -100,5 +101,14 @@ impl SyncFileStorage {
             }
         }
         Ok(())
+    }
+
+    pub fn open_file(&self, user: &User, sha256: &str) -> Result<std::fs::File, Error> {
+        let path = self.get_user_path(user).join(sha256);
+        let file = std::fs::File::options()
+            .read(true)
+            .write(false)
+            .open(path)?;
+        Ok(file)
     }
 }

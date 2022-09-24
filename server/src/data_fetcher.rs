@@ -70,6 +70,10 @@ impl SyncFile {
             Err(anyhow!("invalid filename"))
         }
     }
+
+    pub fn filename(&self) -> String {
+        SyncFile::id_to_filename(self.id)
+    }
 }
 
 #[cfg(test)]
