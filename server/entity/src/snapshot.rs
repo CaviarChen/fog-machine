@@ -7,7 +7,7 @@ use std::collections::HashMap;
 #[sea_orm(rs_type = "i16", db_type = "TinyInteger")]
 pub enum SourceKind {
     #[sea_orm(num_value = 0)]
-    Snapshot,
+    Sync,
     #[sea_orm(num_value = 1)]
     Upload,
 }

@@ -123,7 +123,7 @@ async fn create(conn: Connection<'_, Db>, user: User, data: Json<CreateData>) ->
 }
 
 #[derive(Serialize)]
-pub struct TaskJson {
+struct TaskJson {
     pub status: snapshot_task::Status,
     pub interval: i16,
     pub source: snapshot_task::Source,

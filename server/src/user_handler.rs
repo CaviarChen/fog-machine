@@ -52,7 +52,7 @@ fn generate_user_token(server_state: &ServerState, user_id: i64) -> String {
         sub: user_id,
         exp,
     };
-    jwt_data.sign_with_key(&server_state.jwt_key).unwrap()
+    jwt_data.sign_with_key(&server_state.user_jwt_key).unwrap()
 }
 
 pub struct User {
@@ -73,13 +73,17 @@ impl<'r> FromRequest<'r> for User {
                 Some(jwt_token) => {
                     let server_state = req.rocket().state::<ServerState>().unwrap();
                     let jwt_data: Result<JwtData, _> =
-                        jwt_token.verify_with_key(&server_state.jwt_key);
+                        jwt_token.verify_with_key(&server_state.user_jwt_key);
                     match jwt_data {
                         Err(_) => None,
                         Ok(jwt_data) => {
-                            let now = chrono::Utc::now().timestamp();
-                            if now < jwt_data.exp {
-                                Some(User { uid: jwt_data.sub })
+                            if jwt_data.ver == 1 {
+                                let now = chrono::Utc::now().timestamp();
+                                if now < jwt_data.exp {
+                                    Some(User { uid: jwt_data.sub })
+                                } else {
+                                    None
+                                }
                             } else {
                                 None
                             }

@@ -21,7 +21,9 @@ use std::io::Cursor;
 mod data_fetcher;
 mod file_storage;
 mod limit;
+mod misc_handler;
 mod pool;
+mod snapshot_handler;
 mod snapshot_task_handler;
 mod task_runner;
 mod user_handler;
@@ -51,13 +53,24 @@ pub struct Config {
 
 pub struct ServerState {
     pub config: Config,
-    pub jwt_key: Hmac<Sha256>,
+    pub user_jwt_key: Hmac<Sha256>,
+    pub download_jwt_key: Hmac<Sha256>,
+    pub file_storage: file_storage::SyncFileStorage,
 }
 impl ServerState {
     pub fn from_config(config: Config) -> Self {
-        // TODO: move this to user handler state
-        let jwt_key = Hmac::new_from_slice(config.jwt_secret.as_bytes()).unwrap();
-        ServerState { config, jwt_key }
+        // it is very important that we use different key for different jwt.
+        let user_jwt_key =
+            Hmac::new_from_slice(format!("user#{}", config.jwt_secret).as_bytes()).unwrap();
+        let download_jwt_key =
+            Hmac::new_from_slice(format!("download#{}", config.jwt_secret).as_bytes()).unwrap();
+        let file_storage = file_storage::SyncFileStorage::init(&config.data_base_dir).unwrap();
+        ServerState {
+            config,
+            user_jwt_key,
+            download_jwt_key,
+            file_storage,
+        }
     }
 }
 
@@ -112,7 +125,7 @@ fn rocket() -> _ {
     let allowed_origins = if config.cors_allowed_origins == "*" {
         AllowedOrigins::All
     } else {
-        let exact: Vec<&str> = (&config.cors_allowed_origins).split(',').collect();
+        let exact: Vec<&str> = (config.cors_allowed_origins).split(',').collect();
         AllowedOrigins::some_exact(&exact)
     };
 
@@ -123,9 +136,9 @@ fn rocket() -> _ {
     .to_cors()
     .unwrap();
 
-    let file_storage = file_storage::SyncFileStorage::init(&config.data_base_dir).unwrap();
-
     let server_state = ServerState::from_config(config);
+    let file_storage = server_state.file_storage.clone();
+
     rocket::custom(figment)
         .attach(Db::init())
         .attach(AdHoc::try_on_ignite("Migrations", run_migrations))
@@ -138,4 +151,6 @@ fn rocket() -> _ {
         .manage(user_handler::State::create())
         .mount("/api/v1/user", user_handler::routes())
         .mount("/api/v1/snapshot_task", snapshot_task_handler::routes())
+        .mount("/api/v1/snapshot", snapshot_handler::routes())
+        .mount("/api/v1/misc", misc_handler::routes())
 }

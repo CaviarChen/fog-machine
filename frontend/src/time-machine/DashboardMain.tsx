@@ -26,8 +26,9 @@ import CloseOutlineIcon from "@rsuite/icons/CloseOutline";
 import EditIcon from "@rsuite/icons/Edit";
 import AddOutlineIcon from "@rsuite/icons/AddOutline";
 import HelpOutlineIcon from "@rsuite/icons/HelpOutline";
+import DashboardSnapshot from "./DashboardSnapshot";
 
-function Dashboard() {
+function DashboardMain() {
   const [isLoading, setIsLoading] = useState(false);
   const [snapshotTask, setSnapshotTask] = useState<SnapshotTask | null>(null);
   const loadData = async () => {
@@ -55,8 +56,7 @@ function Dashboard() {
 
   const renderDetail = () => {
     if (isLoading) {
-      return;
-      <Placeholder.Paragraph />;
+      return <Placeholder.Paragraph />;
     } else {
       if (!snapshotTask) {
         return (
@@ -306,6 +306,7 @@ function Dashboard() {
       <Panel bordered>
         <div style={{ height: "120px" }}>{renderDetail()}</div>
       </Panel>
+      <DashboardSnapshot />
 
       <Modal
         open={openEditModel}
@@ -399,4 +400,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default DashboardMain;

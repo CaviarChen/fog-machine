@@ -14,7 +14,7 @@ import {
 } from "rsuite";
 import "./Home.css";
 import Api from "./api";
-import Dashboard from "./Dashboard";
+import DashboardMain from "./DashboardMain";
 
 // I really want ADT
 type LoginStatus = {
@@ -101,7 +101,7 @@ function Home() {
       );
     } else {
       if (loginStatus.loggedIn) {
-        return <Dashboard />;
+        return <DashboardMain />;
       } else {
         if (registrationState) {
           const handleSubmit = async (checkStatus: boolean) => {
