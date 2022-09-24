@@ -2,34 +2,16 @@ import { useState, useEffect } from "react";
 import moment from "moment";
 import {
   Button,
-  Modal,
   Table,
   Panel,
   Placeholder,
   ButtonToolbar,
-  Stack,
   Tooltip,
   Whisper,
   Tag,
-  IconButton,
-  Form,
-  SelectPicker,
-  InputGroup,
-  Message,
-  useToaster,
-  Notification,
 } from "rsuite";
 import MoreIcon from "@rsuite/icons/legacy/More";
 import Api, { Snapshot } from "./api";
-import PauseIcon from "@rsuite/icons/legacy/Pause";
-import FileTextIcon from "@rsuite/icons/legacy/FileText";
-import PlayIcon from "@rsuite/icons/legacy/Play";
-import PlayOutlineIcon from "@rsuite/icons/PlayOutline";
-import PauseOutlineIcon from "@rsuite/icons/PauseOutline";
-import CloseOutlineIcon from "@rsuite/icons/CloseOutline";
-import EditIcon from "@rsuite/icons/Edit";
-import AddOutlineIcon from "@rsuite/icons/AddOutline";
-import HelpOutlineIcon from "@rsuite/icons/HelpOutline";
 
 const { Column, HeaderCell, Cell } = Table;
 
@@ -99,22 +81,33 @@ function DashboardSnapshot() {
                   <div style={{ marginTop: "-3px" }}>
                     <ButtonToolbar>
                       <Button size="sm">View</Button>
-                      <Button size="sm" onClick={async () => {
-                        const token = await Api.getSnapshotDownloadToken(snapshot.id);
-                        if (token.ok) {
-                          window.open(Api.backendUrl + "misc/download?token=" + token.ok, "_blank")
-                        } else {
-                          //TODO: error handling
-                        }
-
-                      }}>Download</Button>
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          const token = await Api.getSnapshotDownloadToken(
+                            snapshot.id
+                          );
+                          if (token.ok) {
+                            window.open(
+                              Api.backendUrl +
+                                "misc/download?token=" +
+                                token.ok,
+                              "_blank"
+                            );
+                          } else {
+                            //TODO: error handling
+                          }
+                        }}
+                      >
+                        Download
+                      </Button>
                     </ButtonToolbar>
                   </div>
                 );
               }}
             </Cell>
           </Column>
-        </Table >
+        </Table>
       );
     }
   };
