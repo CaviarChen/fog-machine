@@ -1,22 +1,15 @@
-use crate::data_fetcher;
 use crate::misc_handler;
 use crate::pool::Db;
 use crate::user_handler::User;
 use crate::{APIResponse, ServerState};
-use anyhow::Error;
-use anyhow::Result;
 use chrono::prelude::*;
 use entity::sea_orm;
-use entity::{snapshot, snapshot_log};
-use jwt::SignWithKey;
+use entity::snapshot;
 use rocket::http::Status;
-use rocket::serde::json::Json;
-use sea_orm::{entity::*, query::*, DatabaseTransaction};
+use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::json;
-use std::cmp;
-use std::collections::HashSet;
 
 #[derive(Serialize)]
 struct SnapshotJson {

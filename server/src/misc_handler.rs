@@ -1,25 +1,18 @@
 use crate::data_fetcher;
 use crate::pool::Db;
 use crate::user_handler::User;
-use crate::{APIResponse, InternalError, ServerState};
-use anyhow::Error;
+use crate::{InternalError, ServerState};
 use anyhow::Result;
-use chrono::prelude::*;
 use entity::sea_orm;
-use entity::{snapshot, snapshot_log};
+use entity::snapshot;
 use jwt::SignWithKey;
 use rocket::http::ContentType;
 use rocket::http::Status;
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
-use rocket::serde::json::Json;
-use sea_orm::{entity::*, query::*, DatabaseTransaction};
+use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::cmp;
-use std::collections::HashSet;
-use zip::write::FileOptions;
 
 #[derive(Serialize, Deserialize)]
 struct DownloadJwtData {
