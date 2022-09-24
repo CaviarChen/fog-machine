@@ -146,6 +146,11 @@ fn rocket() -> _ {
         .attach(AdHoc::on_liftoff("Task Runner", |rocket| {
             Box::pin(async move { task_runner::run(rocket, file_storage).await })
         }))
+        .attach(AdHoc::on_response("No cache", |_, resp| {
+            Box::pin(async move {
+                resp.set_raw_header("Cache-Control", "no-cache, no-store");
+            })
+        }))
         .manage(server_state)
         // user handler
         .manage(user_handler::State::create())
