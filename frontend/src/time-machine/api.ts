@@ -252,4 +252,13 @@ export default class Api {
     }
     return result;
   }
+
+  public static async getSnapshotDownloadToken(snapshotId: number): Promise<Result<string>> {
+    const result = await this.requestApi("snapshot/" + String(snapshotId) + "/download_token", "post", true);
+    if (result.ok) {
+      result.ok = result.ok.token;
+    }
+    return result;
+  }
+
 }

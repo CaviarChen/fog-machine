@@ -94,19 +94,27 @@ function DashboardSnapshot() {
             </HeaderCell>
             <Cell>
               {(rawData) => {
-                const _snapshot = rawData as Snapshot;
+                const snapshot = rawData as Snapshot;
                 return (
                   <div style={{ marginTop: "-3px" }}>
                     <ButtonToolbar>
                       <Button size="sm">View</Button>
-                      <Button size="sm">Download</Button>
+                      <Button size="sm" onClick={async () => {
+                        const token = await Api.getSnapshotDownloadToken(snapshot.id);
+                        if (token.ok) {
+                          window.open(Api.backendUrl + "misc/download?token=" + token.ok, "_blank")
+                        } else {
+                          //TODO: error handling
+                        }
+
+                      }}>Download</Button>
                     </ButtonToolbar>
                   </div>
                 );
               }}
             </Cell>
           </Column>
-        </Table>
+        </Table >
       );
     }
   };
