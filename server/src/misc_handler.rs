@@ -74,7 +74,6 @@ async fn download<'r>(
 ) -> Result<FileResponse, InternalError> {
     use jwt::VerifyWithKey;
 
-    println!("token: {}", token);
     let jwt_data: Result<DownloadJwtData, _> =
         token.verify_with_key(&server_state.download_jwt_key);
     let sanpshot_id = match jwt_data {
