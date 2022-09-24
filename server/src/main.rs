@@ -125,7 +125,7 @@ fn rocket() -> _ {
     let allowed_origins = if config.cors_allowed_origins == "*" {
         AllowedOrigins::All
     } else {
-        let exact: Vec<&str> = (&config.cors_allowed_origins).split(',').collect();
+        let exact: Vec<&str> = (config.cors_allowed_origins).split(',').collect();
         AllowedOrigins::some_exact(&exact)
     };
 
