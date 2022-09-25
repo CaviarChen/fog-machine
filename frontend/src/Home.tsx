@@ -1,16 +1,18 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Container, Panel, Content, Divider, Stack } from "rsuite";
+import { Button, ButtonGroup, Container, Panel, Content, Divider, Stack } from "rsuite";
 import EditIcon from "@rsuite/icons/Edit";
 import HistoryIcon from "@rsuite/icons/History";
 import { IconProps } from "@rsuite/icons/lib/Icon";
+import { useTranslation } from "react-i18next";
 import "./Home.css";
 
 function Item(
   title: string,
   Icon: React.FC<IconProps>,
   description: string,
-  onClick: () => void
+  onClick: () => void,
+  enable: boolean,
 ) {
   const [hover, setHover] = useState(false);
   return (
@@ -19,9 +21,9 @@ function Item(
       bordered
       bodyFill
       className="home-item"
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onClick={() => { if (enable) { onClick() } }}
+      onMouseEnter={() => { if (enable) { setHover(true) } }}
+      onMouseLeave={() => { if (enable) { setHover(false) } }}
     >
       <Stack spacing={6}>
         <Icon style={{ fontSize: "6em", margin: "20px" }} />
@@ -37,31 +39,43 @@ function Item(
 
 function Home() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   return (
     <Container>
       <Content>
         <div className="home-body">
           <div className="home-title">
-            <h1>Fog Machine</h1>
-            <h4>A 3rd party extension tool for the app Fog of World</h4>
+            <h1>{t("home-main-title")}</h1>
+            <h4>{t("home-main-title-desc")}</h4>
           </div>
 
           <Divider />
+
+          <div style={{ width: "100%" }}>
+            <ButtonGroup style={{ display: "table", margin: "0 auto" }} size="lg">
+              <Button active={i18n.resolvedLanguage == "zh"} onClick={() => i18n.changeLanguage("zh")}>简体中文</Button>
+              <Button active={i18n.resolvedLanguage == "en"} onClick={() => i18n.changeLanguage("en")}>English</Button>
+            </ButtonGroup>
+          </div>
+
           {Item(
-            "Editor",
+            t("home-editor-title"),
             EditIcon,
-            "A tool for visualizing and editing the data of Fog of World App.",
+            t("home-editor-desc"),
             () => {
               location.href = "/editor";
-            }
+            },
+            true,
           )}
           {Item(
-            "Time Machine",
+            t("home-time-machine-title"),
             HistoryIcon,
-            "A service for backup and preserve history of the data of Fog of World App.",
+            t("home-time-machine-desc"),
             () => {
               navigate("/time-machine", { replace: false });
-            }
+            },
+            // hide this before public beta
+            false,
           )}
         </div>
       </Content>

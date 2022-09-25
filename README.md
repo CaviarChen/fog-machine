@@ -1,5 +1,8 @@
 # Fog Machine
 
+**Note:** We are actively working on Fog Machine 2. Things changed a lot and this README is mainly for the Fog Machine editor which is under folder `./editor`. We'll update this README shortly.
+
+
 Fog Machine is a web tool for visualizing and editing the data of [_Fog of World_](https://fogofworld.app/) App. Currently, it supports:
 
 - import and visualize FoW data
