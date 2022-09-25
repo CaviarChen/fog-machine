@@ -1,8 +1,8 @@
 #!/bin/bash
-echo "REACT_APP_MAPBOX_TOKEN:" $REACT_APP_MAPBOX_TOKEN
-echo "CDN_URL:" $CDN_URL
-echo "API_URL:" $API_URL
-echo "----------"
+# echo "REACT_APP_MAPBOX_TOKEN:" $REACT_APP_MAPBOX_TOKEN
+# echo "CDN_URL:" $CDN_URL
+# echo "API_URL:" $API_URL
+# echo "----------"
 mkdir -p build/frontend/
 rm -rf build/frontend/*
 (cd frontend && export PUBLIC_URL=$CDN_URL && export REACT_APP_BACKEND_URL=$API_URL && yarn build)
