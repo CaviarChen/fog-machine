@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, ButtonGroup, Container, Panel, Content, Divider, Stack } from "rsuite";
+import {
+  Button,
+  ButtonGroup,
+  Container,
+  Panel,
+  Content,
+  Divider,
+  Stack,
+} from "rsuite";
 import EditIcon from "@rsuite/icons/Edit";
 import HistoryIcon from "@rsuite/icons/History";
 import { IconProps } from "@rsuite/icons/lib/Icon";
@@ -12,7 +20,7 @@ function Item(
   Icon: React.FC<IconProps>,
   description: string,
   onClick: () => void,
-  enable: boolean,
+  enable: boolean
 ) {
   const [hover, setHover] = useState(false);
   return (
@@ -21,9 +29,21 @@ function Item(
       bordered
       bodyFill
       className="home-item"
-      onClick={() => { if (enable) { onClick() } }}
-      onMouseEnter={() => { if (enable) { setHover(true) } }}
-      onMouseLeave={() => { if (enable) { setHover(false) } }}
+      onClick={() => {
+        if (enable) {
+          onClick();
+        }
+      }}
+      onMouseEnter={() => {
+        if (enable) {
+          setHover(true);
+        }
+      }}
+      onMouseLeave={() => {
+        if (enable) {
+          setHover(false);
+        }
+      }}
     >
       <Stack spacing={6}>
         <Icon style={{ fontSize: "6em", margin: "20px" }} />
@@ -52,9 +72,22 @@ function Home() {
           <Divider />
 
           <div style={{ width: "100%" }}>
-            <ButtonGroup style={{ display: "table", margin: "0 auto" }} size="lg">
-              <Button active={i18n.resolvedLanguage == "zh"} onClick={() => i18n.changeLanguage("zh")}>简体中文</Button>
-              <Button active={i18n.resolvedLanguage == "en"} onClick={() => i18n.changeLanguage("en")}>English</Button>
+            <ButtonGroup
+              style={{ display: "table", margin: "0 auto" }}
+              size="lg"
+            >
+              <Button
+                active={i18n.resolvedLanguage == "zh"}
+                onClick={() => i18n.changeLanguage("zh")}
+              >
+                简体中文
+              </Button>
+              <Button
+                active={i18n.resolvedLanguage == "en"}
+                onClick={() => i18n.changeLanguage("en")}
+              >
+                English
+              </Button>
             </ButtonGroup>
           </div>
 
@@ -65,7 +98,7 @@ function Home() {
             () => {
               location.href = "/editor";
             },
-            true,
+            true
           )}
           {Item(
             t("home-time-machine-title"),
@@ -75,7 +108,7 @@ function Home() {
               navigate("/time-machine", { replace: false });
             },
             // hide this before public beta
-            false,
+            false
           )}
         </div>
       </Content>
