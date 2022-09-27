@@ -74,65 +74,6 @@ async fn create_download_token(
     }
 }
 
-#[get("/<snapshot_id>/editor_view")]
-async fn get_editor_view(
-    conn: Connection<'_, Db>,
-    server_state: &rocket::State<ServerState>,
-    user: User,
-    snapshot_id: i64,
-) -> APIResponse {
-    let db = conn.into_inner();
-    let txn = db.begin().await?;
-
-    let this_snapshot = snapshot::Entity::find()
-        .filter(snapshot::Column::UserId.eq(user.uid))
-        .filter(snapshot::Column::Id.eq(snapshot_id))
-        .one(&txn)
-        .await?;
-
-    match this_snapshot {
-        None => {
-            txn.commit().await?;
-            Ok((Status::NotFound, json!({})))
-        }
-        Some(this_snapshot) => {
-            let prev_snapshot = snapshot::Entity::find()
-                .filter(snapshot::Column::UserId.eq(user.uid))
-                .filter(snapshot::Column::Id.ne(snapshot_id))
-                .filter(snapshot::Column::Timestamp.lte(this_snapshot.timestamp))
-                .order_by_desc(snapshot::Column::Timestamp)
-                .one(&txn)
-                .await?;
-            let next_snapshot = snapshot::Entity::find()
-                .filter(snapshot::Column::UserId.eq(user.uid))
-                .filter(snapshot::Column::Id.ne(snapshot_id))
-                .filter(snapshot::Column::Timestamp.gte(this_snapshot.timestamp))
-                .order_by_asc(snapshot::Column::Timestamp)
-                .one(&txn)
-                .await?;
-            txn.commit().await?;
-
-            Ok((
-                Status::Ok,
-                json!({
-                    "id": this_snapshot.id,
-                    "timestamp": this_snapshot.timestamp,
-                    "prev": json!({
-                        "id": prev_snapshot.as_ref().map(|s| s.id),
-                        "timestamp": prev_snapshot.as_ref().map(|s| s.timestamp),
-                    }),
-                    "next": json!({
-                        "id": next_snapshot.as_ref().map(|s| s.id),
-                        "timestamp": next_snapshot.as_ref().map(|s| s.timestamp),
-                    }),
-                    "download_token":
-                        misc_handler::generate_snapshot_download_token(server_state, snapshot_id),
-                }),
-            ))
-        }
-    }
-}
-
 pub fn routes() -> Vec<rocket::Route> {
-    routes![list_all, create_download_token, get_editor_view]
+    routes![list_all, create_download_token]
 }
