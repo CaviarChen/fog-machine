@@ -1,5 +1,5 @@
 import React, { Fragment, useState } from "react";
-import Map from "./Map";
+import EditorMode from "./EditorMode";
 import MainMenu, { Actions } from "./MainMenu";
 import GithubCorner from "./GithubCorner";
 import Import from "./Import";
@@ -176,7 +176,7 @@ function App(): JSX.Element {
           }}
         />
         {msgbox}
-        <Map setLoaded={setLoaded} />
+        <EditorMode setLoaded={setLoaded} />
       </div>
       {loaded ? <></> : loadingSpinner}
     </>

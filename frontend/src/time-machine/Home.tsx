@@ -172,7 +172,12 @@ function Home() {
           return (
             <>
               <h3>Login</h3>
-              <Message showIcon type="warning" header="Warning" style={{ marginTop: "1vh" }}>
+              <Message
+                showIcon
+                type="warning"
+                header="Warning"
+                style={{ marginTop: "1vh" }}
+              >
                 This service is in alpha testing. Use it at your own risk.
               </Message>
               <div style={{ marginTop: "8vh" }}></div>

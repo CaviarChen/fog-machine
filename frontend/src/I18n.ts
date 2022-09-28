@@ -15,11 +15,14 @@ i18n
       en: {
         translation: {
           "home-main-title": "Fog Machine",
-          "home-main-title-desc": "A 3rd party extension tool for the app Fog of World",
+          "home-main-title-desc":
+            "A 3rd party extension tool for the app Fog of World",
           "home-editor-title": "Editor",
-          "home-editor-desc": "A tool for visualizing and editing the data of Fog of World App.",
+          "home-editor-desc":
+            "A tool for visualizing and editing the data of Fog of World App.",
           "home-time-machine-title": "Time Machine (Coming soon)",
-          "home-time-machine-desc": "A service for backup and preserve history of the data of Fog of World App.",
+          "home-time-machine-desc":
+            "A service for backup and preserve history of the data of Fog of World App.",
         },
       },
       zh: {
