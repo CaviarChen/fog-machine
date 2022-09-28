@@ -112,19 +112,26 @@ async fn get_editor_view(
                 .await?;
             txn.commit().await?;
 
+            let prev = prev_snapshot.map(|s| {
+                json!({
+                    "id": s.id,
+                    "timestamp":  s.timestamp,
+                })
+            });
+            let next = next_snapshot.map(|s| {
+                json!({
+                    "id": s.id,
+                    "timestamp":  s.timestamp,
+                })
+            });
+
             Ok((
                 Status::Ok,
                 json!({
                     "id": this_snapshot.id,
                     "timestamp": this_snapshot.timestamp,
-                    "prev": json!({
-                        "id": prev_snapshot.as_ref().map(|s| s.id),
-                        "timestamp": prev_snapshot.as_ref().map(|s| s.timestamp),
-                    }),
-                    "next": json!({
-                        "id": next_snapshot.as_ref().map(|s| s.id),
-                        "timestamp": next_snapshot.as_ref().map(|s| s.timestamp),
-                    }),
+                    "prev": prev,
+                    "next": next,
                     "download_token":
                         misc_handler::generate_snapshot_download_token(server_state, snapshot_id),
                 }),
