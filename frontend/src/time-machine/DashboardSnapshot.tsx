@@ -11,7 +11,7 @@ import {
   Tag,
 } from "rsuite";
 import MoreIcon from "@rsuite/icons/legacy/More";
-import Api, { Snapshot } from "./api";
+import Api, { Snapshot } from "./Api";
 
 const { Column, HeaderCell, Cell } = Table;
 
@@ -90,8 +90,8 @@ function DashboardSnapshot() {
                           if (token.ok) {
                             window.open(
                               Api.backendUrl +
-                                "misc/download?token=" +
-                                token.ok,
+                              "misc/download?token=" +
+                              token.ok,
                               "_blank"
                             );
                           } else {

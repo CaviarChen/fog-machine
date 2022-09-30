@@ -14,7 +14,7 @@ import {
   Message,
 } from "rsuite";
 import "./Home.css";
-import Api from "./api";
+import Api from "./Api";
 import DashboardMain from "./DashboardMain";
 
 // I really want ADT

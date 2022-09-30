@@ -47,8 +47,8 @@ async fn list_all(conn: Connection<'_, Db>, user: User) -> APIResponse {
     Ok((Status::Ok, json!(snapshot_list)))
 }
 
-#[post("/<snapshot_id>/download_token")]
-async fn create_download_token(
+#[get("/<snapshot_id>/download_token")]
+async fn get_download_token(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
     user: User,
@@ -141,5 +141,5 @@ async fn get_editor_view(
 }
 
 pub fn routes() -> Vec<rocket::Route> {
-    routes![list_all, create_download_token, get_editor_view]
+    routes![list_all, get_download_token, get_editor_view]
 }
