@@ -45,7 +45,8 @@ export default function MyModal(props: Props): JSX.Element {
           return [file.name, data] as [string, ArrayBuffer];
         })
       );
-      mapRenderer.addFoGFiles(tileFiles);
+      const map = FogMap.createFromFiles(tileFiles);
+      mapRenderer.replaceFogMap(map);
       done = true;
     } else {
       if (files.length === 1 && getFileExtension(files[0].name) === "zip") {
@@ -58,7 +59,8 @@ export default function MyModal(props: Props): JSX.Element {
               return [filename, data] as [string, ArrayBuffer];
             })
           );
-          mapRenderer.addFoGFiles(tileFiles);
+          const map = FogMap.createFromFiles(tileFiles);
+          mapRenderer.replaceFogMap(map);
         }
         done = true;
       }

@@ -118,12 +118,6 @@ export class MapRenderer {
     this.historyManager.redo(this.applyFogMapUpdate.bind(this));
   }
 
-  addFoGFiles(files: [string, ArrayBuffer][]): void {
-    const newMap = this.fogMap.addFiles(files);
-
-    this.updateFogMap(newMap, "all");
-  }
-
   handleMouseClick(e: mapboxgl.MapMouseEvent): void {
     if (this.eraserMode) {
       console.log(

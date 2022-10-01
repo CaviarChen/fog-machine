@@ -25,6 +25,7 @@ function Map(props: Props): JSX.Element {
     if (map.current) return;
     if (!mapContainer.current) return;
     if (!deckglContainer.current) return;
+    console.log("initializing");
     const mapboxMap = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/streets-v11",
@@ -53,7 +54,7 @@ function Map(props: Props): JSX.Element {
       // TODO: This clean up seems wrong
       // mapRenderer.unregisterMap(mapboxMap);
     };
-  });
+  }, []);
 
   return (
     <div className="absolute inset-0">

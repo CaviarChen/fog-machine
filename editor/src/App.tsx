@@ -6,6 +6,7 @@ import Import from "./Import";
 import { MapRenderer } from "./utils/MapRenderer";
 import { Dialog, Transition } from "@headlessui/react";
 import { useTranslation } from "react-i18next";
+import ViewerMode from "./ViewerMode";
 
 function App(): JSX.Element {
   const { t } = useTranslation();
@@ -136,6 +137,17 @@ function App(): JSX.Element {
     </div>
   );
 
+  const Mode = () => {
+    const snapshotIdStr = (new URL(window.location.href)).searchParams.get("viewing-snapshot")
+    if (snapshotIdStr) {
+      const snapshotId = Number(snapshotIdStr);
+      return <ViewerMode setLoaded={setLoaded} snapshotId={snapshotId} />;
+    } else {
+      return <EditorMode setLoaded={setLoaded} />;
+    }
+  }
+
+
   return (
     <>
       <GithubCorner />
@@ -176,7 +188,7 @@ function App(): JSX.Element {
           }}
         />
         {msgbox}
-        <EditorMode setLoaded={setLoaded} />
+        <Mode />
       </div>
       {loaded ? <></> : loadingSpinner}
     </>
