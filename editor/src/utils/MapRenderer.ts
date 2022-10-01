@@ -74,9 +74,9 @@ export class MapRenderer {
     // TODO
   }
 
-  redrawArea(area: deckgl.Bbox | null): void {
+  redrawArea(area: deckgl.Bbox | "all"): void {
     Object.values(this.loadedFogCanvases).forEach((fogCanvas) => {
-      if (area === null || isBboxOverlap(fogCanvas.tile.bbox, area)) {
+      if (area === "all" || isBboxOverlap(fogCanvas.tile.bbox, area)) {
         this.drawFogCanvas(fogCanvas);
       }
     });
@@ -85,7 +85,7 @@ export class MapRenderer {
 
   private applyFogMapUpdate(
     newMap: fogMap.FogMap,
-    areaChanged: deckgl.Bbox | null
+    areaChanged: deckgl.Bbox | "all"
   ) {
     this.fogMap = newMap;
     this.redrawArea(areaChanged);
@@ -97,12 +97,17 @@ export class MapRenderer {
 
   private updateFogMap(
     newMap: fogMap.FogMap,
-    areaChanged: deckgl.Bbox | null
+    areaChanged: deckgl.Bbox | "all"
   ): void {
     if (this.fogMap !== newMap) {
       this.historyManager.append(newMap, areaChanged);
       this.applyFogMapUpdate(newMap, areaChanged);
     }
+  }
+
+  replaceFogMap(newMap: fogMap.FogMap): void {
+    this.historyManager = new HistoryManager(fogMap.FogMap.empty);
+    this.updateFogMap(newMap, "all");
   }
 
   undo(): void {
@@ -116,8 +121,7 @@ export class MapRenderer {
   addFoGFiles(files: [string, ArrayBuffer][]): void {
     const newMap = this.fogMap.addFiles(files);
 
-    // NOTE: areaChanged = null means all area
-    this.updateFogMap(newMap, null);
+    this.updateFogMap(newMap, "all");
   }
 
   handleMouseClick(e: mapboxgl.MapMouseEvent): void {
