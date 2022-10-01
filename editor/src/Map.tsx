@@ -15,7 +15,7 @@ mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
 // created multiple times.
 type Props = {
   initialized(mapRenderer: MapRenderer): void;
-  note: "THIS SHOULDN'T BE UNMOUNTED"
+  note: "THIS SHOULDN'T BE UNMOUNTED";
 };
 
 function Map(props: Props): JSX.Element {

@@ -1,7 +1,7 @@
 import { MapRenderer } from "./utils/MapRenderer";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
-import MainMenu, { Actions } from "./MainMenu";
+import MainMenu from "./MainMenu";
 
 type Props = {
   setLoaded(isLoaded: boolean): void;
@@ -41,7 +41,6 @@ function EditorMode(props: Props): JSX.Element {
   });
   props.setLoaded(true);
 
-
   const toolButtons = [
     {
       icon: iconUndo,
@@ -72,9 +71,7 @@ function EditorMode(props: Props): JSX.Element {
 
   return (
     <>
-      <MainMenu mapRenderer={mapRenderer}
-        msgboxShow={props.msgboxShow}
-      />
+      <MainMenu mapRenderer={mapRenderer} msgboxShow={props.msgboxShow} />
 
       <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
         {toolButtons.map((toolButton) =>

@@ -1,15 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Popover, Tab, Transition } from "@headlessui/react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/solid";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { MapRenderer } from "./utils/MapRenderer";
 import Import from "./Import";
-
-export enum Actions {
-  Import,
-  Export,
-}
 
 type Props = {
   mapRenderer: MapRenderer;

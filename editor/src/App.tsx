@@ -2,7 +2,7 @@ import React, { Fragment, useState } from "react";
 import Editor from "./Editor";
 import GithubCorner from "./GithubCorner";
 import { MapRenderer } from "./utils/MapRenderer";
-import Map from "./Map"
+import Map from "./Map";
 import { Dialog, Transition } from "@headlessui/react";
 import { useTranslation } from "react-i18next";
 
@@ -30,11 +30,11 @@ function App(): JSX.Element {
 
   const msgboxClose = () => {
     setMsgboxState({ ...msgboxState, isOpen: false });
-  }
+  };
 
   const msgboxShow = (title: string, msg: string) => {
     setMsgboxState({ isOpen: true, title: title, msg: msg });
-  }
+  };
 
   const msgbox = (
     <Transition appear show={msgboxState.isOpen} as={Fragment}>
@@ -137,11 +137,14 @@ function App(): JSX.Element {
 
   const Mode = () => {
     if (!mapRenderer) return <></>;
-    return <Editor mapRenderer={mapRenderer} setLoaded={setLoaded}
-      msgboxShow={msgboxShow}
-    />;
-  }
-
+    return (
+      <Editor
+        mapRenderer={mapRenderer}
+        setLoaded={setLoaded}
+        msgboxShow={msgboxShow}
+      />
+    );
+  };
 
   return (
     <>
@@ -149,7 +152,10 @@ function App(): JSX.Element {
       <div className={loaded ? "" : "invisible"}>
         <Map
           note="THIS SHOULDN'T BE UNMOUNTED"
-          initialized={(mapRenderer) => { setMapRenderer(mapRenderer); setLoaded(true); }}
+          initialized={(mapRenderer) => {
+            setMapRenderer(mapRenderer);
+            setLoaded(true);
+          }}
         />
         {msgbox}
         <Mode />

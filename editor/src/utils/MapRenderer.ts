@@ -33,7 +33,7 @@ export class MapRenderer {
   private loadedFogCanvases: { [key: string]: FogCanvas };
   private eraserMode: boolean;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
-  private onChangeCallback: { [key: string]: (() => void) };
+  private onChangeCallback: { [key: string]: () => void };
 
   private constructor() {
     this.map = null;
@@ -48,7 +48,9 @@ export class MapRenderer {
 
   static create(): MapRenderer {
     if (MapRenderer.instance) {
-      console.log("WARNING: One shouldn't create a second copy of `MapRenderer`")
+      console.log(
+        "WARNING: One shouldn't create a second copy of `MapRenderer`"
+      );
     } else {
       MapRenderer.instance = new MapRenderer();
     }
@@ -56,16 +58,13 @@ export class MapRenderer {
   }
 
   private onChange() {
-    Object.keys(this.onChangeCallback).map(key => {
+    Object.keys(this.onChangeCallback).map((key) => {
       const callback = this.onChangeCallback[key];
       callback();
     });
   }
 
-  registerMap(
-    map: mapboxgl.Map,
-    deckglContainer: HTMLCanvasElement,
-  ): void {
+  registerMap(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement): void {
     this.map = map;
     this.deckgl = new deckgl.Deckgl(
       map,
