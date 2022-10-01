@@ -373,7 +373,7 @@ export class Block {
     );
     const regionChar1 = String.fromCharCode(
       (((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xc0) >> 6)) +
-      "?".charCodeAt(0)
+        "?".charCodeAt(0)
     );
     return regionChar0 + regionChar1;
   }

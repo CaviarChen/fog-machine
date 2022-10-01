@@ -35,8 +35,8 @@ export type SnapshotInfo = {
   id: number;
   timestamp: Date;
   downloadToken: string;
-  prev: { id: number; timestamp: Date; } | null;
-  next: { id: number; timestamp: Date; } | null;
+  prev: { id: number; timestamp: Date } | null;
+  next: { id: number; timestamp: Date } | null;
 };
 
 // TODO: [snakeToCamel] and [camelToSnake] are very silly.
@@ -64,6 +64,7 @@ export default class TimeMachineApi {
     url: string,
     method: "get" | "post" | "patch" | "delete",
     needToken: boolean,
+    responseType: "json" | "arraybuffer",
     data?: { [key: string]: any }
   ): Promise<Result<any>> {
     try {
@@ -76,6 +77,7 @@ export default class TimeMachineApi {
         url: this.backendUrl + url,
         data,
         headers,
+        responseType,
       });
       return { status: response.status, ok: response.data };
     } catch (error: any) {
@@ -97,7 +99,8 @@ export default class TimeMachineApi {
     const result = await this.requestApi(
       "snapshot/" + String(snapshotId) + "/editor_view",
       "get",
-      true
+      true,
+      "json"
     );
     if (result.ok) {
       result.ok = snakeToCamel(result.ok);
@@ -105,11 +108,12 @@ export default class TimeMachineApi {
     return result;
   }
 
-  public static async downloadSnapshot(downloadToken: string) {
+  public static async downloadSnapshot(downloadToken: string): Promise<Result<ArrayBuffer>> {
     return this.requestApi(
       "misc/download?token=" + downloadToken,
       "get",
-      false
+      false,
+      "arraybuffer"
     );
   }
 }

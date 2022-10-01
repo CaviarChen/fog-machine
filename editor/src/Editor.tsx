@@ -9,7 +9,7 @@ type Props = {
   msgboxShow(title: string, msg: string): void;
 };
 
-function EditorMode(props: Props): JSX.Element {
+function Editor(props: Props): JSX.Element {
   const mapRenderer = props.mapRenderer;
   const [eraserMode, setEraserMode] = useState(false);
   useEffect(() => {
@@ -105,7 +105,7 @@ function EditorMode(props: Props): JSX.Element {
   );
 }
 
-export default EditorMode;
+export default Editor;
 
 const iconEraserSolid = (
   <svg
