@@ -1,14 +1,16 @@
-import Map from "./Map";
 import { MapRenderer } from "./utils/MapRenderer";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
+import MainMenu from "./MainMenu";
 
 type Props = {
   setLoaded(isLoaded: boolean): void;
+  mapRenderer: MapRenderer;
+  msgboxShow(title: string, msg: string): void;
 };
 
 function EditorMode(props: Props): JSX.Element {
-  const mapRenderer = MapRenderer.get();
+  const mapRenderer = props.mapRenderer;
   const [eraserMode, setEraserMode] = useState(false);
   useEffect(() => {
     mapRenderer.setEraserMod(eraserMode);
@@ -19,25 +21,25 @@ function EditorMode(props: Props): JSX.Element {
     canUndo: false,
   });
 
-  const mapRendererOnChange = () => {
-    setHistoryStatus({
-      canRedo: mapRenderer.historyManager.canRedo(),
-      canUndo: mapRenderer.historyManager.canUndo(),
+  useEffect(() => {
+    mapRenderer.registerOnChangeCallback("editor", () => {
+      setHistoryStatus({
+        canRedo: mapRenderer.historyManager.canRedo(),
+        canUndo: mapRenderer.historyManager.canUndo(),
+      });
     });
-  };
-  const mapOnLoaded = () => {
-    Mousetrap.bind(["mod+z"], (_) => {
-      mapRenderer.undo();
-    });
-    Mousetrap.bind(["mod+shift+z"], (_) => {
-      mapRenderer.redo();
-    });
+    return function cleanup() {
+      mapRenderer.unregisterOnChangeCallback("editor");
+    };
+  }, []);
 
-    // give deckgl a little bit of time
-    setTimeout(() => {
-      props.setLoaded(true);
-    }, 200);
-  };
+  Mousetrap.bind(["mod+z"], (_) => {
+    mapRenderer.undo();
+  });
+  Mousetrap.bind(["mod+shift+z"], (_) => {
+    mapRenderer.redo();
+  });
+  props.setLoaded(true);
 
   const toolButtons = [
     {
@@ -69,11 +71,8 @@ function EditorMode(props: Props): JSX.Element {
 
   return (
     <>
-      <Map
-        setLoaded={props.setLoaded}
-        mapOnLoaded={mapOnLoaded}
-        mapRendererOnChange={mapRendererOnChange}
-      />
+      <MainMenu mapRenderer={mapRenderer} msgboxShow={props.msgboxShow} />
+
       <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
         {toolButtons.map((toolButton) =>
           toolButton !== null ? (
