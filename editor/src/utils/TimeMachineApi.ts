@@ -108,7 +108,9 @@ export default class TimeMachineApi {
     return result;
   }
 
-  public static async downloadSnapshot(downloadToken: string): Promise<Result<ArrayBuffer>> {
+  public static async downloadSnapshot(
+    downloadToken: string
+  ): Promise<Result<ArrayBuffer>> {
     return this.requestApi(
       "misc/download?token=" + downloadToken,
       "get",

@@ -148,6 +148,7 @@ function App(): JSX.Element {
           mapRenderer={mapRenderer}
           setLoaded={setLoaded}
           initialSnapshotId={snapshotId}
+          msgboxShow={msgboxShow}
         />
       );
     } else {

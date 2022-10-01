@@ -1,52 +1,64 @@
 import { MapRenderer } from "./utils/MapRenderer";
 import { useEffect, useState } from "react";
-import { createMapFromZip } from "./Import"
+import { createMapFromZip } from "./Import";
 import TimeMachineApi from "./utils/TimeMachineApi";
 
 type Props = {
-    mapRenderer: MapRenderer;
-    initialSnapshotId: number;
-    setLoaded(isLoaded: boolean): void;
+  mapRenderer: MapRenderer;
+  initialSnapshotId: number;
+  setLoaded(isLoaded: boolean): void;
+  msgboxShow(title: string, msg: string): void;
 };
 
+// User may switch between snapshots a lot and the sansphotId -> data mapping should be immutable.
+// So let's cache it.
+// TODO: improve caching. e.g. size limit / not in memory / share across sessions
+const gloablSnapshotCache: { [key: number]: ArrayBuffer } = {};
+
 function Viewer(props: Props): JSX.Element {
-    const mapRenderer = props.mapRenderer;
-    const [snapshotId, setSnapshotId] = useState(props.initialSnapshotId);
+  const mapRenderer = props.mapRenderer;
+  const [snapshotId, setSnapshotId] = useState(props.initialSnapshotId);
 
-    useEffect(() => {
+  useEffect(() => {
+    return;
+  }, [snapshotId]);
+
+  const loadSnapshot = async () => {
+    console.log("loading");
+    const snapshotInfoRes = await TimeMachineApi.getSnapshotInfo(snapshotId);
+    if (!snapshotInfoRes.ok) {
+      // TODO: error handling
+      return;
+    }
+    const snapshotInfo = snapshotInfoRes.ok;
+
+    let snapshot;
+    if (gloablSnapshotCache[snapshotInfo.id]) {
+      snapshot = gloablSnapshotCache[snapshotInfo.id];
+    } else {
+      const snapshotRes = await TimeMachineApi.downloadSnapshot(
+        snapshotInfo.downloadToken
+      );
+      if (!snapshotRes.ok) {
+        // TODO: error handling
         return;
-    }, [snapshotId]);
+      }
+      snapshot = snapshotRes.ok;
+      gloablSnapshotCache[snapshotInfo.id] = snapshot;
+    }
+    const map = await createMapFromZip(snapshot);
+    mapRenderer.replaceFogMap(map);
+    props.setLoaded(true);
+  };
 
-    const loadSnapshot = async () => {
-        const snapshotInfoRes = await TimeMachineApi.getSnapshotInfo(snapshotId);
-        if (!snapshotInfoRes.ok) {
-            // TODO: error handling
-            return;
-        }
-        const snapshotInfo = snapshotInfoRes.ok;
-        // TODO: we should cache the snapshot locally to save bandwidth
-        const snapshotRes = await TimeMachineApi.downloadSnapshot(
-            snapshotInfo.downloadToken
-        );
-        if (!snapshotRes.ok) {
-            // TODO: error handling
-            return;
-        }
-        const snapshot = snapshotRes.ok;
-        const map = await createMapFromZip(snapshot);
-        mapRenderer.replaceFogMap(map);
-        props.setLoaded(true);
-    };
+  useEffect(() => {
+    loadSnapshot();
+  }, []);
 
-
-    useEffect(() => {
-        loadSnapshot();
-    }, []);
-
-    return (
-        <>
-            <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
-                {/* {toolButtons.map((toolButton) =>
+  return (
+    <>
+      <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
+        {/* {toolButtons.map((toolButton) =>
           toolButton !== null ? (
             <button
               className={
@@ -72,9 +84,9 @@ function Viewer(props: Props): JSX.Element {
             ></div>
           )
         )} */}
-            </div>
-        </>
-    );
+      </div>
+    </>
+  );
 }
 
 export default Viewer;

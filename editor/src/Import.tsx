@@ -23,10 +23,18 @@ function getFileExtension(filename: string): string {
 export async function createMapFromZip(data: ArrayBuffer): Promise<FogMap> {
   const zip = await new JSZip().loadAsync(data);
   const tileFiles = await Promise.all(
-    Object.entries(zip.files).map(async ([filename, file]) => {
-      const data = await file.async("arraybuffer");
-      return [filename, data] as [string, ArrayBuffer];
-    })
+    Object.entries(zip.files)
+      .map(([filename, file]) => {
+        filename = filename.replace(/^.*[\\/]/, "");
+        return [filename, file] as [string, JSZip.JSZipObject];
+      })
+      .filter(([filename, _file]) => {
+        return filename != ""
+      })
+      .map(async ([filename, file]) => {
+        const data = await file.async("arraybuffer");
+        return [filename, data] as [string, ArrayBuffer];
+      })
   );
   const map = FogMap.createFromFiles(tileFiles);
   return map;
