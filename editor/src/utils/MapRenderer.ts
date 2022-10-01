@@ -25,7 +25,7 @@ function isBboxOverlap(a: deckgl.Bbox, b: deckgl.Bbox) {
 }
 
 export class MapRenderer {
-  private static instance = new MapRenderer();
+  private static instance: MapRenderer | null = null;
   private map: mapboxgl.Map | null;
   private deckgl: deckgl.Deckgl | null;
   public fogMap: fogMap.FogMap;
@@ -33,7 +33,7 @@ export class MapRenderer {
   private loadedFogCanvases: { [key: string]: FogCanvas };
   private eraserMode: boolean;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
-  private onChange: (() => void) | null;
+  private onChangeCallback: { [key: string]: (() => void) };
 
   private constructor() {
     this.map = null;
@@ -43,17 +43,28 @@ export class MapRenderer {
     this.eraserMode = false;
     this.eraserArea = null;
     this.historyManager = new HistoryManager(this.fogMap);
-    this.onChange = null;
+    this.onChangeCallback = {};
   }
 
-  static get(): MapRenderer {
+  static create(): MapRenderer {
+    if (MapRenderer.instance) {
+      console.log("WARNING: One shouldn't create a second copy of `MapRenderer`")
+    } else {
+      MapRenderer.instance = new MapRenderer();
+    }
     return MapRenderer.instance;
+  }
+
+  private onChange() {
+    Object.keys(this.onChangeCallback).map(key => {
+      const callback = this.onChangeCallback[key];
+      callback();
+    });
   }
 
   registerMap(
     map: mapboxgl.Map,
     deckglContainer: HTMLCanvasElement,
-    onChange: () => void
   ): void {
     this.map = map;
     this.deckgl = new deckgl.Deckgl(
@@ -66,7 +77,6 @@ export class MapRenderer {
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
     this.setEraserMod(this.eraserMode);
-    this.onChange = onChange;
     this.onChange();
   }
 
@@ -74,9 +84,18 @@ export class MapRenderer {
     // TODO
   }
 
-  redrawArea(area: deckgl.Bbox | null): void {
+  registerOnChangeCallback(key: string, callback: () => void) {
+    this.onChangeCallback[key] = callback;
+    this.onChange();
+  }
+
+  unregisterOnChangeCallback(key: string) {
+    delete this.onChangeCallback[key];
+  }
+
+  redrawArea(area: deckgl.Bbox | "all"): void {
     Object.values(this.loadedFogCanvases).forEach((fogCanvas) => {
-      if (area === null || isBboxOverlap(fogCanvas.tile.bbox, area)) {
+      if (area === "all" || isBboxOverlap(fogCanvas.tile.bbox, area)) {
         this.drawFogCanvas(fogCanvas);
       }
     });
@@ -85,7 +104,7 @@ export class MapRenderer {
 
   private applyFogMapUpdate(
     newMap: fogMap.FogMap,
-    areaChanged: deckgl.Bbox | null
+    areaChanged: deckgl.Bbox | "all"
   ) {
     this.fogMap = newMap;
     this.redrawArea(areaChanged);
@@ -97,12 +116,17 @@ export class MapRenderer {
 
   private updateFogMap(
     newMap: fogMap.FogMap,
-    areaChanged: deckgl.Bbox | null
+    areaChanged: deckgl.Bbox | "all"
   ): void {
     if (this.fogMap !== newMap) {
       this.historyManager.append(newMap, areaChanged);
       this.applyFogMapUpdate(newMap, areaChanged);
     }
+  }
+
+  replaceFogMap(newMap: fogMap.FogMap): void {
+    this.historyManager = new HistoryManager(fogMap.FogMap.empty);
+    this.updateFogMap(newMap, "all");
   }
 
   undo(): void {
@@ -111,13 +135,6 @@ export class MapRenderer {
 
   redo(): void {
     this.historyManager.redo(this.applyFogMapUpdate.bind(this));
-  }
-
-  addFoGFiles(files: [string, ArrayBuffer][]): void {
-    const newMap = this.fogMap.addFiles(files);
-
-    // NOTE: areaChanged = null means all area
-    this.updateFogMap(newMap, null);
   }
 
   handleMouseClick(e: mapboxgl.MapMouseEvent): void {

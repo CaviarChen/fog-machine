@@ -5,8 +5,8 @@ const MAX_HISTORY_SIZE = 20;
 
 class HistoryItem {
   public readonly fogMap: fogMap.FogMap;
-  public readonly areaChanged: deckgl.Bbox | null;
-  public constructor(fogMap: fogMap.FogMap, areaChanged: deckgl.Bbox | null) {
+  public readonly areaChanged: deckgl.Bbox | "all";
+  public constructor(fogMap: fogMap.FogMap, areaChanged: deckgl.Bbox | "all") {
     this.fogMap = fogMap;
     this.areaChanged = areaChanged;
   }
@@ -17,7 +17,7 @@ export class HistoryManager {
   private history: HistoryItem[];
   private pos: number;
   public constructor(initialMap: fogMap.FogMap) {
-    this.history = [new HistoryItem(initialMap, null)];
+    this.history = [new HistoryItem(initialMap, "all")];
     this.pos = 0;
   }
 
@@ -29,7 +29,7 @@ export class HistoryManager {
     return this.pos > 0;
   }
 
-  public append(newMap: fogMap.FogMap, areaChanged: deckgl.Bbox | null): void {
+  public append(newMap: fogMap.FogMap, areaChanged: deckgl.Bbox | "all"): void {
     while (this.history.length > this.pos + 1) {
       this.history.pop();
     }
@@ -42,7 +42,7 @@ export class HistoryManager {
   }
 
   public undo(
-    apply: (map: fogMap.FogMap, areaChanged: deckgl.Bbox | null) => void
+    apply: (map: fogMap.FogMap, areaChanged: deckgl.Bbox | "all") => void
   ): void {
     if (this.canUndo()) {
       this.pos -= 1;
@@ -55,7 +55,7 @@ export class HistoryManager {
   }
 
   public redo(
-    apply: (map: fogMap.FogMap, areaChanged: deckgl.Bbox | null) => void
+    apply: (map: fogMap.FogMap, areaChanged: deckgl.Bbox | "all") => void
   ): void {
     if (this.canRedo()) {
       this.pos += 1;

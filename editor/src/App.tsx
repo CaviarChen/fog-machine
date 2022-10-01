@@ -1,9 +1,10 @@
 import React, { Fragment, useState } from "react";
-import EditorMode from "./EditorMode";
+import Editor from "./Editor";
 import MainMenu, { Actions } from "./MainMenu";
 import GithubCorner from "./GithubCorner";
 import Import from "./Import";
 import { MapRenderer } from "./utils/MapRenderer";
+import Map from "./Map"
 import { Dialog, Transition } from "@headlessui/react";
 import { useTranslation } from "react-i18next";
 
@@ -17,6 +18,7 @@ function App(): JSX.Element {
     }
   };
 
+  const [mapRenderer, setMapRenderer] = useState<MapRenderer | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [importDialog, setImportDialog] = useState(false);
   const [msgboxState, setMsgboxState] = useState<{
@@ -125,7 +127,7 @@ function App(): JSX.Element {
           cy="12"
           r="10"
           stroke="currentColor"
-          stroke-width="4"
+          strokeWidth="4"
         ></circle>
         <path
           className="opacity-75"
@@ -136,10 +138,20 @@ function App(): JSX.Element {
     </div>
   );
 
+  const Mode = () => {
+    if (!mapRenderer) return <></>;
+    return <Editor mapRenderer={mapRenderer} setLoaded={setLoaded} />;
+  }
+
+
   return (
     <>
       <GithubCorner />
       <div className={loaded ? "" : "invisible"}>
+        <Map
+          note="THIS SHOULDN'T BE UNMOUNTED"
+          initialized={(mapRenderer) => { setMapRenderer(mapRenderer); setLoaded(true); }}
+        />
         <Import
           isOpen={importDialog}
           setIsOpen={setImportDialog}
@@ -151,32 +163,32 @@ function App(): JSX.Element {
               setImportDialog(true);
             } else if (action === Actions.Export) {
               // TODO: seems pretty fast, but we should consider handle this async properly
-              const blob = await MapRenderer.get().fogMap.exportArchive();
-              if (blob) {
-                const name = "Sync.zip";
-                const blobUrl = URL.createObjectURL(blob);
-                const link = document.createElement("a");
+              // const blob = await MapRenderer.get().fogMap.exportArchive();
+              // if (blob) {
+              //   const name = "Sync.zip";
+              //   const blobUrl = URL.createObjectURL(blob);
+              //   const link = document.createElement("a");
 
-                link.href = blobUrl;
-                link.download = name;
+              //   link.href = blobUrl;
+              //   link.download = name;
 
-                document.body.appendChild(link);
-                // This is necessary as link.click() does not work on the latest firefox
-                link.dispatchEvent(
-                  new MouseEvent("click", {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window,
-                  })
-                );
-                document.body.removeChild(link);
-                msgboxShow("info", "export-done-message");
-              }
+              //   document.body.appendChild(link);
+              //   // This is necessary as link.click() does not work on the latest firefox
+              //   link.dispatchEvent(
+              //     new MouseEvent("click", {
+              //       bubbles: true,
+              //       cancelable: true,
+              //       view: window,
+              //     })
+              //   );
+              //   document.body.removeChild(link);
+              //   msgboxShow("info", "export-done-message");
+              // }
             }
           }}
         />
         {msgbox}
-        <EditorMode setLoaded={setLoaded} />
+        <Mode />
       </div>
       {loaded ? <></> : loadingSpinner}
     </>

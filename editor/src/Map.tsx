@@ -8,10 +8,14 @@ import { initLanguageControl } from "./utils/MapLanguage";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
 
+// This componet is a bit sad, we don't want to re-initialize the mapbox/deckgl
+// and our `MapRenderer` doesn't handle cleanup correctly. So it shouldn't be
+// unmounted and re-mounted. We only use the <Map /> in <App /> and made sure
+// that the Props are static. We have a warning message when `MapRenderer` is
+// created multiple times.
 type Props = {
-  setLoaded(isLoaded: boolean): void;
-  mapOnLoaded(): void;
-  mapRendererOnChange(): void;
+  initialized(mapRenderer: MapRenderer): void;
+  note: "THIS SHOULDN'T BE UNMOUNTED"
 };
 
 function Map(props: Props): JSX.Element {
@@ -19,7 +23,6 @@ function Map(props: Props): JSX.Element {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const deckglContainer = useRef<HTMLCanvasElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const mapRenderer = MapRenderer.get();
 
   useEffect(() => {
     if (map.current) return;
@@ -36,16 +39,18 @@ function Map(props: Props): JSX.Element {
     );
 
     mapboxMap.on("load", () => {
-      mapRenderer.registerMap(mapboxMap, deckglContainer.current!, () => {
-        props.mapRendererOnChange();
-      });
+      const mapRenderer = MapRenderer.create();
+      mapRenderer.registerMap(mapboxMap, deckglContainer.current!);
       setMapboxLanguage(i18n.resolvedLanguage);
       i18n.on("languageChanged", (_) => {
         setMapboxLanguage(i18n.resolvedLanguage);
       });
       mapboxMap.resize();
 
-      props.mapOnLoaded();
+      // give deckgl a little bit of time
+      setTimeout(() => {
+        props.initialized(mapRenderer);
+      }, 200);
     });
     map.current = mapboxMap;
 
@@ -53,7 +58,7 @@ function Map(props: Props): JSX.Element {
       // TODO: This clean up seems wrong
       // mapRenderer.unregisterMap(mapboxMap);
     };
-  });
+  }, []);
 
   return (
     <div className="absolute inset-0">

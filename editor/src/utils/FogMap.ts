@@ -40,12 +40,11 @@ export class FogMap {
     return `${x}-${y}`;
   }
 
-  // TODO: merge instead of override
-  addFiles(files: [string, ArrayBuffer][]): FogMap {
+  static createFromFiles(files: [string, ArrayBuffer][]): FogMap {
     if (files.length === 0) {
-      return this;
+      return FogMap.empty;
     }
-    const mutableTiles = { ...this.tiles };
+    const mutableTiles = { ...FogMap.empty.tiles };
     files.forEach(([filename, data]) => {
       try {
         const tile = Tile.create(filename, data);
@@ -374,7 +373,7 @@ export class Block {
     );
     const regionChar1 = String.fromCharCode(
       (((this.extraData[0] & 0x7) << 2) | ((this.extraData[1] & 0xc0) >> 6)) +
-        "?".charCodeAt(0)
+      "?".charCodeAt(0)
     );
     return regionChar0 + regionChar1;
   }
