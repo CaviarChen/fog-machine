@@ -8,8 +8,9 @@ import { useTranslation } from "react-i18next";
 import { FogMap } from "./utils/FogMap";
 
 type Props = {
+  mapRenderer: MapRenderer;
   isOpen: boolean;
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsOpen(isOpen: boolean): void;
   msgboxShow(title: string, msg: string): void;
 };
 
@@ -24,53 +25,53 @@ export default function MyModal(props: Props): JSX.Element {
   const { isOpen, setIsOpen, msgboxShow } = props;
 
   async function importFiles(files: File[]) {
-    // const mapRenderer = MapRenderer.get();
-    // closeModal();
-    // if (mapRenderer.fogMap !== FogMap.empty) {
-    //   // we need this because we do not support overriding in `mapRenderer.addFoGFile`
-    //   msgboxShow("error", "error-already-imported");
-    //   return;
-    // }
+    const mapRenderer = props.mapRenderer;
+    closeModal();
+    if (mapRenderer.fogMap !== FogMap.empty) {
+      // we need this because we do not support overriding in `mapRenderer.addFoGFile`
+      msgboxShow("error", "error-already-imported");
+      return;
+    }
 
-    // console.log(files);
-    // // TODO: error handling
-    // // TODO: progress bar
-    // // TODO: improve file checking
-    // let done = false;
-    // files.forEach((file) => console.log(getFileExtension(file.name)));
-    // if (files.every((file) => getFileExtension(file.name) === "")) {
-    //   const tileFiles = await Promise.all(
-    //     files.map(async (file) => {
-    //       const data = await readFileAsync(file);
-    //       return [file.name, data] as [string, ArrayBuffer];
-    //     })
-    //   );
-    //   const map = FogMap.createFromFiles(tileFiles);
-    //   mapRenderer.replaceFogMap(map);
-    //   done = true;
-    // } else {
-    //   if (files.length === 1 && getFileExtension(files[0].name) === "zip") {
-    //     const data = await readFileAsync(files[0]);
-    //     if (data instanceof ArrayBuffer) {
-    //       const zip = await new JSZip().loadAsync(data);
-    //       const tileFiles = await Promise.all(
-    //         Object.entries(zip.files).map(async ([filename, file]) => {
-    //           const data = await file.async("arraybuffer");
-    //           return [filename, data] as [string, ArrayBuffer];
-    //         })
-    //       );
-    //       const map = FogMap.createFromFiles(tileFiles);
-    //       mapRenderer.replaceFogMap(map);
-    //     }
-    //     done = true;
-    //   }
-    // }
+    console.log(files);
+    // TODO: error handling
+    // TODO: progress bar
+    // TODO: improve file checking
+    let done = false;
+    files.forEach((file) => console.log(getFileExtension(file.name)));
+    if (files.every((file) => getFileExtension(file.name) === "")) {
+      const tileFiles = await Promise.all(
+        files.map(async (file) => {
+          const data = await readFileAsync(file);
+          return [file.name, data] as [string, ArrayBuffer];
+        })
+      );
+      const map = FogMap.createFromFiles(tileFiles);
+      mapRenderer.replaceFogMap(map);
+      done = true;
+    } else {
+      if (files.length === 1 && getFileExtension(files[0].name) === "zip") {
+        const data = await readFileAsync(files[0]);
+        if (data instanceof ArrayBuffer) {
+          const zip = await new JSZip().loadAsync(data);
+          const tileFiles = await Promise.all(
+            Object.entries(zip.files).map(async ([filename, file]) => {
+              const data = await file.async("arraybuffer");
+              return [filename, data] as [string, ArrayBuffer];
+            })
+          );
+          const map = FogMap.createFromFiles(tileFiles);
+          mapRenderer.replaceFogMap(map);
+        }
+        done = true;
+      }
+    }
 
-    // if (done) {
-    //   // TODO: move to center?
-    // } else {
-    //   msgboxShow("error", "error-invalid-format");
-    // }
+    if (done) {
+      // TODO: move to center?
+    } else {
+      msgboxShow("error", "error-invalid-format");
+    }
   }
 
   const { open, getRootProps, getInputProps } = useDropzone({

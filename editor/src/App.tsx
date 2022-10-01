@@ -1,8 +1,6 @@
 import React, { Fragment, useState } from "react";
 import Editor from "./Editor";
-import MainMenu, { Actions } from "./MainMenu";
 import GithubCorner from "./GithubCorner";
-import Import from "./Import";
 import { MapRenderer } from "./utils/MapRenderer";
 import Map from "./Map"
 import { Dialog, Transition } from "@headlessui/react";
@@ -20,7 +18,6 @@ function App(): JSX.Element {
 
   const [mapRenderer, setMapRenderer] = useState<MapRenderer | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [importDialog, setImportDialog] = useState(false);
   const [msgboxState, setMsgboxState] = useState<{
     isOpen: boolean;
     title: null | string;
@@ -31,11 +28,11 @@ function App(): JSX.Element {
     msg: null,
   });
 
-  function msgboxClose() {
+  const msgboxClose = () => {
     setMsgboxState({ ...msgboxState, isOpen: false });
   }
 
-  function msgboxShow(title: string, msg: string) {
+  const msgboxShow = (title: string, msg: string) => {
     setMsgboxState({ isOpen: true, title: title, msg: msg });
   }
 
@@ -140,7 +137,9 @@ function App(): JSX.Element {
 
   const Mode = () => {
     if (!mapRenderer) return <></>;
-    return <Editor mapRenderer={mapRenderer} setLoaded={setLoaded} />;
+    return <Editor mapRenderer={mapRenderer} setLoaded={setLoaded}
+      msgboxShow={msgboxShow}
+    />;
   }
 
 
@@ -151,41 +150,6 @@ function App(): JSX.Element {
         <Map
           note="THIS SHOULDN'T BE UNMOUNTED"
           initialized={(mapRenderer) => { setMapRenderer(mapRenderer); setLoaded(true); }}
-        />
-        <Import
-          isOpen={importDialog}
-          setIsOpen={setImportDialog}
-          msgboxShow={msgboxShow}
-        />
-        <MainMenu
-          onAction={async (action: Actions) => {
-            if (action === Actions.Import) {
-              setImportDialog(true);
-            } else if (action === Actions.Export) {
-              // TODO: seems pretty fast, but we should consider handle this async properly
-              // const blob = await MapRenderer.get().fogMap.exportArchive();
-              // if (blob) {
-              //   const name = "Sync.zip";
-              //   const blobUrl = URL.createObjectURL(blob);
-              //   const link = document.createElement("a");
-
-              //   link.href = blobUrl;
-              //   link.download = name;
-
-              //   document.body.appendChild(link);
-              //   // This is necessary as link.click() does not work on the latest firefox
-              //   link.dispatchEvent(
-              //     new MouseEvent("click", {
-              //       bubbles: true,
-              //       cancelable: true,
-              //       view: window,
-              //     })
-              //   );
-              //   document.body.removeChild(link);
-              //   msgboxShow("info", "export-done-message");
-              // }
-            }
-          }}
         />
         {msgbox}
         <Mode />
