@@ -16,6 +16,7 @@ type Props = {
 const gloablSnapshotCache: { [key: number]: ArrayBuffer } = {};
 
 function Viewer(props: Props): JSX.Element {
+  console.log("creating viewer", props);
   const mapRenderer = props.mapRenderer;
   const [snapshotId, setSnapshotId] = useState(props.initialSnapshotId);
 
@@ -24,10 +25,11 @@ function Viewer(props: Props): JSX.Element {
   }, [snapshotId]);
 
   const loadSnapshot = async () => {
-    console.log("loading");
+    props.setLoaded(false);
     const snapshotInfoRes = await TimeMachineApi.getSnapshotInfo(snapshotId);
     if (!snapshotInfoRes.ok) {
-      // TODO: error handling
+      console.log(snapshotInfoRes);
+      props.msgboxShow("error", "error-failed-to-load-snapshot");
       return;
     }
     const snapshotInfo = snapshotInfoRes.ok;
@@ -40,7 +42,8 @@ function Viewer(props: Props): JSX.Element {
         snapshotInfo.downloadToken
       );
       if (!snapshotRes.ok) {
-        // TODO: error handling
+        console.log(snapshotInfoRes);
+        props.msgboxShow("error", "error-failed-to-load-snapshot");
         return;
       }
       snapshot = snapshotRes.ok;

@@ -29,7 +29,7 @@ export async function createMapFromZip(data: ArrayBuffer): Promise<FogMap> {
         return [filename, file] as [string, JSZip.JSZipObject];
       })
       .filter(([filename, _file]) => {
-        return filename != ""
+        return filename != "";
       })
       .map(async ([filename, file]) => {
         const data = await file.async("arraybuffer");
