@@ -8,8 +8,9 @@ import { useTranslation } from "react-i18next";
 import { FogMap } from "./utils/FogMap";
 
 type Props = {
+  mapRenderer: MapRenderer;
   isOpen: boolean;
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsOpen(isOpen: boolean): void;
   msgboxShow(title: string, msg: string): void;
 };
 
@@ -24,7 +25,7 @@ export default function MyModal(props: Props): JSX.Element {
   const { isOpen, setIsOpen, msgboxShow } = props;
 
   async function importFiles(files: File[]) {
-    const mapRenderer = MapRenderer.get();
+    const mapRenderer = props.mapRenderer;
     closeModal();
     if (mapRenderer.fogMap !== FogMap.empty) {
       // we need this because we do not support overriding in `mapRenderer.addFoGFile`

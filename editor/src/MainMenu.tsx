@@ -1,31 +1,58 @@
+import { useState } from "react";
 import { Popover, Tab, Transition } from "@headlessui/react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/solid";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
-
-export enum Actions {
-  Import,
-  Export,
-}
+import { MapRenderer } from "./utils/MapRenderer";
+import Import from "./Import";
 
 type Props = {
-  onAction(action: Actions): void;
+  mapRenderer: MapRenderer;
+  msgboxShow(title: string, msg: string): void;
 };
 
 export default function MainMenu(props: Props): JSX.Element {
   const { t, i18n } = useTranslation();
+  const mapRenderer = props.mapRenderer;
+
+  const [importDialog, setImportDialog] = useState(false);
 
   const menuItems = [
     {
       name: t("import"),
       description: t("import-description"),
-      action: Actions.Import,
+      action: () => {
+        setImportDialog(true);
+      },
       icon: IconImport,
     },
     {
       name: t("export"),
       description: t("export-description"),
-      action: Actions.Export,
+      action: async () => {
+        // TODO: seems pretty fast, but we should consider handle this async properly
+        const blob = await mapRenderer.fogMap.exportArchive();
+        if (blob) {
+          const name = "Sync.zip";
+          const blobUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+
+          link.href = blobUrl;
+          link.download = name;
+
+          document.body.appendChild(link);
+          // This is necessary as link.click() does not work on the latest firefox
+          link.dispatchEvent(
+            new MouseEvent("click", {
+              bubbles: true,
+              cancelable: true,
+              view: window,
+            })
+          );
+          document.body.removeChild(link);
+          props.msgboxShow("info", "export-done-message");
+        }
+      },
       icon: IconExport,
     },
   ];
@@ -62,80 +89,88 @@ export default function MainMenu(props: Props): JSX.Element {
   );
 
   return (
-    <div className="absolute z-40 top-4 left-4">
-      <div className="max-w-sm m-auto bg-white bg-opacity-90 rounded-xl shadow-md flex items-center space-x-4">
-        <Popover className="relative">
-          {({ open }) => (
-            <>
-              <Popover.Button
-                className={`
+    <>
+      <Import
+        mapRenderer={mapRenderer}
+        isOpen={importDialog}
+        setIsOpen={setImportDialog}
+        msgboxShow={props.msgboxShow}
+      />
+      <div className="absolute z-40 top-4 left-4">
+        <div className="max-w-sm m-auto bg-white bg-opacity-90 rounded-xl shadow-md flex items-center space-x-4">
+          <Popover className="relative">
+            {({ open }) => (
+              <>
+                <Popover.Button
+                  className={`
                 ${open ? "" : "text-opacity-90"}
                 text-black group px-3 py-2 rounded-md inline-flex items-center text-base font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`}
-              >
-                <div className="p-0.5">
-                  <span>{t("main-title")}</span>
-                </div>
-                {open ? (
-                  <ChevronUpIcon
-                    className="ml-2 h-5 w-5 group-hover:text-opacity-80 transition ease-in-out duration-150"
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <ChevronDownIcon
-                    className="ml-2 h-5 w-5 group-hover:text-opacity-80 transition ease-in-out duration-150"
-                    aria-hidden="true"
-                  />
-                )}
-              </Popover.Button>
-              <Transition
-                as={Fragment}
-                enter="transition ease-out duration-200"
-                enterFrom="opacity-0 translate-y-1"
-                enterTo="opacity-100 translate-y-0"
-                leave="transition ease-in duration-150"
-                leaveFrom="opacity-100 translate-y-0"
-                leaveTo="opacity-0 translate-y-1"
-              >
-                <Popover.Panel className="absolute z-10 w-screen max-w-sm mt-3 transform lg:max-w-3xl">
-                  <div className="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
-                    <div className="relative grid gap-8 bg-white p-7 lg:grid-cols-2">
-                      {menuItems.map((item) => (
-                        <a
-                          key={item.name}
-                          onClick={() => props.onAction(item.action)}
-                          className="flex items-center cursor-pointer p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-50 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
-                        >
-                          <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 text-white sm:h-12 sm:w-12">
-                            <item.icon aria-hidden="true" />
-                          </div>
-                          <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-900">
-                              {item.name}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {item.description}
-                            </p>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-
-                    <div className="p-4 bg-gray-50">
-                      <span className="flex items-center">
-                        <span className="text-sm font-medium text-gray-900">
-                          {t("language")}
-                        </span>
-                      </span>
-                      {languageTab}
-                    </div>
+                >
+                  <div className="p-0.5">
+                    <span>{t("main-title")}</span>
                   </div>
-                </Popover.Panel>
-              </Transition>
-            </>
-          )}
-        </Popover>
+                  {open ? (
+                    <ChevronUpIcon
+                      className="ml-2 h-5 w-5 group-hover:text-opacity-80 transition ease-in-out duration-150"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <ChevronDownIcon
+                      className="ml-2 h-5 w-5 group-hover:text-opacity-80 transition ease-in-out duration-150"
+                      aria-hidden="true"
+                    />
+                  )}
+                </Popover.Button>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-200"
+                  enterFrom="opacity-0 translate-y-1"
+                  enterTo="opacity-100 translate-y-0"
+                  leave="transition ease-in duration-150"
+                  leaveFrom="opacity-100 translate-y-0"
+                  leaveTo="opacity-0 translate-y-1"
+                >
+                  <Popover.Panel className="absolute z-10 w-screen max-w-sm mt-3 transform lg:max-w-3xl">
+                    <div className="overflow-hidden rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
+                      <div className="relative grid gap-8 bg-white p-7 lg:grid-cols-2">
+                        {menuItems.map((item) => (
+                          <a
+                            key={item.name}
+                            onClick={item.action}
+                            className="flex items-center cursor-pointer p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-50 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
+                          >
+                            <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 text-white sm:h-12 sm:w-12">
+                              <item.icon aria-hidden="true" />
+                            </div>
+                            <div className="ml-4">
+                              <p className="text-sm font-medium text-gray-900">
+                                {item.name}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {item.description}
+                              </p>
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+
+                      <div className="p-4 bg-gray-50">
+                        <span className="flex items-center">
+                          <span className="text-sm font-medium text-gray-900">
+                            {t("language")}
+                          </span>
+                        </span>
+                        {languageTab}
+                      </div>
+                    </div>
+                  </Popover.Panel>
+                </Transition>
+              </>
+            )}
+          </Popover>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
