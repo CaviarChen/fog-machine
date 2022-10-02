@@ -80,7 +80,15 @@ function DashboardSnapshot() {
                 return (
                   <div style={{ marginTop: "-3px" }}>
                     <ButtonToolbar>
-                      <Button size="sm">View</Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          location.href =
+                            "/editor?viewing-snapshot=" + String(snapshot.id);
+                        }}
+                      >
+                        View
+                      </Button>
                       <Button
                         size="sm"
                         onClick={async () => {
@@ -90,8 +98,8 @@ function DashboardSnapshot() {
                           if (token.ok) {
                             window.open(
                               Api.backendUrl +
-                              "misc/download?token=" +
-                              token.ok,
+                                "misc/download?token=" +
+                                token.ok,
                               "_blank"
                             );
                           } else {
