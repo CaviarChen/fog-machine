@@ -66,8 +66,6 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: caviarc/fog-machine-server
-          flavor: |
-            latest=true
           tags: |
             type=raw,value=latest
             type=sha
@@ -75,8 +73,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
-          context: . 
-          file: ./github-action.Dockerfile
+          context: ./server
+          file: ./server/github-action.Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
