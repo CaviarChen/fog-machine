@@ -5,7 +5,7 @@ name: Build and publish Docker image
 
 on:
   push:
-    branches: ['docker-build']
+    branches: ['production']
 
 jobs:
   fog_machine_server:
