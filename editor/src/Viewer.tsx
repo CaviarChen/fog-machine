@@ -1,7 +1,8 @@
 import { MapRenderer } from "./utils/MapRenderer";
 import { useEffect, useState } from "react";
 import { createMapFromZip } from "./Import";
-import TimeMachineApi from "./utils/TimeMachineApi";
+import TimeMachineApi, { SnapshotInfo } from "./utils/TimeMachineApi";
+import moment from "moment";
 
 type Props = {
   mapRenderer: MapRenderer;
@@ -16,16 +17,15 @@ type Props = {
 const gloablSnapshotCache: { [key: number]: ArrayBuffer } = {};
 
 function Viewer(props: Props): JSX.Element {
-  console.log("creating viewer", props);
   const mapRenderer = props.mapRenderer;
   const [snapshotId, setSnapshotId] = useState(props.initialSnapshotId);
-
-  useEffect(() => {
-    return;
-  }, [snapshotId]);
+  const [snapshotInfo, setSnapshotInfo] = useState<SnapshotInfo | null>(null);
 
   const loadSnapshot = async () => {
+    console.log("loading snapshot", snapshotId);
     props.setLoaded(false);
+    // TODO: use react router
+    history.replaceState({}, "", "?viewing-snapshot=" + String(snapshotId));
     const snapshotInfoRes = await TimeMachineApi.getSnapshotInfo(snapshotId);
     if (!snapshotInfoRes.ok) {
       console.log(snapshotInfoRes);
@@ -51,45 +51,63 @@ function Viewer(props: Props): JSX.Element {
     }
     const map = await createMapFromZip(snapshot);
     mapRenderer.replaceFogMap(map);
+    setSnapshotInfo(snapshotInfo);
     props.setLoaded(true);
   };
 
   useEffect(() => {
     loadSnapshot();
-  }, []);
+  }, [snapshotId]);
 
-  return (
-    <>
-      <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
-        {/* {toolButtons.map((toolButton) =>
-          toolButton !== null ? (
-            <button
-              className={
-                "flex items-center justify-center mx-2 w-9 h-9 p-2 bg-white shadow rounded-lg hover:bg-gray-200 active:bg-gray-400" +
-                (toolButton.enabled ? " ring-4 ring-gray-700" : "") +
-                (toolButton.clickable
-                  ? " pointer-events-auto"
-                  : " text-gray-300 opacity-40")
+  if (!snapshotInfo) {
+    return <></>;
+  } else {
+    const commonClassName =
+      "flex items-center justify-center mx-2 h-9 p-2 bg-white shadow rounded-lg";
+    return (
+      <>
+        <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
+          <button
+            className={
+              commonClassName +
+              " hover:bg-gray-200 active:bg-gray-400 pointer-events-auto text-gray-700 opacity-80" +
+              (snapshotInfo.prev != null ? "" : " invisible")
+            }
+            onClick={() => {
+              if (snapshotInfo.prev) {
+                setSnapshotId(snapshotInfo.prev.id);
               }
-              onClick={() => {
-                if (toolButton.clickable) {
-                  toolButton.onClick();
-                }
-              }}
-            >
-              {toolButton.icon}
-            </button>
-          ) : (
-            <div
-              className={
-                "flex items-center justify-center rounded mx-7 w-1 h-9 bg-black shadow"
+            }}
+          >
+            {moment(snapshotInfo.prev?.timestamp).format("YYYY-MM-DD") + " <"}
+          </button>
+
+          <button
+            className={
+              commonClassName + " active:bg-gray-400 ring-4 ring-gray-700"
+            }
+          >
+            {moment(snapshotInfo.timestamp).format("YYYY-MM-DD")}
+          </button>
+
+          <button
+            className={
+              commonClassName +
+              " hover:bg-gray-200 active:bg-gray-400 pointer-events-auto text-gray-700 opacity-80" +
+              (snapshotInfo.next != null ? "" : " invisible")
+            }
+            onClick={() => {
+              if (snapshotInfo.next) {
+                setSnapshotId(snapshotInfo.next.id);
               }
-            ></div>
-          )
-        )} */}
-      </div>
-    </>
-  );
+            }}
+          >
+            {"> " + moment(snapshotInfo.next?.timestamp).format("YYYY-MM-DD")}
+          </button>
+        </div>
+      </>
+    );
+  }
 }
 
 export default Viewer;
