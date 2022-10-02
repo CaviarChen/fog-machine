@@ -28,6 +28,7 @@ function Map(props: Props): JSX.Element {
     if (map.current) return;
     if (!mapContainer.current) return;
     if (!deckglContainer.current) return;
+    console.log("initializing");
     const mapboxMap = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/streets-v11",

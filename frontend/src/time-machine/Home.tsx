@@ -14,8 +14,8 @@ import {
   Message,
 } from "rsuite";
 import "./Home.css";
-import Api from "./api";
 import DashboardMain from "./DashboardMain";
+import Api from "./Api";
 
 // I really want ADT
 type LoginStatus = {

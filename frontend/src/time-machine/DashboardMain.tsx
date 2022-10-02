@@ -16,7 +16,7 @@ import {
   useToaster,
   Notification,
 } from "rsuite";
-import Api, { SnapshotTask } from "./api";
+import Api, { SnapshotTask } from "./Api";
 import PauseIcon from "@rsuite/icons/legacy/Pause";
 import FileTextIcon from "@rsuite/icons/legacy/FileText";
 import PlayIcon from "@rsuite/icons/legacy/Play";

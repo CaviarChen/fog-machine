@@ -20,6 +20,26 @@ function getFileExtension(filename: string): string {
   );
 }
 
+export async function createMapFromZip(data: ArrayBuffer): Promise<FogMap> {
+  const zip = await new JSZip().loadAsync(data);
+  const tileFiles = await Promise.all(
+    Object.entries(zip.files)
+      .map(([filename, file]) => {
+        filename = filename.replace(/^.*[\\/]/, "");
+        return [filename, file] as [string, JSZip.JSZipObject];
+      })
+      .filter(([filename, _file]) => {
+        return filename != "";
+      })
+      .map(async ([filename, file]) => {
+        const data = await file.async("arraybuffer");
+        return [filename, data] as [string, ArrayBuffer];
+      })
+  );
+  const map = FogMap.createFromFiles(tileFiles);
+  return map;
+}
+
 export default function MyModal(props: Props): JSX.Element {
   const { t } = useTranslation();
   const { isOpen, setIsOpen, msgboxShow } = props;
@@ -53,14 +73,7 @@ export default function MyModal(props: Props): JSX.Element {
       if (files.length === 1 && getFileExtension(files[0].name) === "zip") {
         const data = await readFileAsync(files[0]);
         if (data instanceof ArrayBuffer) {
-          const zip = await new JSZip().loadAsync(data);
-          const tileFiles = await Promise.all(
-            Object.entries(zip.files).map(async ([filename, file]) => {
-              const data = await file.async("arraybuffer");
-              return [filename, data] as [string, ArrayBuffer];
-            })
-          );
-          const map = FogMap.createFromFiles(tileFiles);
+          const map = await createMapFromZip(data);
           mapRenderer.replaceFogMap(map);
         }
         done = true;

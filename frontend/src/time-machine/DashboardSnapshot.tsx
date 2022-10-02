@@ -11,7 +11,7 @@ import {
   Tag,
 } from "rsuite";
 import MoreIcon from "@rsuite/icons/legacy/More";
-import Api, { Snapshot } from "./api";
+import Api, { Snapshot } from "./Api";
 
 const { Column, HeaderCell, Cell } = Table;
 
@@ -80,7 +80,15 @@ function DashboardSnapshot() {
                 return (
                   <div style={{ marginTop: "-3px" }}>
                     <ButtonToolbar>
-                      <Button size="sm">View</Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          location.href =
+                            "/editor?viewing-snapshot=" + String(snapshot.id);
+                        }}
+                      >
+                        View
+                      </Button>
                       <Button
                         size="sm"
                         onClick={async () => {

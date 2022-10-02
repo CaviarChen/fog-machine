@@ -1,10 +1,42 @@
-import React, { Fragment, useState } from "react";
-import Editor from "./Editor";
+import { Fragment, useState } from "react";
 import GithubCorner from "./GithubCorner";
 import { MapRenderer } from "./utils/MapRenderer";
-import Map from "./Map";
 import { Dialog, Transition } from "@headlessui/react";
 import { useTranslation } from "react-i18next";
+import Map from "./Map";
+import Editor from "./Editor";
+import Viewer from "./Viewer";
+
+type ModeProps = {
+  mapRenderer: MapRenderer | null;
+  setLoaded(isLoaded: boolean): void;
+  msgboxShow(title: string, msg: string): void;
+};
+function Mode(props: ModeProps) {
+  if (!props.mapRenderer) return <></>;
+  const snapshotIdStr = new URL(window.location.href).searchParams.get(
+    "viewing-snapshot"
+  );
+  if (snapshotIdStr) {
+    const snapshotId = Number(snapshotIdStr);
+    return (
+      <Viewer
+        mapRenderer={props.mapRenderer}
+        setLoaded={props.setLoaded}
+        initialSnapshotId={snapshotId}
+        msgboxShow={props.msgboxShow}
+      />
+    );
+  } else {
+    return (
+      <Editor
+        mapRenderer={props.mapRenderer}
+        setLoaded={props.setLoaded}
+        msgboxShow={props.msgboxShow}
+      />
+    );
+  }
+}
 
 function App(): JSX.Element {
   const { t } = useTranslation();
@@ -135,17 +167,6 @@ function App(): JSX.Element {
     </div>
   );
 
-  const Mode = () => {
-    if (!mapRenderer) return <></>;
-    return (
-      <Editor
-        mapRenderer={mapRenderer}
-        setLoaded={setLoaded}
-        msgboxShow={msgboxShow}
-      />
-    );
-  };
-
   return (
     <>
       <GithubCorner />
@@ -154,12 +175,15 @@ function App(): JSX.Element {
           note="THIS SHOULDN'T BE UNMOUNTED"
           initialized={(mapRenderer) => {
             setMapRenderer(mapRenderer);
-            setLoaded(true);
           }}
         />
-        {msgbox}
-        <Mode />
       </div>
+      {msgbox}
+      <Mode
+        mapRenderer={mapRenderer}
+        setLoaded={setLoaded}
+        msgboxShow={msgboxShow}
+      />
       {loaded ? <></> : loadingSpinner}
     </>
   );

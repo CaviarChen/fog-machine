@@ -258,7 +258,7 @@ export default class Api {
   ): Promise<Result<string>> {
     const result = await this.requestApi(
       "snapshot/" + String(snapshotId) + "/download_token",
-      "post",
+      "get",
       true
     );
     if (result.ok) {
