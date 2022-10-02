@@ -7,8 +7,7 @@ COPY . .
 
 # build for release
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    cargo build 
-# --release
+    cargo build --release
 
 # our final base
 FROM debian:buster-slim
