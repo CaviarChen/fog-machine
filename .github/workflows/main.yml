@@ -44,8 +44,7 @@ jobs:
           workspaces: "server"
 
           # Determines if the cache should be saved even when the workflow has failed.
-          # Default: "false"
-          cache-on-failure: ""
+          cache-on-failure: true
       
       - name: Check
         run: cargo check
