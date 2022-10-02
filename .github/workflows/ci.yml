@@ -1,0 +1,58 @@
+name: CI
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          # An explicit cache key that is used instead of the automatic `job`-based
+          # cache key and is thus stable across jobs.
+          # Default: empty
+          shared-key: ""
+
+          # An additional cache key that is added alongside the automatic `job`-based
+          # cache key and can be used to further differentiate jobs.
+          # Default: empty
+          key: ""
+
+          # A whitespace separated list of env-var *prefixes* who's value contributes
+          # to the environment cache key.
+          # The env-vars are matched by *prefix*, so the default `RUST` var will
+          # match all of `RUSTC`, `RUSTUP_*`, `RUSTFLAGS`, `RUSTDOC_*`, etc.
+          # Default: "CARGO CC CFLAGS CXX CMAKE RUST"
+          env-vars: ""
+
+          # The cargo workspaces and target directory configuration.
+          # These entries are separated by newlines and have the form
+          # `$workspace -> $target`. The `$target` part is treated as a directory
+          # relative to the `$workspace` and defaults to "target" if not explicitly given.
+          workspaces: "server"
+
+          # Determines if the cache should be saved even when the workflow has failed.
+          cache-on-failure: true
+      
+      - name: Check
+        run: cargo check
+
+      - name: Tests
+        run: cargo test
+      
+      - name: Rustfmt
+        run: cargo fmt --all -- --check
+      
+      - name: Clippy
+        run: cargo clippy -- -D warnings
