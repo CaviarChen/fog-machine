@@ -11,6 +11,7 @@ jobs:
   fog_machine_server:
     name: Build and publish [fog-machine-server]
     runs-on: ubuntu-latest
+    environment: Docker
     defaults:
       run:
         working-directory: server
