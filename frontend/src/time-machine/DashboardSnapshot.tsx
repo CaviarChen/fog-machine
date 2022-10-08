@@ -109,6 +109,9 @@ function DashboardSnapshot() {
                       >
                         Download
                       </Button>
+                      <Button size="sm">
+                        Delete
+                      </Button>
                     </ButtonToolbar>
                   </div>
                 );

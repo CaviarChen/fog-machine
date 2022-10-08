@@ -15,6 +15,7 @@ import {
   Message,
   useToaster,
   Notification,
+  DatePicker,
 } from "rsuite";
 import Api, { SnapshotTask } from "./Api";
 import PauseIcon from "@rsuite/icons/legacy/Pause";
@@ -23,10 +24,13 @@ import PlayIcon from "@rsuite/icons/legacy/Play";
 import PlayOutlineIcon from "@rsuite/icons/PlayOutline";
 import PauseOutlineIcon from "@rsuite/icons/PauseOutline";
 import CloseOutlineIcon from "@rsuite/icons/CloseOutline";
+import ImportIcon from "@rsuite/icons/Import";
 import EditIcon from "@rsuite/icons/Edit";
 import AddOutlineIcon from "@rsuite/icons/AddOutline";
 import HelpOutlineIcon from "@rsuite/icons/HelpOutline";
 import DashboardSnapshot from "./DashboardSnapshot";
+import { useDropzone,FileWithPath } from "react-dropzone";
+import MyImport from "./Import";
 
 function DashboardMain() {
   const [isLoading, setIsLoading] = useState(false);
@@ -53,6 +57,7 @@ function DashboardMain() {
   }>({ mode: "create" });
 
   const [openEditModel, setOpenEditModel] = useState(false);
+  const [openImportModel,setOpenImportModel] = useState(false);
 
   const renderDetail = () => {
     if (isLoading) {
@@ -174,6 +179,13 @@ function DashboardMain() {
                       }}
                     >
                       Edit
+                    </IconButton>
+                    <IconButton icon={<ImportIcon/>} 
+                    placement="left"
+                    onClick={() => {
+                      setOpenImportModel(true);
+                       }}>
+                      Import
                     </IconButton>
                   </ButtonToolbar>
                 </div>
@@ -301,12 +313,58 @@ function DashboardMain() {
     setEditButtonLoading(false);
   };
 
+  const {acceptedFiles, getRootProps, getInputProps} = useDropzone();
+ 
+  const files = acceptedFiles.map((file: FileWithPath) => (
+    <li key={file.path}>
+      {file.path} - {file.size} bytes
+    </li>
+  ));
+
   return (
     <>
       <Panel bordered>
         <div style={{ height: "120px" }}>{renderDetail()}</div>
       </Panel>
       <DashboardSnapshot />
+
+      <Modal
+        open={openImportModel}
+        onClose={() => {
+          setOpenImportModel(false);
+        }}
+        backdrop={"static"}
+      >
+        <Modal.Header>
+          <Modal.Title>
+            Import Data
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+
+          <DatePicker size="lg" placeholder="Select Date" style={{ width: 200, display: 'block', marginBottom: 10 }} />
+
+          <MyImport isOpen={true}></MyImport>
+
+            <Modal.Footer style={{ marginTop: "16px" }}>
+              <Form.Group>
+                <ButtonToolbar>
+                  <Button
+                    type="submit"
+                    appearance="primary"
+                    loading={editButtonLoading}
+                  >
+                    Submit
+                  </Button>
+                </ButtonToolbar>
+              </Form.Group>
+            </Modal.Footer>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      
 
       <Modal
         open={openEditModel}
