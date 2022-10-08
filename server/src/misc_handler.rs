@@ -2,16 +2,18 @@ use crate::data_fetcher;
 use crate::pool::Db;
 use crate::user_handler::User;
 use crate::utils;
-use crate::{InternalError, ServerState};
+use crate::{APIResponse, InternalError, ServerState};
 use anyhow::Result;
 use entity::sea_orm;
 use entity::snapshot;
+use rocket::data::{Data, ToByteUnit};
 use rocket::http::ContentType;
 use rocket::http::Status;
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
 use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
+use serde_json::json;
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -114,6 +116,34 @@ async fn download<'r>(
     }
 }
 
+#[post("/upload", data = "<data>")]
+async fn upload<'r>(
+    server_state: &rocket::State<ServerState>,
+    // we don't keep track of of who uploaded what. this is just make sure only valid users are allowed to upload
+    user: User,
+    data: Data<'_>,
+) -> APIResponse {
+    // TODO: we just save the whole thing in memory for 1 mins. This is bad and one can use this to OOM us.
+    // we should do something better.
+    let bytes = data.open(4.mebibytes()).into_bytes().await?.into_inner();
+
+    if bytes.is_empty() {
+        return Ok((Status::BadRequest, json!({"error":"empty_file"})));
+    }
+
+    info!(
+        "[misc/upload] data received from user: {} size: {}",
+        user.uid,
+        bytes.len(),
+    );
+
+    let mut uploaded_items = server_state.uploaded_items.lock().unwrap();
+    let upload_token = utils::random_token(|token| !uploaded_items.contains_key(token));
+    uploaded_items.insert(upload_token.clone(), bytes, Duration::from_secs(60));
+
+    Ok((Status::Ok, json!({ "upload_token": upload_token })))
+}
+
 pub fn routes() -> Vec<rocket::Route> {
-    routes![download]
+    routes![upload, download]
 }
