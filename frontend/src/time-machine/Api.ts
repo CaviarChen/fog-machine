@@ -79,6 +79,10 @@ export default class Api {
     return token;
   }
 
+  public static readonly tokenHeaders = {
+    Authorization: "Bearer " + this.getToken(),
+  };
+
   private static clearToken() {
     sessionStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.tokenKey);
@@ -215,6 +219,26 @@ export default class Api {
     if (result.ok) {
       result.ok = "ok";
     }
+    return result;
+  }
+
+  public static async deleteSnapshot(id: number): Promise<Result<string>> {
+    const result = await this.requestApi(
+      "snapshot/" + String(id),
+      "delete",
+      true
+    );
+    return result;
+  }
+
+  public static async uploadSnapshot(
+    timestamp: string,
+    uploadToken: string
+  ): Promise<Result<object>> {
+    const data: any = {};
+    data["timestamp"] = timestamp;
+    data["upload_token"] = uploadToken;
+    const result = await this.requestApi("snapshot", "post", true, data);
     return result;
   }
 

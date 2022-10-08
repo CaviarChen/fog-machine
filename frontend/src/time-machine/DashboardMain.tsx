@@ -16,6 +16,7 @@ import {
   useToaster,
   Notification,
   DatePicker,
+  Uploader,
 } from "rsuite";
 import Api, { SnapshotTask } from "./Api";
 import PauseIcon from "@rsuite/icons/legacy/Pause";
@@ -29,8 +30,7 @@ import EditIcon from "@rsuite/icons/Edit";
 import AddOutlineIcon from "@rsuite/icons/AddOutline";
 import HelpOutlineIcon from "@rsuite/icons/HelpOutline";
 import DashboardSnapshot from "./DashboardSnapshot";
-import { useDropzone,FileWithPath } from "react-dropzone";
-import MyImport from "./Import";
+import format from "date-fns/format";
 
 function DashboardMain() {
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +57,7 @@ function DashboardMain() {
   }>({ mode: "create" });
 
   const [openEditModel, setOpenEditModel] = useState(false);
-  const [openImportModel,setOpenImportModel] = useState(false);
+  const [openImportModel, setOpenImportModel] = useState(false);
 
   const renderDetail = () => {
     if (isLoading) {
@@ -180,12 +180,15 @@ function DashboardMain() {
                     >
                       Edit
                     </IconButton>
-                    <IconButton icon={<ImportIcon/>} 
-                    placement="left"
-                    onClick={() => {
-                      setOpenImportModel(true);
-                       }}>
-                      Import
+                    <IconButton
+                      icon={<ImportIcon />}
+                      placement="left"
+                      onClick={() => {
+                        setOpenImportModel(true);
+                        setIsFileUpload(false);
+                      }}
+                    >
+                      Upload
                     </IconButton>
                   </ButtonToolbar>
                 </div>
@@ -313,13 +316,11 @@ function DashboardMain() {
     setEditButtonLoading(false);
   };
 
-  const {acceptedFiles, getRootProps, getInputProps} = useDropzone();
- 
-  const files = acceptedFiles.map((file: FileWithPath) => (
-    <li key={file.path}>
-      {file.path} - {file.size} bytes
-    </li>
-  ));
+  const fileUploadUrl = Api.backendUrl + "misc/upload";
+  const headers = Api.tokenHeaders;
+  const [uploadDate, setUploadDate] = useState<string | null>(null);
+  const [uploadToken, setUploadToken] = useState<string | null>(null);
+  const [isFileUpload, setIsFileUpload] = useState(false);
 
   return (
     <>
@@ -336,16 +337,47 @@ function DashboardMain() {
         backdrop={"static"}
       >
         <Modal.Header>
-          <Modal.Title>
-            Import Data
-          </Modal.Title>
+          <Modal.Title>Upload Data</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
+            <DatePicker
+              format="yyyy-MM-dd HH:mm"
+              size="lg"
+              placeholder="Select Date"
+              onChange={(date) => {
+                if (date) {
+                  setUploadDate(
+                    format(date, "yyyy-MM-dd HH:mm:ss.000").replace(" ", "T") +
+                      "Z"
+                  );
+                }
+              }}
+              style={{ width: 200, display: "block", marginBottom: 10 }}
+            />
 
-          <DatePicker size="lg" placeholder="Select Date" style={{ width: 200, display: 'block', marginBottom: 10 }} />
-
-          <MyImport isOpen={true}></MyImport>
+            <Uploader
+              action={fileUploadUrl}
+              headers={headers}
+              disabled={isFileUpload}
+              accept=".zip"
+              onSuccess={(res) => {
+                setUploadToken(res.upload_token);
+                setIsFileUpload(true);
+              }}
+              draggable
+            >
+              <div
+                style={{
+                  height: 200,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <span>Click or Drag files to this area to upload</span>
+              </div>
+            </Uploader>
 
             <Modal.Footer style={{ marginTop: "16px" }}>
               <Form.Group>
@@ -354,6 +386,15 @@ function DashboardMain() {
                     type="submit"
                     appearance="primary"
                     loading={editButtonLoading}
+                    onClick={() => {
+                      console.log(uploadDate);
+                      console.log(uploadToken);
+                      if (uploadDate && uploadToken) {
+                        Api.uploadSnapshot(uploadDate, uploadToken);
+                        loadData();
+                        setOpenImportModel(false);
+                      } //TODO: failed tips
+                    }}
                   >
                     Submit
                   </Button>
@@ -363,8 +404,6 @@ function DashboardMain() {
           </Form>
         </Modal.Body>
       </Modal>
-
-      
 
       <Modal
         open={openEditModel}

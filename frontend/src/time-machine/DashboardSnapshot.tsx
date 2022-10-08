@@ -109,7 +109,15 @@ function DashboardSnapshot() {
                       >
                         Download
                       </Button>
-                      <Button size="sm">
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          // TODO: Warning
+                          const res = await Api.deleteSnapshot(snapshot.id);
+                          console.log(res);
+                          loadData();
+                        }}
+                      >
                         Delete
                       </Button>
                     </ButtonToolbar>
