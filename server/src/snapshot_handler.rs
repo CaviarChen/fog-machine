@@ -58,8 +58,7 @@ fn get_and_remove_uploaded_item(
     token: &str,
 ) -> Option<Vec<u8>> {
     let mut uploaded_items = server_state.uploaded_items.lock().unwrap();
-    // uploaded_items.remove(token)
-    uploaded_items.get(token).cloned()
+    uploaded_items.remove(token)
 }
 
 #[derive(Deserialize)]
@@ -82,9 +81,7 @@ async fn create(
         ));
     }
     match get_and_remove_uploaded_item(server_state, &data.upload_token) {
-        None => {
-            return Ok((Status::BadRequest, json!({"error": "invalid_upload_token"})));
-        }
+        None => Ok((Status::BadRequest, json!({"error": "invalid_upload_token"}))),
         Some(zip_data) => {
             // TODO: share the code with `data_fetcher`
             let reader = std::io::Cursor::new(zip_data);
@@ -109,7 +106,7 @@ async fn create(
                 let filename = Path::file_name(Path::new(&filename))
                     .and_then(|x| x.to_str())
                     .unwrap_or("");
-                if filename.len() == 0 {
+                if filename.is_empty() {
                     continue;
                 }
                 // TODO: we compute the sha-256 multiple times, this is totally unnecessary,

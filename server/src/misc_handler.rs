@@ -127,7 +127,7 @@ async fn upload<'r>(
     // we should do something better.
     let bytes = data.open(4.mebibytes()).into_bytes().await?.into_inner();
 
-    if bytes.len() == 0 {
+    if bytes.is_empty() {
         return Ok((Status::BadRequest, json!({"error":"empty_file"})));
     }
 
@@ -139,7 +139,7 @@ async fn upload<'r>(
 
     let mut uploaded_items = server_state.uploaded_items.lock().unwrap();
     let upload_token = utils::random_token(|token| !uploaded_items.contains_key(token));
-    uploaded_items.insert(upload_token.clone(), bytes, Duration::from_secs(1 * 60));
+    uploaded_items.insert(upload_token.clone(), bytes, Duration::from_secs(60));
 
     Ok((Status::Ok, json!({ "upload_token": upload_token })))
 }

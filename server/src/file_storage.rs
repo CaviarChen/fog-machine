@@ -80,7 +80,7 @@ impl SyncFileStorage {
             // TODO: async?
             io::copy(&mut file, &mut hasher)?;
             let hash = format!("{:x}", hasher.finalize());
-            if &hash != sha256 {
+            if hash != sha256 {
                 return Err(anyhow!("provided hash does not match the actual file. file: {}, expected_hash: {}, actual_hash: {}",
                                    path.display(), sha256, hash));
             }
