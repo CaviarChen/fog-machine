@@ -47,6 +47,27 @@ async fn list_all(conn: Connection<'_, Db>, user: User) -> APIResponse {
     Ok((Status::Ok, json!(snapshot_list)))
 }
 
+#[delete("/<snapshot_id>")]
+async fn delete(conn: Connection<'_, Db>, user: User, snapshot_id: i64) -> APIResponse {
+    let db = conn.into_inner();
+    let txn = db.begin().await?;
+
+    match snapshot::Entity::find()
+        .filter(snapshot::Column::UserId.eq(user.uid))
+        .filter(snapshot::Column::Id.eq(snapshot_id))
+        .lock_exclusive()
+        .one(&txn)
+        .await?
+    {
+        Some(snapshot) => {
+            snapshot.delete(&txn).await?;
+            txn.commit().await?;
+            Ok((Status::Ok, json!({})))
+        }
+        None => Ok((Status::NotFound, json!({}))),
+    }
+}
+
 #[get("/<snapshot_id>/download_token")]
 async fn get_download_token(
     conn: Connection<'_, Db>,
@@ -141,5 +162,5 @@ async fn get_editor_view(
 }
 
 pub fn routes() -> Vec<rocket::Route> {
-    routes![list_all, get_download_token, get_editor_view]
+    routes![list_all, delete, get_download_token, get_editor_view]
 }
