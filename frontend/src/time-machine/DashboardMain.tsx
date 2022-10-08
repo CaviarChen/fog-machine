@@ -391,7 +391,7 @@ function DashboardMain() {
                       console.log(uploadToken);
                       if (uploadDate && uploadToken) {
                         Api.uploadSnapshot(uploadDate, uploadToken);
-                        loadData();
+                        location.reload(); //TODO: dont refresh all
                         setOpenImportModel(false);
                       } //TODO: failed tips
                     }}
