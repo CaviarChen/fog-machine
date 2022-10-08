@@ -1,40 +1,35 @@
 use crate::data_fetcher;
 use crate::pool::Db;
 use crate::user_handler::User;
-use crate::{InternalError, ServerState};
+use crate::utils;
+use crate::{APIResponse, InternalError, ServerState};
 use anyhow::Result;
 use entity::sea_orm;
 use entity::snapshot;
-use jwt::SignWithKey;
+use rocket::data::{Data, ToByteUnit};
 use rocket::http::ContentType;
 use rocket::http::Status;
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
 use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
-use serde::{Deserialize, Serialize};
+use serde_json::json;
+use std::time::Duration;
 
-#[derive(Serialize, Deserialize)]
-struct DownloadJwtData {
-    ver: i8,
-    sub: i64,
-    exp: i64,
+#[derive(Clone)]
+pub enum DownloadItem {
+    Snapshot { snapshot_id: i64 },
 }
 
 pub fn generate_snapshot_download_token(server_state: &ServerState, snapshot_id: i64) -> String {
-    let exp = chrono::Utc::now()
-        .checked_add_signed(chrono::Duration::minutes(10))
-        .expect("valid timestamp")
-        .timestamp();
-
-    let jwt_data = DownloadJwtData {
-        ver: 1,
-        sub: snapshot_id,
-        exp,
-    };
-    jwt_data
-        .sign_with_key(&server_state.download_jwt_key)
-        .unwrap()
+    let mut download_items = server_state.download_items.lock().unwrap();
+    let download_token = utils::random_token(|token| !download_items.contains_key(token));
+    download_items.insert(
+        download_token.clone(),
+        DownloadItem::Snapshot { snapshot_id },
+        Duration::from_secs(10 * 60),
+    );
+    download_token
 }
 
 // TODO: streaming?
@@ -66,37 +61,26 @@ impl<'r> Responder<'r, 'static> for FileResponse {
     }
 }
 
+fn get_download_item(
+    server_state: &rocket::State<ServerState>,
+    token: &str,
+) -> Option<DownloadItem> {
+    let download_times = server_state.download_items.lock().unwrap();
+    download_times.get(token).cloned()
+}
+
 #[get("/download?<token>")]
 async fn download<'r>(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
     token: &str,
 ) -> Result<FileResponse, InternalError> {
-    use jwt::VerifyWithKey;
-
-    let jwt_data: Result<DownloadJwtData, _> =
-        token.verify_with_key(&server_state.download_jwt_key);
-    let sanpshot_id = match jwt_data {
-        Err(_) => None,
-        Ok(jwt_data) => {
-            if jwt_data.ver == 1 {
-                let now = chrono::Utc::now().timestamp();
-                if now < jwt_data.exp {
-                    Some(jwt_data.sub)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        }
-    };
-    match sanpshot_id {
+    match get_download_item(server_state, token) {
         None => Ok(FileResponse::Forbidden),
-        Some(sanpshot_id) => {
+        Some(DownloadItem::Snapshot { snapshot_id }) => {
             let db = conn.into_inner();
             let snapshot = snapshot::Entity::find()
-                .filter(snapshot::Column::Id.eq(sanpshot_id))
+                .filter(snapshot::Column::Id.eq(snapshot_id))
                 .one(db)
                 .await?;
             match snapshot {
@@ -132,6 +116,34 @@ async fn download<'r>(
     }
 }
 
+#[post("/upload", data = "<data>")]
+async fn upload<'r>(
+    server_state: &rocket::State<ServerState>,
+    // we don't keep track of of who uploaded what. this is just make sure only valid users are allowed to upload
+    user: User,
+    data: Data<'_>,
+) -> APIResponse {
+    // TODO: we just save the whole thing in memory for 1 mins. This is bad and one can use this to OOM us.
+    // we should do something better.
+    let bytes = data.open(4.mebibytes()).into_bytes().await?.into_inner();
+
+    if bytes.is_empty() {
+        return Ok((Status::BadRequest, json!({"error":"empty_file"})));
+    }
+
+    info!(
+        "[misc/upload] data received from user: {} size: {}",
+        user.uid,
+        bytes.len(),
+    );
+
+    let mut uploaded_items = server_state.uploaded_items.lock().unwrap();
+    let upload_token = utils::random_token(|token| !uploaded_items.contains_key(token));
+    uploaded_items.insert(upload_token.clone(), bytes, Duration::from_secs(60));
+
+    Ok((Status::Ok, json!({ "upload_token": upload_token })))
+}
+
 pub fn routes() -> Vec<rocket::Route> {
-    routes![download]
+    routes![upload, download]
 }
