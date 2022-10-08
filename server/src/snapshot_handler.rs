@@ -47,6 +47,22 @@ async fn list_all(conn: Connection<'_, Db>, user: User) -> APIResponse {
     Ok((Status::Ok, json!(snapshot_list)))
 }
 
+// TODO: this api is a bit weird, it uses arguments to pass metadata instead of json.
+// I don't have a very good way to send json form and file at the same time.
+// I think when there are more metadata, what we should do is:
+// 1. have a misc/upload api: upload a file and return a temp file token
+// 2. have this create api that takes metadata + tmep file token as json form.
+// #[post("/?<timestamp>", data = "<zipData>")]
+// async fn create(
+//     conn: Connection<'_, Db>,
+//     user: User,
+//     zipData: rocket::Data<'_>,
+//     timestamp: DateTime<Utc>,
+// ) -> APIResponse {
+//     let db = conn.into_inner();
+//     let txn = db.begin().await?;
+// }
+
 #[delete("/<snapshot_id>")]
 async fn delete(conn: Connection<'_, Db>, user: User, snapshot_id: i64) -> APIResponse {
     let db = conn.into_inner();

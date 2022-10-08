@@ -133,6 +133,7 @@ impl State {
 
         // clean this up after 20 mins.
         // TODO: this is silly but good enough for now. Note that this is the only place that we remove things from the hashmap.
+        // try using `https://crates.io/crates/endorphin`
         let arc_pending_registrations = Arc::clone(&self.pending_registrations);
         let token_copy = token.clone();
         tokio::task::spawn(async move {
