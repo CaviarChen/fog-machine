@@ -56,7 +56,6 @@ pub struct Config {
 pub struct ServerState {
     pub config: Config,
     pub user_jwt_key: Hmac<Sha256>,
-    pub download_jwt_key: Hmac<Sha256>,
     pub file_storage: file_storage::SyncFileStorage,
     // in-memory-cache: Sotre short-lived intermediate data that is ok to be lost during server reboot
     pub pending_registrations: Mutex<
@@ -71,13 +70,10 @@ impl ServerState {
         // it is very important that we use different key for different jwt.
         let user_jwt_key =
             Hmac::new_from_slice(format!("user#{}", config.jwt_secret).as_bytes()).unwrap();
-        let download_jwt_key =
-            Hmac::new_from_slice(format!("download#{}", config.jwt_secret).as_bytes()).unwrap();
         let file_storage = file_storage::SyncFileStorage::init(&config.data_base_dir).unwrap();
         ServerState {
             config,
             user_jwt_key,
-            download_jwt_key,
             file_storage,
             pending_registrations: Mutex::new(endorphin::HashMap::new(
                 endorphin::policy::TTLPolicy::new(),
