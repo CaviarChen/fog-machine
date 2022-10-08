@@ -1,3 +1,4 @@
+use crate::data_fetcher::SyncFile;
 use crate::misc_handler;
 use crate::pool::Db;
 use crate::user_handler::User;
@@ -6,10 +7,15 @@ use chrono::prelude::*;
 use entity::sea_orm;
 use entity::snapshot;
 use rocket::http::Status;
+use rocket::serde::json::Json;
 use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
+use sha2::{Digest, Sha256};
+use std::collections::HashMap;
+use std::path::Path;
+use std::{fs, io};
 
 #[derive(Serialize)]
 struct SnapshotJson {
@@ -47,21 +53,116 @@ async fn list_all(conn: Connection<'_, Db>, user: User) -> APIResponse {
     Ok((Status::Ok, json!(snapshot_list)))
 }
 
-// TODO: this api is a bit weird, it uses arguments to pass metadata instead of json.
-// I don't have a very good way to send json form and file at the same time.
-// I think when there are more metadata, what we should do is:
-// 1. have a misc/upload api: upload a file and return a temp file token
-// 2. have this create api that takes metadata + tmep file token as json form.
-// #[post("/?<timestamp>", data = "<zipData>")]
-// async fn create(
-//     conn: Connection<'_, Db>,
-//     user: User,
-//     zipData: rocket::Data<'_>,
-//     timestamp: DateTime<Utc>,
-// ) -> APIResponse {
-//     let db = conn.into_inner();
-//     let txn = db.begin().await?;
-// }
+fn get_and_remove_uploaded_item(
+    server_state: &rocket::State<ServerState>,
+    token: &str,
+) -> Option<Vec<u8>> {
+    let mut uploaded_items = server_state.uploaded_items.lock().unwrap();
+    // uploaded_items.remove(token)
+    uploaded_items.get(token).cloned()
+}
+
+#[derive(Deserialize)]
+struct CreateData {
+    timestamp: DateTime<Utc>,
+    upload_token: String,
+}
+#[post("/", data = "<data>")]
+async fn create(
+    conn: Connection<'_, Db>,
+    server_state: &rocket::State<ServerState>,
+    user: User,
+    data: Json<CreateData>,
+) -> APIResponse {
+    let cutoff = Utc::now() + chrono::Duration::seconds(10);
+    if data.timestamp > cutoff {
+        return Ok((
+            Status::BadRequest,
+            json!({"error": "timestamp_is_in_future"}),
+        ));
+    }
+    match get_and_remove_uploaded_item(server_state, &data.upload_token) {
+        None => {
+            return Ok((Status::BadRequest, json!({"error": "invalid_upload_token"})));
+        }
+        Some(zip_data) => {
+            // TODO: share the code with `data_fetcher`
+            let reader = std::io::Cursor::new(zip_data);
+            let mut zip = zip::ZipArchive::new(reader)?;
+            let has_sync_folder = zip
+                .file_names()
+                .any(|name| name.to_lowercase().contains("sync/"));
+
+            // let's put file in a temp dir first, we only save the file when we belive everything is good.
+            let tmp_dir = server_state.file_storage.get_tmp_dir()?;
+            let mut logs = Vec::new();
+            let mut sync_files: HashMap<u32, String> = HashMap::new();
+            let mut files_to_add = Vec::new();
+            for i in 0..zip.len() {
+                let mut file = zip.by_index(i)?;
+                let filename = file.name().to_lowercase();
+                // the check below are just best effort.
+                // if there is a sync folder, skip all other files
+                if has_sync_folder && !filename.contains("sync/") {
+                    continue;
+                }
+                let filename = Path::file_name(Path::new(&filename))
+                    .and_then(|x| x.to_str())
+                    .unwrap_or("");
+                if filename.len() == 0 {
+                    continue;
+                }
+                // TODO: we compute the sha-256 multiple times, this is totally unnecessary,
+                // we should redesign the API to avoid that.
+                let mut hasher = Sha256::new();
+                // TODO: async?
+                io::copy(&mut file, &mut hasher)?;
+                drop(file);
+                let sha256_lowercase = format!("{:x}", hasher.finalize());
+                match SyncFile::create_from_filename(filename, &sha256_lowercase) {
+                    Err(_) => {
+                        logs.push(format!("unexpected file: {}", filename));
+                    }
+                    Ok(sync_file) => {
+                        if !server_state.file_storage.has_file(&user, &sha256_lowercase) {
+                            let tmp_file_path = tmp_dir.path().join(sync_file.id.to_string());
+                            let mut tmp_file = fs::File::create(&tmp_file_path)?;
+                            let mut file = zip.by_index(i)?;
+                            io::copy(&mut file, &mut tmp_file)?;
+                            files_to_add.push((sha256_lowercase, tmp_file_path));
+                        }
+                        sync_files.insert(sync_file.id, sync_file.sha256);
+                    }
+                }
+            }
+
+            let file_count = sync_files.len();
+            logs.push(format!("new files: {}/{}", files_to_add.len(), file_count));
+            // save files
+            server_state
+                .file_storage
+                .add_files(&user, &files_to_add[..])?;
+
+            let db = conn.into_inner();
+            // save snapshot
+            let snapshot = snapshot::ActiveModel {
+                id: NotSet,
+                user_id: Set(user.uid),
+                timestamp: Set(data.timestamp),
+                sync_files: Set(entity::snapshot::SyncFiles(sync_files)),
+                source_kind: Set(snapshot::SourceKind::Upload),
+                note: Set(None),
+            }
+            .insert(db)
+            .await?;
+
+            Ok((
+                Status::Ok,
+                json!({"id": snapshot.id, "file_count": file_count, "logs": logs.join("\n")}),
+            ))
+        }
+    }
+}
 
 #[delete("/<snapshot_id>")]
 async fn delete(conn: Connection<'_, Db>, user: User, snapshot_id: i64) -> APIResponse {
@@ -178,5 +279,11 @@ async fn get_editor_view(
 }
 
 pub fn routes() -> Vec<rocket::Route> {
-    routes![list_all, delete, get_download_token, get_editor_view]
+    routes![
+        list_all,
+        create,
+        delete,
+        get_download_token,
+        get_editor_view
+    ]
 }

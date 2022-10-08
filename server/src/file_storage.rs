@@ -65,10 +65,15 @@ impl SyncFileStorage {
     /// `[(sha-256, file_path)]`, sha-256 will be recomputed from the file.
     /// file will be moved to the permanent storage, NOTE that we move file by calling `fs::rename`
     /// so the tmp file must at the same mount point.
-    pub fn add_files(&self, user: &User, files: &[(&str, PathBuf)]) -> Result<(), Error> {
+    pub fn add_files<S: AsRef<str>>(
+        &self,
+        user: &User,
+        files: &[(S, PathBuf)],
+    ) -> Result<(), Error> {
         // validate sha-256 and size
         let mut size: u64 = 0;
         for (sha256, path) in files {
+            let sha256 = sha256.as_ref();
             let mut hasher = Sha256::new();
             let mut file = fs::File::open(path)?;
             size += file.metadata()?.len();
@@ -94,7 +99,7 @@ impl SyncFileStorage {
         // TODO: maybe validate zlib header?
         // all good, let's save files
         for (sha256, path) in files {
-            let target = user_path.join(sha256);
+            let target = user_path.join(sha256.as_ref());
             if !target.exists() {
                 // race-condition should be fine
                 fs::rename(path, target)?

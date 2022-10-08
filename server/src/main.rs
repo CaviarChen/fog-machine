@@ -64,6 +64,7 @@ pub struct ServerState {
     >,
     pub download_items:
         Mutex<endorphin::HashMap<String, misc_handler::DownloadItem, endorphin::policy::TTLPolicy>>,
+    pub uploaded_items: Mutex<endorphin::HashMap<String, Vec<u8>, endorphin::policy::TTLPolicy>>,
 }
 impl ServerState {
     pub fn from_config(config: Config) -> Self {
@@ -82,6 +83,9 @@ impl ServerState {
                 endorphin::policy::TTLPolicy::new(),
             )),
             download_items: Mutex::new(
+                endorphin::HashMap::new(endorphin::policy::TTLPolicy::new()),
+            ),
+            uploaded_items: Mutex::new(
                 endorphin::HashMap::new(endorphin::policy::TTLPolicy::new()),
             ),
         }
