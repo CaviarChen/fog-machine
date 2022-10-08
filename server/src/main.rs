@@ -4,7 +4,6 @@ extern crate rocket;
 extern crate lazy_static;
 #[macro_use]
 extern crate anyhow;
-use endorphin;
 use envconfig::Envconfig;
 use hmac::{Hmac, Mac};
 use migration::MigratorTrait;

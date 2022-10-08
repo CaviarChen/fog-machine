@@ -64,7 +64,7 @@ fn get_download_item(
     token: &str,
 ) -> Option<DownloadItem> {
     let download_times = server_state.download_items.lock().unwrap();
-    download_times.get(token).map(|x| x.clone())
+    download_times.get(token).cloned()
 }
 
 #[get("/download?<token>")]
