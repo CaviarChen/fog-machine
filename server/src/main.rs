@@ -17,6 +17,7 @@ use rocket_cors::AllowedOrigins;
 use sea_orm_rocket::Database;
 use sha2::Sha256;
 use std::io::Cursor;
+use std::sync::Mutex;
 
 mod data_fetcher;
 mod file_storage;
@@ -27,6 +28,7 @@ mod snapshot_handler;
 mod snapshot_task_handler;
 mod task_runner;
 mod user_handler;
+mod utils;
 
 use pool::Db;
 
@@ -56,6 +58,12 @@ pub struct ServerState {
     pub user_jwt_key: Hmac<Sha256>,
     pub download_jwt_key: Hmac<Sha256>,
     pub file_storage: file_storage::SyncFileStorage,
+    // in-memory-cache: Sotre short-lived intermediate data that is ok to be lost during server reboot
+    pub pending_registrations: Mutex<
+        endorphin::HashMap<String, user_handler::PendingRegistration, endorphin::policy::TTLPolicy>,
+    >,
+    pub download_items:
+        Mutex<endorphin::HashMap<String, misc_handler::DownloadItem, endorphin::policy::TTLPolicy>>,
 }
 impl ServerState {
     pub fn from_config(config: Config) -> Self {
@@ -70,6 +78,12 @@ impl ServerState {
             user_jwt_key,
             download_jwt_key,
             file_storage,
+            pending_registrations: Mutex::new(endorphin::HashMap::new(
+                endorphin::policy::TTLPolicy::new(),
+            )),
+            download_items: Mutex::new(
+                endorphin::HashMap::new(endorphin::policy::TTLPolicy::new()),
+            ),
         }
     }
 }
@@ -152,8 +166,6 @@ fn rocket() -> _ {
             })
         }))
         .manage(server_state)
-        // user handler
-        .manage(user_handler::State::create())
         .mount("/api/v1/user", user_handler::routes())
         .mount("/api/v1/snapshot_task", snapshot_task_handler::routes())
         .mount("/api/v1/snapshot", snapshot_handler::routes())

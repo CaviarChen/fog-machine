@@ -34,6 +34,7 @@ tempfile = "3.3.0"
 md5 = "0.7.0"
 lazy_static = "1.4.0"
 zip = "0.6.2"
+endorphin = "0.1.9"
 
 [dependencies.sea-orm-rocket]
 git = "https://github.com/SeaQL/sea-orm"
