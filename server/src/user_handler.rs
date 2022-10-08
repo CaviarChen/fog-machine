@@ -1,5 +1,6 @@
 use crate::pool::Db;
 use crate::user_handler::PendingRegistration::Github;
+use crate::utils;
 use crate::{APIResponse, InternalError, ServerState};
 use anyhow::anyhow;
 use entity::sea_orm;
@@ -11,8 +12,7 @@ use rocket::serde::{json::Json, Deserialize, Serialize};
 use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
 use serde_json::json;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use std::vec::Vec;
 
 /* Design of the user system
@@ -99,55 +99,9 @@ impl<'r> FromRequest<'r> for User {
     }
 }
 
-fn random_token(validate_token: impl Fn(&str) -> bool) -> String {
-    use rand::distributions::{Alphanumeric, DistString};
-    loop {
-        let token = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
-        if validate_token(&token) {
-            return token;
-        }
-    }
-}
-
 #[derive(Clone)]
-enum PendingRegistration {
+pub enum PendingRegistration {
     Github { github_uid: i64 },
-}
-
-pub struct State {
-    // we'll lost the state when we restart the server, but for the use case below, it should be
-    // fine.
-    pending_registrations: Arc<Mutex<HashMap<String, PendingRegistration>>>,
-}
-impl State {
-    pub fn create() -> Self {
-        State {
-            pending_registrations: Arc::new(Mutex::new(HashMap::new())),
-        }
-    }
-
-    fn add_pending_registration(&self, pending: PendingRegistration) -> String {
-        let mut pending_registrations = self.pending_registrations.lock().unwrap();
-        let token = random_token(|token| !pending_registrations.contains_key(token));
-        pending_registrations.insert(token.clone(), pending);
-
-        // clean this up after 20 mins.
-        // TODO: this is silly but good enough for now. Note that this is the only place that we remove things from the hashmap.
-        let arc_pending_registrations = Arc::clone(&self.pending_registrations);
-        let token_copy = token.clone();
-        tokio::task::spawn(async move {
-            use tokio::time::{sleep, Duration};
-            sleep(Duration::from_secs(60 * 20)).await;
-            let mut pending_registrations = arc_pending_registrations.lock().unwrap();
-            pending_registrations.remove(&token_copy);
-        });
-        token
-    }
-
-    fn get_pending_registration(&self, token: &str) -> Option<PendingRegistration> {
-        let pending_registrations = self.pending_registrations.lock().unwrap();
-        pending_registrations.get(token).cloned()
-    }
 }
 
 #[derive(Deserialize)]
@@ -161,7 +115,6 @@ struct GithubSSOData {
 async fn sso_github(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
-    state: &rocket::State<State>,
     data: Json<GithubSSOData>,
 ) -> APIResponse {
     let client = reqwest::Client::builder().user_agent("rust").build()?;
@@ -223,7 +176,14 @@ async fn sso_github(
         None => {
             // this email cannot be trusted
             let email: Option<&str> = res["email"].as_str();
-            let registration_token = state.add_pending_registration(Github { github_uid });
+            let mut pending_registrations = server_state.pending_registrations.lock().unwrap();
+            let registration_token =
+                utils::random_token(|token| !pending_registrations.contains_key(token));
+            pending_registrations.insert(
+                registration_token.clone(),
+                Github { github_uid },
+                Duration::from_secs(20 * 60),
+            );
             Ok((
                 Status::Ok,
                 json!({"login": false, "default_email":email , "registration_token": registration_token }),
@@ -247,27 +207,35 @@ struct SSOData {
     language: entity::user::Language,
 }
 
+fn get_and_remove_pending_registration(
+    server_state: &rocket::State<ServerState>,
+    token: &str,
+) -> Option<PendingRegistration> {
+    let mut pending_registrations = server_state.pending_registrations.lock().unwrap();
+    pending_registrations.remove(token)
+}
+
 // create a new user by sso.
 #[post("/sso", data = "<data>")]
 async fn sso(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
-    state: &rocket::State<State>,
     data: Json<SSOData>,
 ) -> APIResponse {
     let contact_email = data.contact_email.to_lowercase();
     if !email_address::EmailAddress::is_valid(&contact_email) {
         return Ok((Status::BadRequest, json!({"error": "invalid_email"})));
     }
-    let pending_registration = match state.get_pending_registration(&data.registration_token) {
-        None => {
-            return Ok((
-                Status::Unauthorized,
-                json!({"error": "invalid_registration_token"}),
-            ))
-        }
-        Some(pending_registration) => pending_registration,
-    };
+    let pending_registration =
+        match get_and_remove_pending_registration(server_state, &data.registration_token) {
+            None => {
+                return Ok((
+                    Status::Unauthorized,
+                    json!({"error": "invalid_registration_token"}),
+                ))
+            }
+            Some(pending_registration) => pending_registration,
+        };
     let db = conn.into_inner();
     match pending_registration {
         Github { github_uid } => {

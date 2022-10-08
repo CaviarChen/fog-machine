@@ -1,40 +1,33 @@
 use crate::data_fetcher;
 use crate::pool::Db;
 use crate::user_handler::User;
+use crate::utils;
 use crate::{InternalError, ServerState};
 use anyhow::Result;
 use entity::sea_orm;
 use entity::snapshot;
-use jwt::SignWithKey;
 use rocket::http::ContentType;
 use rocket::http::Status;
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
 use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
-use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
-#[derive(Serialize, Deserialize)]
-struct DownloadJwtData {
-    ver: i8,
-    sub: i64,
-    exp: i64,
+#[derive(Clone)]
+pub enum DownloadItem {
+    Snapshot { snapshot_id: i64 },
 }
 
 pub fn generate_snapshot_download_token(server_state: &ServerState, snapshot_id: i64) -> String {
-    let exp = chrono::Utc::now()
-        .checked_add_signed(chrono::Duration::minutes(10))
-        .expect("valid timestamp")
-        .timestamp();
-
-    let jwt_data = DownloadJwtData {
-        ver: 1,
-        sub: snapshot_id,
-        exp,
-    };
-    jwt_data
-        .sign_with_key(&server_state.download_jwt_key)
-        .unwrap()
+    let mut download_items = server_state.download_items.lock().unwrap();
+    let download_token = utils::random_token(|token| !download_items.contains_key(token));
+    download_items.insert(
+        download_token.clone(),
+        DownloadItem::Snapshot { snapshot_id },
+        Duration::from_secs(10 * 60),
+    );
+    download_token
 }
 
 // TODO: streaming?
@@ -66,37 +59,26 @@ impl<'r> Responder<'r, 'static> for FileResponse {
     }
 }
 
+fn get_download_item(
+    server_state: &rocket::State<ServerState>,
+    token: &str,
+) -> Option<DownloadItem> {
+    let download_times = server_state.download_items.lock().unwrap();
+    download_times.get(token).map(|x| x.clone())
+}
+
 #[get("/download?<token>")]
 async fn download<'r>(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
     token: &str,
 ) -> Result<FileResponse, InternalError> {
-    use jwt::VerifyWithKey;
-
-    let jwt_data: Result<DownloadJwtData, _> =
-        token.verify_with_key(&server_state.download_jwt_key);
-    let sanpshot_id = match jwt_data {
-        Err(_) => None,
-        Ok(jwt_data) => {
-            if jwt_data.ver == 1 {
-                let now = chrono::Utc::now().timestamp();
-                if now < jwt_data.exp {
-                    Some(jwt_data.sub)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        }
-    };
-    match sanpshot_id {
+    match get_download_item(server_state, token) {
         None => Ok(FileResponse::Forbidden),
-        Some(sanpshot_id) => {
+        Some(DownloadItem::Snapshot { snapshot_id }) => {
             let db = conn.into_inner();
             let snapshot = snapshot::Entity::find()
-                .filter(snapshot::Column::Id.eq(sanpshot_id))
+                .filter(snapshot::Column::Id.eq(snapshot_id))
                 .one(db)
                 .await?;
             match snapshot {
