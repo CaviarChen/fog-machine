@@ -321,8 +321,14 @@ function DashboardMain() {
   const [uploadDate, setUploadDate] = useState<string | null>(null);
   const [uploadToken, setUploadToken] = useState<string | null>(null);
   const [isFileUpload, setIsFileUpload] = useState(false);
-  type PlacementType = 'topStart' | 'topCenter' | 'topEnd' | 'bottomStart' | 'bottomCenter' | 'bottomEnd';
-  const placement:PlacementType = 'topCenter';
+  type PlacementType =
+    | "topStart"
+    | "topCenter"
+    | "topEnd"
+    | "bottomStart"
+    | "bottomCenter"
+    | "bottomEnd";
+  const placement: PlacementType = "topCenter";
   const toaster = useToaster();
 
   return (
@@ -396,14 +402,20 @@ function DashboardMain() {
                         Api.uploadSnapshot(uploadDate, uploadToken);
                         location.reload(); //TODO: dont refresh all
                         setOpenImportModel(false);
-                      } else if(!uploadDate) {
-                        toaster.push((<Message showIcon type='error'>
+                      } else if (!uploadDate) {
+                        toaster.push(
+                          <Message showIcon type="error">
                             Please select upload date.
-                          </Message>), { placement });
-                      } else if(!uploadToken) {
-                        toaster.push((<Message showIcon type='error'>
+                          </Message>,
+                          { placement }
+                        );
+                      } else if (!uploadToken) {
+                        toaster.push(
+                          <Message showIcon type="error">
                             Please upload a file.
-                          </Message>), { placement });
+                          </Message>,
+                          { placement }
+                        );
                       }
                     }}
                   >
