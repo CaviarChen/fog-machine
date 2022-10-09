@@ -130,9 +130,9 @@ fn rocket() -> _ {
         sea_orm_rocket::Config {
             url: String::clone(&config.database_url),
             min_connections: None,
-            max_connections: 1024,
+            max_connections: 32,
             connect_timeout: 3,
-            idle_timeout: None,
+            idle_timeout: Some(5 * 60),
         },
     ));
 
