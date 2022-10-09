@@ -321,6 +321,9 @@ function DashboardMain() {
   const [uploadDate, setUploadDate] = useState<string | null>(null);
   const [uploadToken, setUploadToken] = useState<string | null>(null);
   const [isFileUpload, setIsFileUpload] = useState(false);
+  type PlacementType = 'topStart' | 'topCenter' | 'topEnd' | 'bottomStart' | 'bottomCenter' | 'bottomEnd';
+  const placement:PlacementType = 'topCenter';
+  const toaster = useToaster();
 
   return (
     <>
@@ -375,7 +378,7 @@ function DashboardMain() {
                   justifyContent: "center",
                 }}
               >
-                <span>Click or Drag files to this area to upload</span>
+                <span>Click or Drag a .zip file to this area to upload</span>
               </div>
             </Uploader>
 
@@ -393,7 +396,15 @@ function DashboardMain() {
                         Api.uploadSnapshot(uploadDate, uploadToken);
                         location.reload(); //TODO: dont refresh all
                         setOpenImportModel(false);
-                      } //TODO: failed tips
+                      } else if(!uploadDate) {
+                        toaster.push((<Message showIcon type='error'>
+                            Please select upload date.
+                          </Message>), { placement });
+                      } else if(!uploadToken) {
+                        toaster.push((<Message showIcon type='error'>
+                            Please upload a file.
+                          </Message>), { placement });
+                      }
                     }}
                   >
                     Submit

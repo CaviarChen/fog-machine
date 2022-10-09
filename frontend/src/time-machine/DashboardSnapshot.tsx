@@ -9,11 +9,17 @@ import {
   Tooltip,
   Whisper,
   Tag,
+  Notification,
+  useToaster,
+  Modal,
+  Message,
 } from "rsuite";
 import MoreIcon from "@rsuite/icons/legacy/More";
 import Api, { Snapshot } from "./Api";
 
 const { Column, HeaderCell, Cell } = Table;
+
+
 
 function DashboardSnapshot() {
   const [snapshots, setSnapshots] = useState<Snapshot[] | null>(null);
@@ -29,6 +35,37 @@ function DashboardSnapshot() {
   useEffect(() => {
     loadData();
   }, []);
+
+  type PlacementType = 'topStart' | 'topCenter' | 'topEnd' | 'bottomStart' | 'bottomCenter' | 'bottomEnd';
+
+
+  const placement:PlacementType = 'topCenter';
+  const toaster = useToaster();
+
+
+  const message = (snapId:number) => {
+    return(
+    <Notification type="warning" header="warning" closable>
+      <Modal.Body>This operation cannot be undone,Sure?</Modal.Body>
+      <hr />
+      <Button
+                        size="sm"
+                        onClick={async () => {
+                          // TODO: Warning
+                          const res = await Api.deleteSnapshot(snapId);
+                          console.log(res);
+                          loadData();
+                          toaster.clear();
+                          toaster.push((<Message showIcon type='success'>
+                            Success！
+                          </Message>), { placement });
+                        }}
+                      >
+                        confirm
+                      </Button> 
+    </Notification>
+  );
+                      }
 
   const Detail = () => {
     if (!snapshots) {
@@ -109,17 +146,7 @@ function DashboardSnapshot() {
                       >
                         Download
                       </Button>
-                      <Button
-                        size="sm"
-                        onClick={async () => {
-                          // TODO: Warning
-                          const res = await Api.deleteSnapshot(snapshot.id);
-                          console.log(res);
-                          loadData();
-                        }}
-                      >
-                        Delete
-                      </Button>
+                      <Button size="sm" onClick={() => toaster.push(message(snapshot.id), { placement })}>Delete</Button>
                     </ButtonToolbar>
                   </div>
                 );
