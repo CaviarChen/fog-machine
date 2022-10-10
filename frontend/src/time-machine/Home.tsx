@@ -16,7 +16,7 @@ import {
 import "./Home.css";
 import DashboardMain from "./DashboardMain";
 import Api from "./Api";
-import {useTranslation} from "react-i18next";
+import { useTranslation } from "react-i18next";
 
 // I really want ADT
 type LoginStatus = {
@@ -205,7 +205,7 @@ function Home() {
   };
 
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   return (
     <Container>
@@ -222,7 +222,9 @@ function Home() {
             >
               {t("home-main-title")}
             </Breadcrumb.Item>
-            <Breadcrumb.Item active>{t("home-time-machine-title")}</Breadcrumb.Item>
+            <Breadcrumb.Item active>
+              {t("home-time-machine-title")}
+            </Breadcrumb.Item>
           </Breadcrumb>
 
           <Divider style={{ marginTop: "1vh" }} />

@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 const { Column, HeaderCell, Cell } = Table;
 
 function DashboardSnapshot() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [snapshots, setSnapshots] = useState<Snapshot[] | null>(null);
   const loadData = async () => {
     const result = await Api.listSnapshots();
@@ -66,7 +66,11 @@ function DashboardSnapshot() {
               {(rawData) => {
                 const snapshot = rawData as Snapshot;
                 return (
-                  <Tag>{snapshot.sourceKind == "Sync" ? t("snapshot-table-source-sync") : t("snapshot-table-source-upload")}</Tag>
+                  <Tag>
+                    {snapshot.sourceKind == "Sync"
+                      ? t("snapshot-table-source-sync")
+                      : t("snapshot-table-source-upload")}
+                  </Tag>
                 );
               }}
             </Cell>

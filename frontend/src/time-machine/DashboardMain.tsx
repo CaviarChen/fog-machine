@@ -30,7 +30,7 @@ import DashboardSnapshot from "./DashboardSnapshot";
 import { useTranslation } from "react-i18next";
 
 function DashboardMain() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [snapshotTask, setSnapshotTask] = useState<SnapshotTask | null>(null);
   const loadData = async () => {
@@ -188,12 +188,12 @@ function DashboardMain() {
   };
 
   const allowedInterval = [
-    ["6 "+ t("data-sync-interval-hours"), 6 * 60],
-    ["8 "+ t("data-sync-interval-hours"), 8 * 60],
-    ["12 "+ t("data-sync-interval-hours"), 12 * 60],
-    ["1 "+ t("data-sync-interval-day"), 24 * 60],
-    ["2 "+ t("data-sync-interval-days"), 2 * 24 * 60],
-    ["1 "+ t("data-sync-interval-week"), 7 * 24 * 60],
+    ["6 " + t("data-sync-interval-hours"), 6 * 60],
+    ["8 " + t("data-sync-interval-hours"), 8 * 60],
+    ["12 " + t("data-sync-interval-hours"), 12 * 60],
+    ["1 " + t("data-sync-interval-day"), 24 * 60],
+    ["2 " + t("data-sync-interval-days"), 2 * 24 * 60],
+    ["1 " + t("data-sync-interval-week"), 7 * 24 * 60],
   ].map(([label, value]) => ({ label, value: value }));
 
   const sourceType = [["OneDrive", "onedrive"]].map(([label, value]) => ({
