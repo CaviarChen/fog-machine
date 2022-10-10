@@ -12,10 +12,12 @@ import {
 } from "rsuite";
 import MoreIcon from "@rsuite/icons/legacy/More";
 import Api, { Snapshot } from "./Api";
+import { useTranslation } from "react-i18next";
 
 const { Column, HeaderCell, Cell } = Table;
 
 function DashboardSnapshot() {
+  const { t, i18n } = useTranslation();
   const [snapshots, setSnapshots] = useState<Snapshot[] | null>(null);
   const loadData = async () => {
     const result = await Api.listSnapshots();
@@ -37,7 +39,7 @@ function DashboardSnapshot() {
       return (
         <Table data={snapshots} id="table">
           <Column flexGrow={10}>
-            <HeaderCell>Date</HeaderCell>
+            <HeaderCell>{t("snapshot-table-date")}</HeaderCell>
             <Cell>
               {(rawData) => {
                 const snapshot = rawData as Snapshot;
@@ -59,12 +61,12 @@ function DashboardSnapshot() {
           </Column>
 
           <Column flexGrow={10}>
-            <HeaderCell>Source</HeaderCell>
+            <HeaderCell>{t("snapshot-table-source")}</HeaderCell>
             <Cell>
               {(rawData) => {
                 const snapshot = rawData as Snapshot;
                 return (
-                  <Tag>{snapshot.sourceKind == "Sync" ? "Sync" : "Upload"}</Tag>
+                  <Tag>{snapshot.sourceKind == "Sync" ? t("snapshot-table-source-sync") : t("snapshot-table-source-upload")}</Tag>
                 );
               }}
             </Cell>
@@ -87,7 +89,7 @@ function DashboardSnapshot() {
                             "/editor?viewing-snapshot=" + String(snapshot.id);
                         }}
                       >
-                        View
+                        {t("snapshot-table-view")}
                       </Button>
                       <Button
                         size="sm"
@@ -107,7 +109,7 @@ function DashboardSnapshot() {
                           }
                         }}
                       >
-                        Download
+                        {t("snapshot-table-download")}
                       </Button>
                     </ButtonToolbar>
                   </div>
@@ -122,7 +124,7 @@ function DashboardSnapshot() {
 
   return (
     <div style={{ marginTop: "2vh" }}>
-      <Panel header="Snapshots">
+      <Panel header={t("snapshot-table-title")}>
         <Detail />
       </Panel>
     </div>

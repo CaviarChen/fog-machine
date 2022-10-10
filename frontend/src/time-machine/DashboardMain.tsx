@@ -27,8 +27,10 @@ import EditIcon from "@rsuite/icons/Edit";
 import AddOutlineIcon from "@rsuite/icons/AddOutline";
 import HelpOutlineIcon from "@rsuite/icons/HelpOutline";
 import DashboardSnapshot from "./DashboardSnapshot";
+import { useTranslation } from "react-i18next";
 
 function DashboardMain() {
+  const { t, i18n } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [snapshotTask, setSnapshotTask] = useState<SnapshotTask | null>(null);
   const loadData = async () => {
@@ -78,7 +80,7 @@ function DashboardMain() {
                 setEditModelState({ mode: "create" });
               }}
             >
-              Add data source
+              {t("add-data-source")}
             </IconButton>
           </div>
         );
@@ -186,12 +188,12 @@ function DashboardMain() {
   };
 
   const allowedInterval = [
-    ["6 hours", 6 * 60],
-    ["8 hours", 8 * 60],
-    ["12 hours", 12 * 60],
-    ["1 day", 24 * 60],
-    ["2 days", 2 * 24 * 60],
-    ["1 week", 7 * 24 * 60],
+    ["6 "+ t("data-sync-interval-hours"), 6 * 60],
+    ["8 "+ t("data-sync-interval-hours"), 8 * 60],
+    ["12 "+ t("data-sync-interval-hours"), 12 * 60],
+    ["1 "+ t("data-sync-interval-day"), 24 * 60],
+    ["2 "+ t("data-sync-interval-days"), 2 * 24 * 60],
+    ["1 "+ t("data-sync-interval-week"), 7 * 24 * 60],
   ].map(([label, value]) => ({ label, value: value }));
 
   const sourceType = [["OneDrive", "onedrive"]].map(([label, value]) => ({
@@ -318,8 +320,8 @@ function DashboardMain() {
         <Modal.Header>
           <Modal.Title>
             {editModelState.mode == "edit"
-              ? "Edit data source"
-              : "Add data source"}
+              ? t("edit-data-source")
+              : t("add-data-source")}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -334,7 +336,7 @@ function DashboardMain() {
             }}
           >
             <Form.Group controlId="group-data-source">
-              <Form.ControlLabel>Data source</Form.ControlLabel>
+              <Form.ControlLabel>{t("data-source-title")}</Form.ControlLabel>
               <Form.Control
                 name="sourceType"
                 accepter={SelectPicker}
@@ -343,20 +345,20 @@ function DashboardMain() {
                 searchable={false}
               />
               <InputGroup style={{ marginTop: "8px" }}>
-                <InputGroup.Addon>Share link</InputGroup.Addon>
+                <InputGroup.Addon>{t("data-share-link")}</InputGroup.Addon>
                 <Form.Control name="shareLink" />
               </InputGroup>
               <div style={{ textAlign: "right" }}>
-                <HelpOutlineIcon style={{ fontSize: "1.1em" }} /> How to get
-                share link
+                <HelpOutlineIcon style={{ fontSize: "1.1em" }} />
+                {t("data-share-link-help")}
               </div>
             </Form.Group>
             <Form.Group controlId="group-interval">
-              <Form.ControlLabel>Sync interval</Form.ControlLabel>
+              <Form.ControlLabel>{t("data-sync-interval")}</Form.ControlLabel>
               <Form.Control
                 name="interval"
                 accepter={SelectPicker}
-                label="every"
+                label={t("data-share-link-every")}
                 data={allowedInterval}
                 cleanable={false}
                 searchable={false}
@@ -377,7 +379,7 @@ function DashboardMain() {
                     appearance="primary"
                     loading={editButtonLoading}
                   >
-                    Submit
+                    {t("data-form-submit")}
                   </Button>
 
                   {editModelState.mode == "edit" && (
