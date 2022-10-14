@@ -90,7 +90,7 @@ function DashboardMain() {
         let statusText = t("sync-status-running");
         /* TODO: moment i18n */
         const nextSyncMsg =
-            t("sync-nextSyncMsg") +
+          t("sync-nextSyncMsg") +
           (snapshotTask.lastSuccessSync
             ? moment(snapshotTask.lastSuccessSync).fromNow()
             : t("sync-nextSyncMsg-none"));

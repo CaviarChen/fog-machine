@@ -48,7 +48,8 @@ i18n
           "data-form-delete": "Delete",
           "login-main-title": "Login",
           "login-warning-title": "Warning",
-          "login-warning-text": "This service is in alpha testing. Use it at your own risk.",
+          "login-warning-text":
+            "This service is in alpha testing. Use it at your own risk.",
           "login-main-github": "Sign in with Github",
           "snapshot-table-title": "Snapshots",
           "snapshot-table-date": "Date",
@@ -92,7 +93,8 @@ i18n
           "data-form-delete": "删除",
           "login-main-title": "登录",
           "login-warning-title": "警告",
-          "login-warning-text": "该服务正在进行alpha测试。使用时请自行承担风险。",
+          "login-warning-text":
+            "该服务正在进行alpha测试。使用时请自行承担风险。",
           "login-main-github": "使用Github登录",
           "snapshot-table-title": "快照列表",
           "snapshot-table-date": "时间",
