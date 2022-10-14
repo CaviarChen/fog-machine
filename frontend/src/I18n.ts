@@ -4,6 +4,10 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import moment from "moment";
 import "moment/locale/zh-cn";
 
+i18n.on("languageChanged", (lng: string) => {
+  moment.locale(lng == "zh" ? "zh-ch" : "en");
+});
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
