@@ -172,14 +172,14 @@ function Home() {
         } else {
           return (
             <>
-              <h3>Login</h3>
+              <h3>{t("login-main-title")}</h3>
               <Message
                 showIcon
                 type="warning"
-                header="Warning"
+                header={t("login-warning-title")}
                 style={{ marginTop: "1vh" }}
               >
-                This service is in alpha testing. Use it at your own risk.
+                {t("login-warning-text")}
               </Message>
               <div style={{ marginTop: "8vh" }}></div>
               <div
@@ -194,7 +194,7 @@ function Home() {
                     location.href = Api.backendUrl + "user/sso/github";
                   }}
                 >
-                  <GithubIcon style={{ fontSize: "2em" }} /> Sign in with Github
+                  <GithubIcon style={{ fontSize: "2em" }} /> {t("login-main-github")}
                 </Button>
               </div>
             </>

@@ -87,21 +87,21 @@ function DashboardMain() {
       } else {
         let StatusIcon = PlayOutlineIcon;
         let statusIconColor = "#53B13A";
-        let statusText = "Running";
+        let statusText = t("sync-status-running");
         /* TODO: moment i18n */
         const nextSyncMsg =
-          "Last success sync: " +
+            t("sync-nextSyncMsg") +
           (snapshotTask.lastSuccessSync
             ? moment(snapshotTask.lastSuccessSync).fromNow()
-            : "none");
+            : t("sync-nextSyncMsg-none"));
         if (snapshotTask.status == "Paused") {
           StatusIcon = PauseOutlineIcon;
           statusIconColor = "#575657";
-          statusText = "Paused";
+          statusText = t("sync-status-paused");
         } else if (snapshotTask.status == "Stopped") {
           StatusIcon = CloseOutlineIcon;
           statusIconColor = "#D0342C";
-          statusText = "Stopped";
+          statusText = t("sync-status-stopped");
         }
 
         const updateStatus = async (status: "Running" | "Paused") => {
@@ -147,7 +147,7 @@ function DashboardMain() {
                           updateStatus("Paused");
                         }}
                       >
-                        Pause
+                        {t("sync-button-pause")}
                       </IconButton>
                     ) : (
                       <IconButton
@@ -157,11 +157,11 @@ function DashboardMain() {
                           updateStatus("Running");
                         }}
                       >
-                        Start
+                        {t("sync-button-start")}
                       </IconButton>
                     )}
                     <IconButton icon={<FileTextIcon />} placement="left">
-                      View Log
+                      {t("sync-button-view-Log")}
                     </IconButton>
                     <IconButton
                       icon={<EditIcon />}
@@ -175,7 +175,7 @@ function DashboardMain() {
                         });
                       }}
                     >
-                      Edit
+                      {t("sync-button-edit")}
                     </IconButton>
                   </ButtonToolbar>
                 </div>
@@ -366,7 +366,7 @@ function DashboardMain() {
             </Form.Group>
 
             {editModelState.mode == "create" && (
-              <Message showIcon type="info" header="Disclaimer">
+              <Message showIcon type={"info"} header={t("data-disclaimer")}>
                 TODO
               </Message>
             )}
@@ -389,7 +389,7 @@ function DashboardMain() {
                       loading={editButtonLoading}
                       onClick={handleDelete}
                     >
-                      Delete
+                      {t("data-form-delete")}
                     </Button>
                   )}
                 </ButtonToolbar>
