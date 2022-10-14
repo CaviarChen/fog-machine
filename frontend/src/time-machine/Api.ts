@@ -232,7 +232,7 @@ export default class Api {
   }
 
   public static async uploadSnapshot(
-    timestamp: string,
+    timestamp: Date,
     uploadToken: string
   ): Promise<Result<object>> {
     const data: any = {};

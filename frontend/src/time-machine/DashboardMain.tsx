@@ -15,8 +15,6 @@ import {
   Message,
   useToaster,
   Notification,
-  DatePicker,
-  Uploader,
 } from "rsuite";
 import Api, { SnapshotTask } from "./Api";
 import PauseIcon from "@rsuite/icons/legacy/Pause";
@@ -25,12 +23,10 @@ import PlayIcon from "@rsuite/icons/legacy/Play";
 import PlayOutlineIcon from "@rsuite/icons/PlayOutline";
 import PauseOutlineIcon from "@rsuite/icons/PauseOutline";
 import CloseOutlineIcon from "@rsuite/icons/CloseOutline";
-import ImportIcon from "@rsuite/icons/Import";
 import EditIcon from "@rsuite/icons/Edit";
 import AddOutlineIcon from "@rsuite/icons/AddOutline";
 import HelpOutlineIcon from "@rsuite/icons/HelpOutline";
 import DashboardSnapshot from "./DashboardSnapshot";
-import format from "date-fns/format";
 
 function DashboardMain() {
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +53,6 @@ function DashboardMain() {
   }>({ mode: "create" });
 
   const [openEditModel, setOpenEditModel] = useState(false);
-  const [openImportModel, setOpenImportModel] = useState(false);
 
   const renderDetail = () => {
     if (isLoading) {
@@ -179,16 +174,6 @@ function DashboardMain() {
                       }}
                     >
                       Edit
-                    </IconButton>
-                    <IconButton
-                      icon={<ImportIcon />}
-                      placement="left"
-                      onClick={() => {
-                        setOpenImportModel(true);
-                        setIsFileUpload(false);
-                      }}
-                    >
-                      Upload
                     </IconButton>
                   </ButtonToolbar>
                 </div>
@@ -316,117 +301,12 @@ function DashboardMain() {
     setEditButtonLoading(false);
   };
 
-  const fileUploadUrl = Api.backendUrl + "misc/upload";
-  const headers = Api.tokenHeaders;
-  const [uploadDate, setUploadDate] = useState<string | null>(null);
-  const [uploadToken, setUploadToken] = useState<string | null>(null);
-  const [isFileUpload, setIsFileUpload] = useState(false);
-  type PlacementType =
-    | "topStart"
-    | "topCenter"
-    | "topEnd"
-    | "bottomStart"
-    | "bottomCenter"
-    | "bottomEnd";
-  const placement: PlacementType = "topCenter";
-  const toaster = useToaster();
-
   return (
     <>
       <Panel bordered>
         <div style={{ height: "120px" }}>{renderDetail()}</div>
       </Panel>
       <DashboardSnapshot />
-
-      <Modal
-        open={openImportModel}
-        onClose={() => {
-          setOpenImportModel(false);
-        }}
-        backdrop={"static"}
-      >
-        <Modal.Header>
-          <Modal.Title>Upload Data</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <DatePicker
-              format="yyyy-MM-dd HH:mm"
-              size="lg"
-              placeholder="Select Date"
-              onChange={(date) => {
-                if (date) {
-                  setUploadDate(
-                    format(date, "yyyy-MM-dd HH:mm:ss.000").replace(" ", "T") +
-                      "Z"
-                  );
-                }
-              }}
-              style={{ width: 200, display: "block", marginBottom: 10 }}
-            />
-
-            <Uploader
-              action={fileUploadUrl}
-              headers={headers}
-              disabled={isFileUpload}
-              accept=".zip"
-              onSuccess={(res) => {
-                setUploadToken(res.upload_token);
-                setIsFileUpload(true);
-              }}
-              draggable
-            >
-              <div
-                style={{
-                  height: 200,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <span>Click or Drag a .zip file to this area to upload</span>
-              </div>
-            </Uploader>
-
-            <Modal.Footer style={{ marginTop: "16px" }}>
-              <Form.Group>
-                <ButtonToolbar>
-                  <Button
-                    type="submit"
-                    appearance="primary"
-                    loading={editButtonLoading}
-                    onClick={() => {
-                      console.log(uploadDate);
-                      console.log(uploadToken);
-                      if (uploadDate && uploadToken) {
-                        Api.uploadSnapshot(uploadDate, uploadToken);
-                        location.reload(); //TODO: dont refresh all
-                        setOpenImportModel(false);
-                      } else if (!uploadDate) {
-                        toaster.push(
-                          <Message showIcon type="error">
-                            Please select upload date.
-                          </Message>,
-                          { placement }
-                        );
-                      } else if (!uploadToken) {
-                        toaster.push(
-                          <Message showIcon type="error">
-                            Please upload a file.
-                          </Message>,
-                          { placement }
-                        );
-                      }
-                    }}
-                  >
-                    Submit
-                  </Button>
-                </ButtonToolbar>
-              </Form.Group>
-            </Modal.Footer>
-          </Form>
-        </Modal.Body>
-      </Modal>
 
       <Modal
         open={openEditModel}

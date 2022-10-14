@@ -13,9 +13,18 @@ import {
   useToaster,
   Modal,
   Message,
+  Stack,
+  DatePicker,
+  Uploader,
+  Form,
+  IconButton,
 } from "rsuite";
 import MoreIcon from "@rsuite/icons/legacy/More";
 import Api, { Snapshot } from "./Api";
+import PlusIcon from "@rsuite/icons/Plus";
+import { MessageType } from "rsuite/esm/Notification/Notification";
+// import { resourceLimits } from "worker_threads";
+// import { isNullOrUndefined } from "util";
 
 const { Column, HeaderCell, Cell } = Table;
 
@@ -34,20 +43,19 @@ function DashboardSnapshot() {
     loadData();
   }, []);
 
-  type PlacementType =
-    | "topStart"
-    | "topCenter"
-    | "topEnd"
-    | "bottomStart"
-    | "bottomCenter"
-    | "bottomEnd";
-
-  const placement: PlacementType = "topCenter";
-  const toaster = useToaster();
+  const delToaster = useToaster();
+  const notificationToaster = useToaster();
+  const notification = (type: MessageType, msg: string) => {
+    return (
+      <Message showIcon type={type}>
+        {msg}
+      </Message>
+    );
+  };
 
   const message = (snapId: number) => {
     return (
-      <Notification type="warning" header="warning" closable>
+      <Notification type="warning" header="warning" closable duration={0}>
         <Modal.Body>This operation cannot be undone,Sure?</Modal.Body>
         <hr />
         <Button
@@ -57,13 +65,10 @@ function DashboardSnapshot() {
             const res = await Api.deleteSnapshot(snapId);
             console.log(res);
             loadData();
-            toaster.clear();
-            toaster.push(
-              <Message showIcon type="success">
-                Success！
-              </Message>,
-              { placement }
-            );
+            delToaster.clear();
+            notificationToaster.push(notification("success", "success"), {
+              placement: "topCenter",
+            });
           }}
         >
           confirm
@@ -154,7 +159,9 @@ function DashboardSnapshot() {
                       <Button
                         size="sm"
                         onClick={() =>
-                          toaster.push(message(snapshot.id), { placement })
+                          delToaster.push(message(snapshot.id), {
+                            placement: "topCenter",
+                          })
                         }
                       >
                         Delete
@@ -170,11 +177,171 @@ function DashboardSnapshot() {
     }
   };
 
+  const [openImportModel, setOpenImportModel] = useState(false);
+  const fileUploadUrl = Api.backendUrl + "misc/upload";
+  const headers = Api.tokenHeaders;
+
+  type UploadDialogState = {
+    uploadDate: Date | null;
+    uploadToken: string | null;
+  };
+  const [uploadDialogState, setUploadDialogState] =
+    useState<UploadDialogState | null>(null);
+
+  type FileUploadState = "waiting" | "running" | "finished";
+
+  const [isFileUpload, setIsFileUpload] = useState<FileUploadState>("waiting");
+
   return (
     <div style={{ marginTop: "2vh" }}>
-      <Panel header="Snapshots">
+      <Panel
+        header={
+          <Stack justifyContent="space-between">
+            <span>Snapshots</span>
+            <IconButton
+              icon={<PlusIcon />}
+              appearance="ghost"
+              onClick={() => {
+                setOpenImportModel(true);
+                setIsFileUpload("waiting");
+                setUploadDialogState({ uploadDate: null, uploadToken: null });
+              }}
+            >
+              upload
+            </IconButton>
+          </Stack>
+        }
+      >
         <Detail />
       </Panel>
+
+      <Modal
+        open={openImportModel}
+        onClose={() => {
+          setOpenImportModel(false);
+          setIsFileUpload("waiting");
+        }}
+        backdrop={"static"}
+      >
+        <Modal.Header>
+          <Modal.Title>Upload Data</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <DatePicker
+              format="yyyy-MM-dd HH:mm"
+              size="lg"
+              placeholder="Select Date"
+              onChange={(date) => {
+                if (date) {
+                  setUploadDialogState({
+                    uploadDate: date,
+                    uploadToken: uploadDialogState!.uploadToken,
+                  });
+                  console.log(uploadDialogState);
+                }
+              }}
+              style={{ width: 200, display: "block", marginBottom: 10 }}
+            />
+
+            <Uploader
+              action={fileUploadUrl}
+              headers={headers}
+              disabled={isFileUpload == "waiting" ? false : true}
+              accept=".zip"
+              onUpload={(files) => {
+                console.log(files);
+                setIsFileUpload("running");
+              }}
+              onRemove={(file) => {
+                console.log(file);
+                setIsFileUpload("waiting");
+                setUploadDialogState({
+                  uploadDate: uploadDialogState!.uploadDate,
+                  uploadToken: null,
+                });
+              }}
+              onError={(res, files) => {
+                console.log(files);
+                console.log(res);
+                setIsFileUpload("waiting");
+                setUploadDialogState({
+                  uploadDate: uploadDialogState!.uploadDate,
+                  uploadToken: null,
+                });
+                notificationToaster.push(notification("error", "error"));
+              }}
+              onSuccess={(res) => {
+                setUploadDialogState({
+                  uploadDate: uploadDialogState!.uploadDate,
+                  uploadToken: res.upload_token,
+                });
+                console.log(uploadDialogState);
+                setIsFileUpload("finished");
+              }}
+              draggable
+            >
+              <div
+                style={{
+                  height: 200,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <span>
+                  {isFileUpload == "waiting"
+                    ? "Click or Drag a .zip file to this area to upload"
+                    : isFileUpload == "running"
+                    ? "uploading..."
+                    : isFileUpload == "finished"
+                    ? "success!"
+                    : "Click or Drag a .zip file to this area to upload"}
+                </span>
+              </div>
+            </Uploader>
+
+            <Modal.Footer style={{ marginTop: "16px" }}>
+              <Form.Group>
+                <ButtonToolbar>
+                  <Button
+                    disabled={
+                      uploadDialogState?.uploadDate &&
+                      uploadDialogState?.uploadToken
+                        ? false
+                        : true
+                    }
+                    type="submit"
+                    appearance="primary"
+                    onClick={async () => {
+                      console.log(uploadDialogState);
+
+                      const result = await Api.uploadSnapshot(
+                        uploadDialogState!.uploadDate as Date,
+                        uploadDialogState!.uploadToken as string
+                      );
+                      console.log(result.status);
+                      if (result.status == 200) {
+                        notificationToaster.push(
+                          notification("success", "Success!")
+                        );
+                        loadData();
+                        setOpenImportModel(false);
+                      } else {
+                        notificationToaster.push(
+                          notification("error", "unknow error")
+                        );
+                      }
+                    }}
+                  >
+                    Submit
+                  </Button>
+                </ButtonToolbar>
+              </Form.Group>
+            </Modal.Footer>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }
