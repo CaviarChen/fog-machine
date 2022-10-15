@@ -23,8 +23,6 @@ import MoreIcon from "@rsuite/icons/legacy/More";
 import Api, { Snapshot } from "./Api";
 import PlusIcon from "@rsuite/icons/Plus";
 import { MessageType } from "rsuite/esm/Notification/Notification";
-// import { resourceLimits } from "worker_threads";
-// import { isNullOrUndefined } from "util";
 
 const { Column, HeaderCell, Cell } = Table;
 
@@ -145,8 +143,8 @@ function DashboardSnapshot() {
                           if (token.ok) {
                             window.open(
                               Api.backendUrl +
-                                "misc/download?token=" +
-                                token.ok,
+                              "misc/download?token=" +
+                              token.ok,
                               "_blank"
                             );
                           } else {
@@ -293,10 +291,10 @@ function DashboardSnapshot() {
                   {isFileUpload == "waiting"
                     ? "Click or Drag a .zip file to this area to upload"
                     : isFileUpload == "running"
-                    ? "uploading..."
-                    : isFileUpload == "finished"
-                    ? "success!"
-                    : "Click or Drag a .zip file to this area to upload"}
+                      ? "uploading..."
+                      : isFileUpload == "finished"
+                        ? "success!"
+                        : "Click or Drag a .zip file to this area to upload"}
                 </span>
               </div>
             </Uploader>
@@ -307,7 +305,7 @@ function DashboardSnapshot() {
                   <Button
                     disabled={
                       uploadDialogState?.uploadDate &&
-                      uploadDialogState?.uploadToken
+                        uploadDialogState?.uploadToken
                         ? false
                         : true
                     }
