@@ -134,6 +134,9 @@ async fn create(
             }
 
             let file_count = sync_files.len();
+            if file_count == 0 {
+                return Ok((Status::BadRequest, json!({"error": "snapshot_is_empty"})));
+            }
             logs.push(format!("new files: {}/{}", files_to_add.len(), file_count));
             // save files
             server_state

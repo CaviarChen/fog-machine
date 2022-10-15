@@ -58,6 +58,7 @@ pub async fn do_one_task(
             sleep(std::time::Duration::from_secs(30)).await;
         }
         Some(task) => {
+            info!("[task_runner] task for user {}", task.user_id);
             let user = user_handler::User { uid: task.user_id };
             let snapshot_result =
                 data_fetcher::snapshot(&task.source, &user, sync_file_storage).await;
