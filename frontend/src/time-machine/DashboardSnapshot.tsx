@@ -244,9 +244,15 @@ function DashboardSnapshot() {
               style={{ width: 200, display: "block", marginBottom: 10 }}
             />
 
+            {/*
+            TODO: `Uploader` will send the upload request directly. So the file will be uploaded when the user selected the file not when they click the submit button.
+            I guess this is fine except that `upload_token` is only valid for 1 min, so if the user click submit after 1 min then this is not going to work.
+             */}
             <Uploader
               action={fileUploadUrl}
               headers={headers}
+              disableMultipart={true}
+              multiple={false}
               disabled={
                 uploadDialogState == "closed" ||
                 uploadDialogState.uploadState != "empty"
@@ -337,8 +343,20 @@ function DashboardSnapshot() {
                         loadData();
                       } else {
                         console.log(result);
+                        let errorMessage = "Unknown error";
+                        if (result.error == "timestamp_is_in_future") {
+                          errorMessage =
+                            "You cannot select a time that is in the future.";
+                        } else if (result.error == "invalid_upload_token") {
+                          errorMessage =
+                            "Failed to load uploaded file, please reupload and try again.";
+                          // TODO: We should reset the `Uploader` here, but currently this cannot be done because
+                          // the way we use the `Uploader` is wrong.
+                          // We should: not maintaing our own upload status and use `fileList`.
+                          // see this example: https://rsuitejs.com/components/uploader/#controlled
+                        }
                         notificationToaster.push(
-                          notification("error", "unknow error")
+                          notification("error", errorMessage)
                         );
                       }
                     }}
