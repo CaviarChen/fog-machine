@@ -56,6 +56,9 @@ impl SyncFile {
     }
 
     pub fn create_from_filename(filename: &str, sha256_lowercase: &str) -> Result<SyncFile, Error> {
+        if filename.len() < 6 {
+            return Err(anyhow!("invalid filename"));
+        }
         let id_part = &filename[4..(filename.len() - 2)];
         let mut id: u32 = 0;
         for c in id_part.chars() {
