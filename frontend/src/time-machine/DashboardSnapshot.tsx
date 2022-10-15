@@ -41,8 +41,9 @@ function DashboardSnapshot() {
     loadData();
   }, []);
 
-  const delToaster = useToaster();
+  // TODO: we should have a single global toaster for all notifications
   const notificationToaster = useToaster();
+
   const notification = (type: MessageType, msg: string) => {
     return (
       <Message showIcon type={type}>
@@ -51,28 +52,39 @@ function DashboardSnapshot() {
     );
   };
 
-  const message = (snapId: number) => {
-    return (
-      <Notification type="warning" header="warning" closable duration={0}>
-        <Modal.Body>This operation cannot be undone,Sure?</Modal.Body>
+  const openDeleteConfirmation = (snapshotId: number) => {
+    // TODO: It is a bit wierd to use `Notifaction` as a modal. Maybe we shoudln't do this, but it works okish for now.
+    // e.g. when `Notifaction` is open, user can still click other things on the page.
+    //      no easy way to close the current one other than using `clear` which close all things.
+    //      We *SHOULDN'T* allow user to open multiple confirmation, that's really confusing.
+
+    const message = (
+      <Notification type="info" header="Delete snapshot" closable duration={0}>
+        This item will be deleted immediately. You can't undo this action.
         <hr />
         <Button
           size="sm"
           onClick={async () => {
-            // TODO: Warning
-            const res = await Api.deleteSnapshot(snapId);
-            console.log(res);
-            loadData();
-            delToaster.clear();
-            notificationToaster.push(notification("success", "success"), {
-              placement: "topCenter",
-            });
+            notificationToaster.clear();
+            const res = await Api.deleteSnapshot(snapshotId);
+            // TODO: Error handling
+            if (res.ok) {
+              notificationToaster.push(notification("success", "success"), {
+                placement: "topCenter",
+              });
+              loadData();
+            } else {
+              console.log(res);
+            }
           }}
         >
-          confirm
+          Confirm
         </Button>
       </Notification>
     );
+    notificationToaster.push(message, {
+      placement: "topCenter",
+    });
   };
 
   const Detail = () => {
@@ -156,11 +168,7 @@ function DashboardSnapshot() {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={() =>
-                          delToaster.push(message(snapshot.id), {
-                            placement: "topCenter",
-                          })
-                        }
+                        onClick={() => openDeleteConfirmation(snapshot.id)}
                       >
                         Delete
                       </Button>
@@ -175,20 +183,16 @@ function DashboardSnapshot() {
     }
   };
 
-  const [openImportModel, setOpenImportModel] = useState(false);
   const fileUploadUrl = Api.backendUrl + "misc/upload";
   const headers = Api.tokenHeaders;
 
   type UploadDialogState = {
     uploadDate: Date | null;
-    uploadToken: string | null;
+    uploadState: "empty" | "uploading" | { token: string };
   };
-  const [uploadDialogState, setUploadDialogState] =
-    useState<UploadDialogState | null>(null);
-
-  type FileUploadState = "waiting" | "running" | "finished";
-
-  const [isFileUpload, setIsFileUpload] = useState<FileUploadState>("waiting");
+  const [uploadDialogState, setUploadDialogState] = useState<
+    UploadDialogState | "closed"
+  >("closed");
 
   return (
     <div style={{ marginTop: "2vh" }}>
@@ -200,9 +204,10 @@ function DashboardSnapshot() {
               icon={<PlusIcon />}
               appearance="ghost"
               onClick={() => {
-                setOpenImportModel(true);
-                setIsFileUpload("waiting");
-                setUploadDialogState({ uploadDate: null, uploadToken: null });
+                setUploadDialogState({
+                  uploadDate: null,
+                  uploadState: "empty",
+                });
               }}
             >
               upload
@@ -214,10 +219,9 @@ function DashboardSnapshot() {
       </Panel>
 
       <Modal
-        open={openImportModel}
+        open={uploadDialogState != "closed"}
         onClose={() => {
-          setOpenImportModel(false);
-          setIsFileUpload("waiting");
+          setUploadDialogState("closed");
         }}
         backdrop={"static"}
       >
@@ -231,13 +235,11 @@ function DashboardSnapshot() {
               size="lg"
               placeholder="Select Date"
               onChange={(date) => {
-                if (date) {
-                  setUploadDialogState({
-                    uploadDate: date,
-                    uploadToken: uploadDialogState!.uploadToken,
-                  });
-                  console.log(uploadDialogState);
-                }
+                if (uploadDialogState == "closed") return;
+                setUploadDialogState({
+                  ...uploadDialogState,
+                  uploadDate: date,
+                });
               }}
               style={{ width: 200, display: "block", marginBottom: 10 }}
             />
@@ -245,37 +247,41 @@ function DashboardSnapshot() {
             <Uploader
               action={fileUploadUrl}
               headers={headers}
-              disabled={isFileUpload == "waiting" ? false : true}
+              disabled={
+                uploadDialogState == "closed" ||
+                uploadDialogState.uploadState != "empty"
+              }
               accept=".zip"
-              onUpload={(files) => {
-                console.log(files);
-                setIsFileUpload("running");
-              }}
-              onRemove={(file) => {
-                console.log(file);
-                setIsFileUpload("waiting");
+              onUpload={(_files) => {
+                if (uploadDialogState == "closed") return;
                 setUploadDialogState({
-                  uploadDate: uploadDialogState!.uploadDate,
-                  uploadToken: null,
+                  ...uploadDialogState,
+                  uploadState: "uploading",
+                });
+              }}
+              onRemove={(_file) => {
+                if (uploadDialogState == "closed") return;
+                setUploadDialogState({
+                  ...uploadDialogState,
+                  uploadState: "empty",
                 });
               }}
               onError={(res, files) => {
                 console.log(files);
                 console.log(res);
-                setIsFileUpload("waiting");
+                if (uploadDialogState == "closed") return;
                 setUploadDialogState({
-                  uploadDate: uploadDialogState!.uploadDate,
-                  uploadToken: null,
+                  ...uploadDialogState,
+                  uploadState: "empty",
                 });
                 notificationToaster.push(notification("error", "error"));
               }}
               onSuccess={(res) => {
+                if (uploadDialogState == "closed") return;
                 setUploadDialogState({
-                  uploadDate: uploadDialogState!.uploadDate,
-                  uploadToken: res.upload_token,
+                  ...uploadDialogState,
+                  uploadState: { token: res.upload_token },
                 });
-                console.log(uploadDialogState);
-                setIsFileUpload("finished");
               }}
               draggable
             >
@@ -288,13 +294,12 @@ function DashboardSnapshot() {
                 }}
               >
                 <span>
-                  {isFileUpload == "waiting"
+                  {uploadDialogState == "closed" ||
+                    uploadDialogState.uploadState == "empty"
                     ? "Click or Drag a .zip file to this area to upload"
-                    : isFileUpload == "running"
+                    : uploadDialogState.uploadState == "uploading"
                       ? "uploading..."
-                      : isFileUpload == "finished"
-                        ? "success!"
-                        : "Click or Drag a .zip file to this area to upload"}
+                      : "success!"}
                 </span>
               </div>
             </Uploader>
@@ -304,28 +309,33 @@ function DashboardSnapshot() {
                 <ButtonToolbar>
                   <Button
                     disabled={
-                      uploadDialogState?.uploadDate &&
-                        uploadDialogState?.uploadToken
-                        ? false
-                        : true
+                      uploadDialogState == "closed" ||
+                      !uploadDialogState.uploadDate ||
+                      uploadDialogState.uploadState == "empty" ||
+                      uploadDialogState.uploadState == "uploading"
                     }
                     type="submit"
                     appearance="primary"
                     onClick={async () => {
-                      console.log(uploadDialogState);
+                      if (
+                        uploadDialogState == "closed" ||
+                        !uploadDialogState.uploadDate ||
+                        uploadDialogState.uploadState == "empty" ||
+                        uploadDialogState.uploadState == "uploading"
+                      ) return;
 
                       const result = await Api.uploadSnapshot(
-                        uploadDialogState!.uploadDate as Date,
-                        uploadDialogState!.uploadToken as string
+                        uploadDialogState.uploadDate,
+                        uploadDialogState.uploadState.token
                       );
-                      console.log(result.status);
-                      if (result.status == 200) {
+                      if (result.ok) {
                         notificationToaster.push(
                           notification("success", "Success!")
                         );
+                        setUploadDialogState("closed");
                         loadData();
-                        setOpenImportModel(false);
                       } else {
+                        console.log(result);
                         notificationToaster.push(
                           notification("error", "unknow error")
                         );
