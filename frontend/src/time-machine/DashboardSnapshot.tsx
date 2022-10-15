@@ -155,8 +155,8 @@ function DashboardSnapshot() {
                           if (token.ok) {
                             window.open(
                               Api.backendUrl +
-                              "misc/download?token=" +
-                              token.ok,
+                                "misc/download?token=" +
+                                token.ok,
                               "_blank"
                             );
                           } else {
@@ -295,11 +295,11 @@ function DashboardSnapshot() {
               >
                 <span>
                   {uploadDialogState == "closed" ||
-                    uploadDialogState.uploadState == "empty"
+                  uploadDialogState.uploadState == "empty"
                     ? "Click or Drag a .zip file to this area to upload"
                     : uploadDialogState.uploadState == "uploading"
-                      ? "uploading..."
-                      : "success!"}
+                    ? "uploading..."
+                    : "success!"}
                 </span>
               </div>
             </Uploader>
@@ -322,7 +322,8 @@ function DashboardSnapshot() {
                         !uploadDialogState.uploadDate ||
                         uploadDialogState.uploadState == "empty" ||
                         uploadDialogState.uploadState == "uploading"
-                      ) return;
+                      )
+                        return;
 
                       const result = await Api.uploadSnapshot(
                         uploadDialogState.uploadDate,
