@@ -20,7 +20,7 @@ function Map(props: Props): JSX.Element {
   const map = useRef<mapboxgl.Map | null>(null);
   const mapRenderer = MapRenderer.get();
   const [eraserMode, setEraserMode] = useState(false);
-  const [paintMode, setPaintMode] = useState(false);
+  // const [paintMode, setPaintMode] = useState(false);
   const [lineMode, setLineMode] = useState(false);
   // const []
   const [historyStatus, setHistoryStatus] = useState({
@@ -225,5 +225,5 @@ const iconUndo = (
   </svg>
 );
 
-const iconPaint = <p>P</p>;
+// const iconPaint = <p>P</p>;
 const iconLine = <p>L</p>;
