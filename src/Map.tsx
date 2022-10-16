@@ -32,9 +32,9 @@ function Map(props: Props): JSX.Element {
     mapRenderer.setEraserMod(eraserMode);
   }, [eraserMode]);
 
-  useEffect(() => {
-    mapRenderer.setPaintMod(paintMode);
-  }, [paintMode]);
+  // useEffect(() => {
+  //   mapRenderer.setPaintMod(paintMode);
+  // }, [paintMode]);
 
   useEffect(() => {
     mapRenderer.setLineMod(lineMode);
