@@ -1,9 +1,10 @@
 import pako from "pako";
 import JSZip from "jszip";
 import * as deckgl from "./Deckgl";
+import { Md5 } from "ts-md5";
 
 const FILENAME_MASK1 = "olhwjsktri";
-// const FILENAME_MASK2 = "eizxdwknmo";
+const FILENAME_MASK2 = "eizxdwknmo";
 const FILENAME_ENCODING: { [key: string]: number } = {};
 for (let i = 0; i < FILENAME_MASK1.length; i++) {
   FILENAME_ENCODING[FILENAME_MASK1.charAt(i)] = i;
@@ -293,7 +294,13 @@ export class Tile {
   static createEmptyTile(x: number, y: number): Tile {
     const id = y * MAP_WIDTH + x;
     console.log(`Creating tile. id: ${id}, x: ${x}, y: ${y}`);
-    const filename = "hello"; // FIXME: correct the file name
+
+    const digits = id.toString().split("").map(Number);
+    const name0 = Md5.hashStr(id.toString()).substring(0, 4);
+    const name1 = digits.map((d) => FILENAME_MASK1.charAt(d)).join("");
+    const name2 = digits.map((d) => FILENAME_MASK2.charAt(d)).join("");
+    const filename = `${name0}${name1}${name2.substring(name2.length - 2)}`;
+
     const blocks = {} as { [key: XYKey]: Block };
 
     return new Tile(filename, id, x, y, blocks);
@@ -599,12 +606,12 @@ export class Block {
 
   static create(x: number, y: number, data: Uint8Array | null): Block {
     if (data) {
-    const bitmap = data.slice(0, BLOCK_BITMAP_SIZE);
-    const extraData = data.slice(BLOCK_BITMAP_SIZE, BLOCK_SIZE);
-    return new Block(x, y, bitmap, extraData);
+      const bitmap = data.slice(0, BLOCK_BITMAP_SIZE);
+      const extraData = data.slice(BLOCK_BITMAP_SIZE, BLOCK_SIZE);
+      return new Block(x, y, bitmap, extraData);
     } else {
       const bitmap = new Uint8Array(BLOCK_BITMAP_SIZE);
-      const extraData = new Uint8Array(3);
+      const extraData = new Uint8Array(BLOCK_EXTRA_DATA);
       // FIXME: correct the extraData
       return new Block(x, y, bitmap, extraData);
     }
@@ -769,7 +776,12 @@ export class Block {
     if (Block.bitmapEqual(mutableBitmap, this.bitmap)) {
       return [this, x, y, p];
     } else {
-      return [Block.create(this.x, this.y, mutableBitmap), x, y, p];
+      return [
+        new Block(this.x, this.y, mutableBitmap, this.extraData),
+        x,
+        y,
+        p,
+      ];
     }
   }
 
