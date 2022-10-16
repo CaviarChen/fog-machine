@@ -55,6 +55,28 @@ export class MapRenderer {
     this.mapglDraw = new MapboxDraw({
       displayControlsDefault: false,
       defaultMode: "draw_line_string",
+      styles: [
+        // ACTIVE (being drawn)
+        // line stroke
+        {
+          id: "gl-draw-line",
+          type: "line",
+          filter: [
+            "all",
+            ["==", "$type", "LineString"],
+            ["!=", "mode", "static"],
+          ],
+          layout: {
+            "line-cap": "round",
+            "line-join": "round",
+          },
+          paint: {
+            "line-color": "#969696",
+            "line-dasharray": [0.2, 2],
+            "line-width": 2,
+          },
+        },
+      ],
     });
     this.paintEnabled = false;
     this.historyManager = new HistoryManager(this.fogMap);
