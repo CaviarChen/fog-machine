@@ -264,6 +264,15 @@ export class MapRenderer {
         this.updateFogMap(newMap, bbox);
       }
     }
+    this.mapglDraw.trash(); // clean up the user drawing
+    // TODO: solving this delay problem
+    setTimeout(
+      function (that) {
+        that.mapglDraw.changeMode("draw_line_string", {});
+      },
+      100,
+      this
+    );
   }
 
   setEraserMod(isActivated: boolean): void {

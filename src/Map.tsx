@@ -112,14 +112,14 @@ function Map(props: Props): JSX.Element {
         setEraserMode(!eraserMode);
       },
     },
-    {
-      icon: iconPaint,
-      clickable: true,
-      enabled: paintMode,
-      onClick: () => {
-        setPaintMode(!paintMode);
-      },
-    },
+    // {
+    //   icon: iconPaint,
+    //   clickable: true,
+    //   enabled: paintMode,
+    //   onClick: () => {
+    //     setPaintMode(!paintMode);
+    //   },
+    // },
     {
       icon: iconLine,
       clickable: true,
