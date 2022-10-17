@@ -31,10 +31,12 @@ async fn list_all(conn: Connection<'_, Db>, user: User) -> APIResponse {
     let snapshots = snapshot::Entity::find()
         .filter(snapshot::Column::UserId.eq(user.uid))
         .order_by_desc(snapshot::Column::Timestamp)
-        .all(db)
-        .await?;
-    let mut snapshot_list: Vec<SnapshotJson> = Vec::with_capacity(snapshots.len());
-    for snapshot in snapshots {
+        .paginate(db,5);
+
+    let snapshot_list_p = snapshots.fetch_page(2);
+    let snps = snapshot_list_p.await?;
+    let mut snapshot_list: Vec<SnapshotJson> = Vec::with_capacity(snps.len());
+    for snapshot in snps {
         let snapshot::Model {
             id,
             user_id: _,
@@ -50,8 +52,14 @@ async fn list_all(conn: Connection<'_, Db>, user: User) -> APIResponse {
             note,
         })
     }
-    Ok((Status::Ok, json!(snapshot_list)))
+    let total:u32 = match snapshots.num_items().await{
+        Ok(num) => num.try_into().unwrap(),
+        Err(_) => 0
+    };
+
+    Ok((Status::Ok, json!({"total":total,"content":snapshot_list})))
 }
+
 
 fn get_and_remove_uploaded_item(
     server_state: &rocket::State<ServerState>,
