@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import GithubCorner from "./GithubCorner";
 import Home from "./Home";
 import TimeMachineHome from "./time-machine/Home";
+import HlepHome from "./help/Home";
 
 function GithubSsoRedirect() {
   const [searchParams, _] = useSearchParams();
@@ -17,6 +18,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/time-machine" element={<TimeMachineHome />} />
+        <Route path="/help" element={<HlepHome />} />
         {/* github sso */}
         <Route path="/callback/github" element={<GithubSsoRedirect />} />
       </Routes>
