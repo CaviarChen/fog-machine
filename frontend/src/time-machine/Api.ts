@@ -52,6 +52,12 @@ export type Snapshot = {
   note: string | null;
 };
 
+export type SnapshotUploadResult = {
+  id: number;
+  fileCount: number;
+  logs: string;
+};
+
 // TODO: [snakeToCamel] and [camelToSnake] are very silly.
 function snakeToCamel(x: any): any {
   lodash.map;
@@ -79,6 +85,10 @@ export default class Api {
     return token;
   }
 
+  public static readonly tokenHeaders = {
+    Authorization: "Bearer " + this.getToken(),
+  };
+
   private static clearToken() {
     sessionStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.tokenKey);
@@ -96,9 +106,7 @@ export default class Api {
   ): Promise<Result<any>> {
     try {
       console.log("requesting api:", method, " ", url);
-      const headers = needToken
-        ? { Authorization: "Bearer " + this.getToken() }
-        : undefined;
+      const headers = needToken ? this.tokenHeaders : undefined;
       const response = await axios({
         method,
         url: this.backendUrl + url,
@@ -214,6 +222,32 @@ export default class Api {
     const result = await this.requestApi("snapshot_task", "patch", true, data);
     if (result.ok) {
       result.ok = "ok";
+    }
+    return result;
+  }
+
+  public static async deleteSnapshot(id: number): Promise<Result<"ok">> {
+    const result = await this.requestApi(
+      "snapshot/" + String(id),
+      "delete",
+      true
+    );
+    if (result.ok) {
+      result.ok = "ok";
+    }
+    return result;
+  }
+
+  public static async uploadSnapshot(
+    timestamp: Date,
+    uploadToken: string
+  ): Promise<Result<SnapshotUploadResult>> {
+    const data: any = {};
+    data["timestamp"] = timestamp;
+    data["upload_token"] = uploadToken;
+    const result = await this.requestApi("snapshot", "post", true, data);
+    if (result.ok) {
+      result.ok = snakeToCamel(result.ok);
     }
     return result;
   }
