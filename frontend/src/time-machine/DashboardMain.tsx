@@ -210,7 +210,12 @@ function DashboardMain() {
   const errorToaster = useToaster();
   const errorNotification = (msg: string) => {
     return (
-      <Notification type={"error"} header={"Error"} closable duration={0}>
+      <Notification
+        type={"error"}
+        header={t("error-title")}
+        closable
+        duration={0}
+      >
         {msg}
       </Notification>
     );
@@ -266,20 +271,19 @@ function DashboardMain() {
         await loadData();
       } else {
         if (res.error == "invalid_share") {
-          errorToaster.push(
-            errorNotification("The given share link is invalid"),
-            { placement: "topCenter" }
-          );
+          errorToaster.push(errorNotification(t("error-data-share-link")), {
+            placement: "topCenter",
+          });
         } else if (res.error == "invalid_folder_structure") {
           errorToaster.push(
-            errorNotification(
-              "Cannot found the Sync folder created by Fog of World"
-            ),
+            errorNotification(t("error-data-folder-structure")),
             { placement: "topCenter" }
           );
         } else {
           errorToaster.push(
-            errorNotification("Unknown error: " + String(res.unknownError)),
+            errorNotification(
+              t("error-Unknown") + ": " + String(res.unknownError)
+            ),
             { placement: "topCenter" }
           );
         }
@@ -296,7 +300,7 @@ function DashboardMain() {
       await loadData();
     } else {
       errorToaster.push(
-        errorNotification("Unknown error: " + String(res.unknownError)),
+        errorNotification(t("error-Unknown") + ": " + String(res.unknownError)),
         { placement: "topCenter" }
       );
     }

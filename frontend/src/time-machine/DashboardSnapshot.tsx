@@ -18,7 +18,10 @@ import {
   Uploader,
   Form,
   IconButton,
+  CustomProvider,
 } from "rsuite";
+import zhCN from "rsuite/locales/zh_CN";
+import enUS from "rsuite/locales/en_US";
 import MoreIcon from "@rsuite/icons/legacy/More";
 import Api, { Snapshot } from "./Api";
 import PlusIcon from "@rsuite/icons/Plus";
@@ -28,7 +31,7 @@ import { useTranslation } from "react-i18next";
 const { Column, HeaderCell, Cell } = Table;
 
 function DashboardSnapshot() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [snapshots, setSnapshots] = useState<Snapshot[] | null>(null);
   const loadData = async () => {
     const result = await Api.listSnapshots();
@@ -61,27 +64,46 @@ function DashboardSnapshot() {
     //      We *SHOULDN'T* allow user to open multiple confirmation, that's really confusing.
 
     const message = (
-      <Notification type="info" header="Delete snapshot" closable duration={0}>
-        This item will be deleted immediately. You can't undo this action.
+      <Notification
+        type="warning"
+        header={t("snapshot-table-delete-title")}
+        closable
+        duration={0}
+      >
+        {t("snapshot-table-delete-prompt")}
         <hr />
-        <Button
-          size="sm"
-          onClick={async () => {
-            notificationToaster.clear();
-            const res = await Api.deleteSnapshot(snapshotId);
-            // TODO: Error handling
-            if (res.ok) {
-              notificationToaster.push(notification("success", "success"), {
-                placement: "topCenter",
-              });
-              loadData();
-            } else {
-              console.log(res);
-            }
-          }}
-        >
-          Confirm
-        </Button>
+        <ButtonToolbar style={{ padding: 10 }}>
+          <Button
+            appearance="primary"
+            onClick={async () => {
+              notificationToaster.clear();
+            }}
+          >
+            {t("snapshot-table-delete-cancel")}
+          </Button>
+          <Button
+            color="red"
+            appearance="primary"
+            onClick={async () => {
+              notificationToaster.clear();
+              const res = await Api.deleteSnapshot(snapshotId);
+              // TODO: Error handling
+              if (res.ok) {
+                notificationToaster.push(
+                  notification("success", t("success-title")),
+                  {
+                    placement: "topCenter",
+                  }
+                );
+                loadData();
+              } else {
+                console.log(res);
+              }
+            }}
+          >
+            {t("snapshot-table-delete-confirm")}
+          </Button>
+        </ButtonToolbar>
       </Notification>
     );
     notificationToaster.push(message, {
@@ -176,7 +198,7 @@ function DashboardSnapshot() {
                         size="sm"
                         onClick={() => openDeleteConfirmation(snapshot.id)}
                       >
-                        Delete
+                        {t("snapshot-table-delete")}
                       </Button>
                     </ButtonToolbar>
                   </div>
@@ -201,181 +223,183 @@ function DashboardSnapshot() {
   >("closed");
 
   return (
-    <div style={{ marginTop: "2vh" }}>
-      <Panel
-        header={
-          <Stack justifyContent="space-between">
-            <span>Snapshots</span>
-            <IconButton
-              icon={<PlusIcon />}
-              appearance="ghost"
-              onClick={() => {
-                setUploadDialogState({
-                  uploadDate: null,
-                  uploadState: "empty",
-                });
-              }}
-            >
-              upload
-            </IconButton>
-          </Stack>
-        }
-      >
-        <Detail />
-      </Panel>
+    <CustomProvider locale={i18n.language == "zh" ? zhCN : enUS}>
+      <div style={{ marginTop: "2vh" }}>
+        <Panel
+          header={
+            <Stack justifyContent="space-between">
+              <span>{t("snapshot-table-title")}</span>
+              <IconButton
+                icon={<PlusIcon />}
+                appearance="ghost"
+                onClick={() => {
+                  setUploadDialogState({
+                    uploadDate: null,
+                    uploadState: "empty",
+                  });
+                }}
+              >
+                {t("snapshot-table-upload")}
+              </IconButton>
+            </Stack>
+          }
+        >
+          <Detail />
+        </Panel>
 
-      <Modal
-        open={uploadDialogState != "closed"}
-        onClose={() => {
-          setUploadDialogState("closed");
-        }}
-        backdrop={"static"}
-      >
-        <Modal.Header>
-          <Modal.Title>Upload Data</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <DatePicker
-              format="yyyy-MM-dd HH:mm"
-              size="lg"
-              placeholder="Select Date"
-              onChange={(date) => {
-                if (uploadDialogState == "closed") return;
-                setUploadDialogState({
-                  ...uploadDialogState,
-                  uploadDate: date,
-                });
-              }}
-              style={{ width: 200, display: "block", marginBottom: 10 }}
-            />
+        <Modal
+          open={uploadDialogState != "closed"}
+          onClose={() => {
+            setUploadDialogState("closed");
+          }}
+          backdrop={"static"}
+        >
+          <Modal.Header>
+            <Modal.Title>{t("data-upload-title")}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <DatePicker
+                format="yyyy-MM-dd HH:mm"
+                size="lg"
+                placeholder={t("data-upload-select-date")}
+                onChange={(date) => {
+                  if (uploadDialogState == "closed") return;
+                  setUploadDialogState({
+                    ...uploadDialogState,
+                    uploadDate: date,
+                  });
+                }}
+                style={{ width: 200, display: "block", marginBottom: 10 }}
+              />
 
-            {/*
+              {/*
             TODO: `Uploader` will send the upload request directly. So the file will be uploaded when the user selected the file not when they click the submit button.
             I guess this is fine except that `upload_token` is only valid for 1 min, so if the user click submit after 1 min then this is not going to work.
              */}
-            <Uploader
-              action={fileUploadUrl}
-              headers={headers}
-              disableMultipart={true}
-              multiple={false}
-              disabled={
-                uploadDialogState == "closed" ||
-                uploadDialogState.uploadState != "empty"
-              }
-              accept=".zip"
-              onUpload={(_files) => {
-                if (uploadDialogState == "closed") return;
-                setUploadDialogState({
-                  ...uploadDialogState,
-                  uploadState: "uploading",
-                });
-              }}
-              onRemove={(_file) => {
-                if (uploadDialogState == "closed") return;
-                setUploadDialogState({
-                  ...uploadDialogState,
-                  uploadState: "empty",
-                });
-              }}
-              onError={(res, files) => {
-                console.log(files);
-                console.log(res);
-                if (uploadDialogState == "closed") return;
-                setUploadDialogState({
-                  ...uploadDialogState,
-                  uploadState: "empty",
-                });
-                notificationToaster.push(notification("error", "error"));
-              }}
-              onSuccess={(res) => {
-                if (uploadDialogState == "closed") return;
-                setUploadDialogState({
-                  ...uploadDialogState,
-                  uploadState: { token: res.upload_token },
-                });
-              }}
-              draggable
-            >
-              <div
-                style={{
-                  height: 200,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+              <Uploader
+                action={fileUploadUrl}
+                headers={headers}
+                disableMultipart={true}
+                multiple={false}
+                disabled={
+                  uploadDialogState == "closed" ||
+                  uploadDialogState.uploadState != "empty"
+                }
+                accept=".zip"
+                onUpload={(_files) => {
+                  if (uploadDialogState == "closed") return;
+                  setUploadDialogState({
+                    ...uploadDialogState,
+                    uploadState: "uploading",
+                  });
                 }}
+                onRemove={(_file) => {
+                  if (uploadDialogState == "closed") return;
+                  setUploadDialogState({
+                    ...uploadDialogState,
+                    uploadState: "empty",
+                  });
+                }}
+                onError={(res, files) => {
+                  console.log(files);
+                  console.log(res);
+                  if (uploadDialogState == "closed") return;
+                  setUploadDialogState({
+                    ...uploadDialogState,
+                    uploadState: "empty",
+                  });
+                  notificationToaster.push(
+                    notification("error", t("error-title"))
+                  );
+                }}
+                onSuccess={(res) => {
+                  if (uploadDialogState == "closed") return;
+                  setUploadDialogState({
+                    ...uploadDialogState,
+                    uploadState: { token: res.upload_token },
+                  });
+                }}
+                draggable
               >
-                <span>
-                  {uploadDialogState == "closed" ||
-                  uploadDialogState.uploadState == "empty"
-                    ? "Click or Drag a .zip file to this area to upload"
-                    : uploadDialogState.uploadState == "uploading"
-                    ? "uploading..."
-                    : "success!"}
-                </span>
-              </div>
-            </Uploader>
+                <div
+                  style={{
+                    height: 200,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <span>
+                    {uploadDialogState == "closed" ||
+                    uploadDialogState.uploadState == "empty"
+                      ? t("data-upload-prompt")
+                      : uploadDialogState.uploadState == "uploading"
+                      ? t("data-upload-uploading")
+                      : t("data-upload-success")}
+                  </span>
+                </div>
+              </Uploader>
 
-            <Modal.Footer style={{ marginTop: "16px" }}>
-              <Form.Group>
-                <ButtonToolbar>
-                  <Button
-                    disabled={
-                      uploadDialogState == "closed" ||
-                      !uploadDialogState.uploadDate ||
-                      uploadDialogState.uploadState == "empty" ||
-                      uploadDialogState.uploadState == "uploading"
-                    }
-                    type="submit"
-                    appearance="primary"
-                    onClick={async () => {
-                      if (
+              <Modal.Footer style={{ marginTop: "16px" }}>
+                <Form.Group>
+                  <ButtonToolbar>
+                    <Button
+                      disabled={
                         uploadDialogState == "closed" ||
                         !uploadDialogState.uploadDate ||
                         uploadDialogState.uploadState == "empty" ||
                         uploadDialogState.uploadState == "uploading"
-                      )
-                        return;
-
-                      const result = await Api.uploadSnapshot(
-                        uploadDialogState.uploadDate,
-                        uploadDialogState.uploadState.token
-                      );
-                      if (result.ok) {
-                        notificationToaster.push(
-                          notification("success", "Success!")
-                        );
-                        setUploadDialogState("closed");
-                        loadData();
-                      } else {
-                        console.log(result);
-                        let errorMessage = "Unknown error";
-                        if (result.error == "timestamp_is_in_future") {
-                          errorMessage =
-                            "You cannot select a time that is in the future.";
-                        } else if (result.error == "invalid_upload_token") {
-                          errorMessage =
-                            "Failed to load uploaded file, please reupload and try again.";
-                          // TODO: We should reset the `Uploader` here, but currently this cannot be done because
-                          // the way we use the `Uploader` is wrong.
-                          // We should: not maintaing our own upload status and use `fileList`.
-                          // see this example: https://rsuitejs.com/components/uploader/#controlled
-                        }
-                        notificationToaster.push(
-                          notification("error", errorMessage)
-                        );
                       }
-                    }}
-                  >
-                    Submit
-                  </Button>
-                </ButtonToolbar>
-              </Form.Group>
-            </Modal.Footer>
-          </Form>
-        </Modal.Body>
-      </Modal>
-    </div>
+                      type="submit"
+                      appearance="primary"
+                      onClick={async () => {
+                        if (
+                          uploadDialogState == "closed" ||
+                          !uploadDialogState.uploadDate ||
+                          uploadDialogState.uploadState == "empty" ||
+                          uploadDialogState.uploadState == "uploading"
+                        )
+                          return;
+
+                        const result = await Api.uploadSnapshot(
+                          uploadDialogState.uploadDate,
+                          uploadDialogState.uploadState.token
+                        );
+                        if (result.ok) {
+                          notificationToaster.push(
+                            notification("success", t("success-title"))
+                          );
+                          setUploadDialogState("closed");
+                          loadData();
+                        } else {
+                          console.log(result);
+                          let errorMessage = t("error-Unknown");
+                          if (result.error == "timestamp_is_in_future") {
+                            errorMessage = t("error-upload-timestamp");
+                          } else if (result.error == "invalid_upload_token") {
+                            errorMessage = t("error-upload-token");
+                            // TODO: We should reset the `Uploader` here, but currently this cannot be done because
+                            // the way we use the `Uploader` is wrong.
+                            // We should: not maintaing our own upload status and use `fileList`.
+                            // see this example: https://rsuitejs.com/components/uploader/#controlled
+                          }
+                          notificationToaster.push(
+                            notification("error", errorMessage)
+                          );
+                        }
+                      }}
+                    >
+                      {t("data-form-submit")}
+                    </Button>
+                  </ButtonToolbar>
+                </Form.Group>
+              </Modal.Footer>
+            </Form>
+          </Modal.Body>
+        </Modal>
+      </div>
+    </CustomProvider>
   );
 }
 
