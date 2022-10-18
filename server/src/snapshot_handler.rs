@@ -49,7 +49,7 @@ async fn list_snapshots(
                     // frontend page start from 1,but sea_orm page start from 0 , so use page-1 here
                     snapshot_list_p = snapshots.fetch_page(page - 1).await?;
                     total = match snapshots.num_items_and_pages().await {
-                        Ok(num) => num.try_into().unwrap(),
+                        Ok(num) => num,
                         Err(_) => ItemsAndPagesNumber {
                             number_of_items: 0,
                             number_of_pages: 0,
@@ -64,7 +64,7 @@ async fn list_snapshots(
                         .paginate(db, per_page);
                     snapshot_list_p = snapshots.fetch_page(0).await?;
                     total = match snapshots.num_items_and_pages().await {
-                        Ok(num) => num.try_into().unwrap(),
+                        Ok(num) => num,
                         Err(_) => ItemsAndPagesNumber {
                             number_of_items: 0,
                             number_of_pages: 0,
