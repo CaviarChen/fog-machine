@@ -61,7 +61,7 @@ async fn list_snapshots(
                     let snapshots = snapshot::Entity::find()
                         .filter(snapshot::Column::UserId.eq(user.uid))
                         .order_by_desc(snapshot::Column::Timestamp)
-                        .paginate(db, pp);
+                        .paginate(db, per_page);
                     snapshot_list_p = snapshots.fetch_page(0).await?;
                     total = match snapshots.num_items_and_pages().await {
                         Ok(num) => num.try_into().unwrap(),
