@@ -25,9 +25,9 @@ struct SnapshotJson {
     pub source_kind: snapshot::SourceKind,
     pub note: Option<String>,
 }
-// TODO: pagination
+// TODO: pagination looks not good,but it works.
 #[get("/?<page>&<per_page>")]
-async fn list_all(
+async fn list_snapshots(
     conn: Connection<'_, Db>,
     user: User,
     page: Option<usize>,
@@ -39,14 +39,15 @@ async fn list_all(
     let total: ItemsAndPagesNumber;
 
     match per_page {
-        Some(pp) => {
+        Some(per_page) => {
             match page {
-                Some(pa) => {
+                Some(page) => {
                     let snapshots = snapshot::Entity::find()
                         .filter(snapshot::Column::UserId.eq(user.uid))
                         .order_by_desc(snapshot::Column::Timestamp)
-                        .paginate(db, pp);
-                    snapshot_list_p = snapshots.fetch_page(pa).await?;
+                        .paginate(db, per_page);
+                    // frontend page start from 1,but sea_orm page start from 0 , so use page-1 here
+                    snapshot_list_p = snapshots.fetch_page(page - 1).await?;
                     total = match snapshots.num_items_and_pages().await {
                         Ok(num) => num.try_into().unwrap(),
                         Err(_) => ItemsAndPagesNumber {
@@ -61,7 +62,7 @@ async fn list_all(
                         .filter(snapshot::Column::UserId.eq(user.uid))
                         .order_by_desc(snapshot::Column::Timestamp)
                         .paginate(db, pp);
-                    snapshot_list_p = snapshots.fetch_page(1).await?;
+                    snapshot_list_p = snapshots.fetch_page(0).await?;
                     total = match snapshots.num_items_and_pages().await {
                         Ok(num) => num.try_into().unwrap(),
                         Err(_) => ItemsAndPagesNumber {
@@ -71,7 +72,6 @@ async fn list_all(
                     };
                 }
             }
-            
         }
 
         None => {
@@ -338,7 +338,7 @@ async fn get_editor_view(
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![
-        list_all,
+        list_snapshots,
         create,
         delete,
         get_download_token,

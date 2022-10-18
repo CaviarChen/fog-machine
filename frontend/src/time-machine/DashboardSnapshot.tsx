@@ -38,9 +38,12 @@ function DashboardSnapshot() {
     perPage: 10,
   });
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const loadData = useCallback(async () => {
+    setIsLoading(true);
     const result = await Api.listSnapshots(
-      activePage.nowPage - 1,
+      activePage.nowPage,
       activePage.perPage
     );
     console.log(result.ok);
@@ -49,6 +52,7 @@ function DashboardSnapshot() {
     } else {
       console.log(result);
     }
+    setIsLoading(false);
   }, [activePage]);
 
   useEffect(() => {
@@ -107,7 +111,12 @@ function DashboardSnapshot() {
     } else {
       return (
         <div>
-          <Table data={snapshots.content} id="table">
+          <Table
+            data={snapshots.content}
+            loading={isLoading}
+            autoHeight={true}
+            id="table"
+          >
             <Column flexGrow={10}>
               <HeaderCell>Date</HeaderCell>
               <Cell>
@@ -146,7 +155,7 @@ function DashboardSnapshot() {
               </Cell>
             </Column>
 
-            <Column flexGrow={10} verticalAlign="middle">
+            <Column flexGrow={10}>
               <HeaderCell>
                 <MoreIcon />
               </HeaderCell>
@@ -198,8 +207,9 @@ function DashboardSnapshot() {
               </Cell>
             </Column>
           </Table>
+          <hr />
           <Pagination
-            layout={["total", "-", "|", "pager", "skip"]}
+            layout={["total", "-", "limit", "|", "pager", "skip"]}
             size={"sm"}
             prev={true}
             next={true}
@@ -208,19 +218,29 @@ function DashboardSnapshot() {
             ellipsis={true}
             boundaryLinks={true}
             total={snapshots.total}
-            limit={10}
-            // limitOptions={limitOptions}
+            limit={activePage.perPage}
+            limitOptions={[5, 10, 20, 50, 100]}
             maxButtons={5}
             activePage={activePage.nowPage}
             onChangePage={(page) => {
-              console.log(page);
               setActivePage({
                 ...activePage,
                 nowPage: page,
               });
-              // loadData();
             }}
-            // onChangeLimit={setLimit}
+            onChangeLimit={(limit) => {
+              if (limit >= snapshots.total) {
+                setActivePage({
+                  nowPage: 1,
+                  perPage: limit,
+                });
+              } else {
+                setActivePage({
+                  ...activePage,
+                  perPage: limit,
+                });
+              }
+            }}
           />
         </div>
       );
