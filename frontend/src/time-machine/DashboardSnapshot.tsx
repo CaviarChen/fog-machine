@@ -265,7 +265,7 @@ function DashboardSnapshot() {
           <Stack justifyContent="space-between">
             <span>Snapshots</span>
             <IconButton
-              icon={<PlusIcon />}             
+              icon={<PlusIcon />}
               onClick={() => {
                 setUploadDialogState({
                   uploadDate: null,
