@@ -8,6 +8,7 @@ use entity::sea_orm;
 use entity::snapshot;
 use rocket::http::Status;
 use rocket::serde::json::Json;
+use sea_orm::ItemsAndPagesNumber;
 use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
 use serde::{Deserialize, Serialize};
@@ -25,18 +26,69 @@ struct SnapshotJson {
     pub note: Option<String>,
 }
 // TODO: pagination
-#[get("/")]
-async fn list_all(conn: Connection<'_, Db>, user: User) -> APIResponse {
+#[get("/?<page>&<per_page>")]
+async fn list_all(
+    conn: Connection<'_, Db>,
+    user: User,
+    page: Option<usize>,
+    per_page: Option<usize>,
+) -> APIResponse {
     let db = conn.into_inner();
-    let snapshots = snapshot::Entity::find()
-        .filter(snapshot::Column::UserId.eq(user.uid))
-        .order_by_desc(snapshot::Column::Timestamp)
-        .paginate(db,5);
 
-    let snapshot_list_p = snapshots.fetch_page(2);
-    let snps = snapshot_list_p.await?;
-    let mut snapshot_list: Vec<SnapshotJson> = Vec::with_capacity(snps.len());
-    for snapshot in snps {
+    let snapshot_list_p: Vec<snapshot::Model>;
+    let total: ItemsAndPagesNumber;
+
+    match per_page {
+        Some(pp) => {
+            match page {
+                Some(pa) => {
+                    let snapshots = snapshot::Entity::find()
+                        .filter(snapshot::Column::UserId.eq(user.uid))
+                        .order_by_desc(snapshot::Column::Timestamp)
+                        .paginate(db, pp);
+                    snapshot_list_p = snapshots.fetch_page(pa).await?;
+                    total = match snapshots.num_items_and_pages().await {
+                        Ok(num) => num.try_into().unwrap(),
+                        Err(_) => ItemsAndPagesNumber {
+                            number_of_items: 0,
+                            number_of_pages: 0,
+                        },
+                    };
+                }
+
+                None => {
+                    let snapshots = snapshot::Entity::find()
+                        .filter(snapshot::Column::UserId.eq(user.uid))
+                        .order_by_desc(snapshot::Column::Timestamp)
+                        .paginate(db, pp);
+                    snapshot_list_p = snapshots.fetch_page(1).await?;
+                    total = match snapshots.num_items_and_pages().await {
+                        Ok(num) => num.try_into().unwrap(),
+                        Err(_) => ItemsAndPagesNumber {
+                            number_of_items: 0,
+                            number_of_pages: 0,
+                        },
+                    };
+                }
+            }
+            
+        }
+
+        None => {
+            snapshot_list_p = snapshot::Entity::find()
+                .filter(snapshot::Column::UserId.eq(user.uid))
+                .order_by_desc(snapshot::Column::Timestamp)
+                .all(db)
+                .await?;
+            total = ItemsAndPagesNumber {
+                number_of_items: snapshot_list_p.len(),
+                number_of_pages: 1,
+            };
+        }
+    }
+
+    let mut snapshot_list: Vec<SnapshotJson> = Vec::with_capacity(snapshot_list_p.len());
+    for snapshot in snapshot_list_p {
         let snapshot::Model {
             id,
             user_id: _,
@@ -52,14 +104,12 @@ async fn list_all(conn: Connection<'_, Db>, user: User) -> APIResponse {
             note,
         })
     }
-    let total:u32 = match snapshots.num_items().await{
-        Ok(num) => num.try_into().unwrap(),
-        Err(_) => 0
-    };
 
-    Ok((Status::Ok, json!({"total":total,"content":snapshot_list})))
+    Ok((
+        Status::Ok,
+        json!({"total":total.number_of_items,"total_pages":total.number_of_pages,"content":snapshot_list}),
+    ))
 }
-
 
 fn get_and_remove_uploaded_item(
     server_state: &rocket::State<ServerState>,

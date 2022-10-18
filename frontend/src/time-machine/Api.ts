@@ -3,6 +3,7 @@
 
 import axios from "axios";
 import lodash from "lodash";
+import { toCamel } from "snake-camel";
 
 // I really want ADT x2
 type Ok<T> = {
@@ -45,11 +46,17 @@ export type SnapshotTask = {
   status: "Running" | "Paused" | "Stopped";
 };
 
-export type Snapshot = {
+export type SnapshotContent = {
   id: number;
   timestamp: Date;
   sourceKind: "Sync" | "Upload";
   note: string | null;
+};
+
+export type Snapshot = {
+  total: number;
+  totalPages: number;
+  content: SnapshotContent[];
 };
 
 export type SnapshotUploadResult = {
@@ -279,10 +286,17 @@ export default class Api {
     return result;
   }
 
-  public static async listSnapshots(): Promise<Result<Snapshot[]>> {
-    const result = await this.requestApi("snapshot", "get", true);
+  public static async listSnapshots(
+    page: number,
+    perPage: number
+  ): Promise<Result<Snapshot>> {
+    const result = await this.requestApi(
+      "snapshot?page=" + String(page) + "&per_page=" + String(perPage),
+      "get",
+      true
+    );
     if (result.ok) {
-      result.ok = result.ok.map((x: any) => snakeToCamel(x));
+      result.ok = toCamel(result.ok);
     }
     return result;
   }
