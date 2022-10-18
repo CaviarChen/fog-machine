@@ -2,8 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import axios from "axios";
-import lodash from "lodash";
-import { toCamel } from "snake-camel";
+import { toCamel, toSnake } from "snake-camel";
 
 // I really want ADT x2
 type Ok<T> = {
@@ -64,20 +63,6 @@ export type SnapshotUploadResult = {
   fileCount: number;
   logs: string;
 };
-
-// TODO: [snakeToCamel] and [camelToSnake] are very silly.
-function snakeToCamel(x: any): any {
-  lodash.map;
-  return lodash.mapKeys(x, function (_value, key) {
-    return lodash.camelCase(key);
-  });
-}
-
-function camelToSnake(x: any): any {
-  return lodash.mapKeys(x, function (_value, key) {
-    return lodash.snakeCase(key);
-  });
-}
 
 export default class Api {
   public static readonly backendUrl =
@@ -155,7 +140,7 @@ export default class Api {
       code,
     });
     if (result.ok) {
-      result.ok = snakeToCamel(result.ok);
+      result.ok = toCamel(result.ok);
       const data: GithubSsoResponse = result.ok;
 
       if (data.login && data.token) {
@@ -175,7 +160,7 @@ export default class Api {
       "user/sso",
       "post",
       false,
-      camelToSnake({
+      toSnake({
         registrationToken,
         contactEmail,
         language,
@@ -194,11 +179,9 @@ export default class Api {
   > {
     let result = await this.requestApi("snapshot_task", "get", true);
     if (result.ok) {
-      result.ok = snakeToCamel(result.ok);
+      result.ok = toCamel(result.ok);
       if (result.ok.source["OneDrive"]) {
-        result.ok.source["OneDrive"] = snakeToCamel(
-          result.ok.source["OneDrive"]
-        );
+        result.ok.source["OneDrive"] = toCamel(result.ok.source["OneDrive"]);
       }
     } else if (result.status == 404) {
       result = { ok: "none", status: 404 };
@@ -220,7 +203,7 @@ export default class Api {
     }
     if (oneDriveShareUrl) {
       data["source"] = {
-        OneDrive: camelToSnake({
+        OneDrive: toSnake({
           shareUrl: oneDriveShareUrl,
         }),
       };
@@ -254,7 +237,7 @@ export default class Api {
     data["upload_token"] = uploadToken;
     const result = await this.requestApi("snapshot", "post", true, data);
     if (result.ok) {
-      result.ok = snakeToCamel(result.ok);
+      result.ok = toCamel(result.ok);
     }
     return result;
   }
@@ -266,7 +249,7 @@ export default class Api {
     const data: any = {};
     data["interval"] = interval;
     data["source"] = {
-      OneDrive: camelToSnake({
+      OneDrive: toSnake({
         shareUrl: oneDriveShareUrl,
       }),
     };
