@@ -12,6 +12,9 @@ import {
   Divider,
   Loader,
   Message,
+  Toggle,
+  Stack,
+  CustomProvider,
 } from "rsuite";
 import "./Home.css";
 import DashboardMain from "./DashboardMain";
@@ -205,30 +208,48 @@ function Home() {
 
   const navigate = useNavigate();
 
+  const [themeState, setThemeState] = useState<"dark" | "light">("light");
+
   return (
-    <Container>
-      <Content>
-        <div className="time-machine-body">
-          <Breadcrumb
-            style={{ marginTop: "5vh", marginBottom: "0", fontSize: "19px" }}
-          >
-            <Breadcrumb.Item
-              onClick={() => {
-                navigate("/", { replace: false });
-              }}
-              href="/"
-            >
-              Fog Machine
-            </Breadcrumb.Item>
-            <Breadcrumb.Item active>Time Machine</Breadcrumb.Item>
-          </Breadcrumb>
+    <CustomProvider theme={themeState}>
+      <Container>
+        <Content>
+          <div className="time-machine-body">
+            <Stack justifyContent="space-between" wrap={true}>
+              <Breadcrumb
+                style={{
+                  marginTop: "5vh",
+                  marginBottom: "0",
+                  fontSize: "19px",
+                }}
+              >
+                <Breadcrumb.Item
+                  onClick={() => {
+                    navigate("/", { replace: false });
+                  }}
+                  href="/"
+                >
+                  Fog Machine
+                </Breadcrumb.Item>
+                <Breadcrumb.Item active>Time Machine</Breadcrumb.Item>
+              </Breadcrumb>
+              <Toggle
+                size="md"
+                checkedChildren="dark"
+                unCheckedChildren="light"
+                style={{ float: "right" }}
+                onChange={(checked) => {
+                  checked ? setThemeState("dark") : setThemeState("light");
+                }}
+              />
+            </Stack>
+            <Divider style={{ marginTop: "1vh" }} />
 
-          <Divider style={{ marginTop: "1vh" }} />
-
-          <RenderContent />
-        </div>
-      </Content>
-    </Container>
+            <RenderContent />
+          </div>
+        </Content>
+      </Container>
+    </CustomProvider>
   );
 }
 
