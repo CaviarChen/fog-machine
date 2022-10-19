@@ -188,12 +188,12 @@ function DashboardMain() {
   };
 
   const allowedInterval = [
-    ["6 " + t("data-sync-interval-hours"), 6 * 60],
-    ["8 " + t("data-sync-interval-hours"), 8 * 60],
-    ["12 " + t("data-sync-interval-hours"), 12 * 60],
-    ["1 " + t("data-sync-interval-day"), 24 * 60],
-    ["2 " + t("data-sync-interval-days"), 2 * 24 * 60],
-    ["1 " + t("data-sync-interval-week"), 7 * 24 * 60],
+    [moment.duration(6, "hours").humanize(), 6 * 60],
+    [moment.duration(8, "hours").humanize(), 8 * 60],
+    [moment.duration(12, "hours").humanize(), 12 * 60],
+    [moment.duration(1, "days").humanize(), 24 * 60],
+    [moment.duration(2, "days").humanize(), 2 * 24 * 60],
+    [moment.duration(1, "week").humanize(), 7 * 24 * 60],
   ].map(([label, value]) => ({ label, value: value }));
 
   const sourceType = [["OneDrive", "onedrive"]].map(([label, value]) => ({
