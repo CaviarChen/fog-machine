@@ -25,6 +25,11 @@ struct SnapshotJson {
     pub source_kind: snapshot::SourceKind,
     pub note: Option<String>,
 }
+#[derive(Serialize)]
+struct SnapshotFilter {
+    pub page: usize,
+    pub per_page: usize,
+}
 // TODO: pagination looks not good,but it works.
 #[get("/?<page>&<per_page>")]
 async fn list_snapshots(
@@ -38,53 +43,41 @@ async fn list_snapshots(
     let snapshot_list_p: Vec<snapshot::Model>;
     let total: ItemsAndPagesNumber;
 
-    match per_page {
-        Some(per_page) => {
-            match page {
-                Some(page) => {
-                    let snapshots = snapshot::Entity::find()
-                        .filter(snapshot::Column::UserId.eq(user.uid))
-                        .order_by_desc(snapshot::Column::Timestamp)
-                        .paginate(db, per_page);
-                    // frontend page start from 1,but sea_orm page start from 0 , so use page-1 here
-                    snapshot_list_p = snapshots.fetch_page(page - 1).await?;
-                    total = match snapshots.num_items_and_pages().await {
-                        Ok(num) => num,
-                        Err(_) => ItemsAndPagesNumber {
-                            number_of_items: 0,
-                            number_of_pages: 0,
-                        },
-                    };
-                }
+    let filter = SnapshotFilter {
+        per_page: match per_page {
+            Some(per_page) => per_page,
+            None => 0,
+        },
+        page: match page {
+            Some(page) => page,
+            None => 1,
+        },
+    };
 
-                None => {
-                    let snapshots = snapshot::Entity::find()
-                        .filter(snapshot::Column::UserId.eq(user.uid))
-                        .order_by_desc(snapshot::Column::Timestamp)
-                        .paginate(db, per_page);
-                    snapshot_list_p = snapshots.fetch_page(0).await?;
-                    total = match snapshots.num_items_and_pages().await {
-                        Ok(num) => num,
-                        Err(_) => ItemsAndPagesNumber {
-                            number_of_items: 0,
-                            number_of_pages: 0,
-                        },
-                    };
-                }
-            }
-        }
-
-        None => {
-            snapshot_list_p = snapshot::Entity::find()
-                .filter(snapshot::Column::UserId.eq(user.uid))
-                .order_by_desc(snapshot::Column::Timestamp)
-                .all(db)
-                .await?;
-            total = ItemsAndPagesNumber {
-                number_of_items: snapshot_list_p.len(),
-                number_of_pages: 1,
-            };
-        }
+    if filter.per_page != 0 {
+        let snapshots = snapshot::Entity::find()
+            .filter(snapshot::Column::UserId.eq(user.uid))
+            .order_by_desc(snapshot::Column::Timestamp)
+            .paginate(db, filter.per_page);
+        // frontend page start from 1,but sea_orm page start from 0 , so use page-1 here
+        snapshot_list_p = snapshots.fetch_page(filter.page - 1).await?;
+        total = match snapshots.num_items_and_pages().await {
+            Ok(num) => num,
+            Err(_) => ItemsAndPagesNumber {
+                number_of_items: 0,
+                number_of_pages: 0,
+            },
+        };
+    } else {
+        snapshot_list_p = snapshot::Entity::find()
+            .filter(snapshot::Column::UserId.eq(user.uid))
+            .order_by_desc(snapshot::Column::Timestamp)
+            .all(db)
+            .await?;
+        total = ItemsAndPagesNumber {
+            number_of_items: snapshot_list_p.len(),
+            number_of_pages: 1,
+        };
     }
 
     let mut snapshot_list: Vec<SnapshotJson> = Vec::with_capacity(snapshot_list_p.len());
