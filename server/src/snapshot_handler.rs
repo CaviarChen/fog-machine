@@ -44,14 +44,8 @@ async fn list_snapshots(
     let total: ItemsAndPagesNumber;
 
     let filter = SnapshotFilter {
-        per_page: match per_page {
-            Some(per_page) => per_page,
-            None => 0,
-        },
-        page: match page {
-            Some(page) => page,
-            None => 1,
-        },
+        per_page: per_page.unwrap_or(0),
+        page: page.unwrap_or(1),
     };
 
     if filter.per_page != 0 {
