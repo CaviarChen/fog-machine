@@ -188,13 +188,13 @@ function DashboardMain() {
   };
 
   const allowedInterval = [
-    [moment.duration(6, "hours").humanize(), 6 * 60],
-    [moment.duration(8, "hours").humanize(), 8 * 60],
-    [moment.duration(12, "hours").humanize(), 12 * 60],
-    [moment.duration(1, "days").humanize(), 24 * 60],
-    [moment.duration(2, "days").humanize(), 2 * 24 * 60],
-    [moment.duration(1, "week").humanize(), 7 * 24 * 60],
-  ].map(([label, value]) => ({ label, value: value }));
+    6 * 60,
+    8 * 60,
+    12 * 60,
+    24 * 60,
+    2 * 24 * 60,
+    7 * 24 * 60,
+  ].map((value) => ({ label: moment.duration(value, "minutes").humanize(), value: value }));
 
   const sourceType = [["OneDrive", "onedrive"]].map(([label, value]) => ({
     label,
