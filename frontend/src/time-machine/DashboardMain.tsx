@@ -90,10 +90,10 @@ function DashboardMain() {
         let statusText = t("sync-status-running");
         /* TODO: moment i18n */
         const nextSyncMsg =
-          t("sync-nextSyncMsg") +
+          t("sync-next-sync-message") +
           (snapshotTask.lastSuccessSync
             ? moment(snapshotTask.lastSuccessSync).fromNow()
-            : t("sync-nextSyncMsg-none"));
+            : t("sync-next-sync-message-none"));
         if (snapshotTask.status == "Paused") {
           StatusIcon = PauseOutlineIcon;
           statusIconColor = "#575657";
@@ -194,7 +194,10 @@ function DashboardMain() {
     24 * 60,
     2 * 24 * 60,
     7 * 24 * 60,
-  ].map((value) => ({ label: moment.duration(value, "minutes").humanize(), value: value }));
+  ].map((value) => ({
+    label: moment.duration(value, "minutes").humanize(),
+    value: value,
+  }));
 
   const sourceType = [["OneDrive", "onedrive"]].map(([label, value]) => ({
     label,
@@ -282,7 +285,7 @@ function DashboardMain() {
         } else {
           errorToaster.push(
             errorNotification(
-              t("error-Unknown") + ": " + String(res.unknownError)
+              t("error-unknown") + ": " + String(res.unknownError)
             ),
             { placement: "topCenter" }
           );
@@ -300,7 +303,7 @@ function DashboardMain() {
       await loadData();
     } else {
       errorToaster.push(
-        errorNotification(t("error-Unknown") + ": " + String(res.unknownError)),
+        errorNotification(t("error-unknown") + ": " + String(res.unknownError)),
         { placement: "topCenter" }
       );
     }
