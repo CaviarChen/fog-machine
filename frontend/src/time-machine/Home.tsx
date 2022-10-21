@@ -16,6 +16,7 @@ import {
 import "./Home.css";
 import DashboardMain from "./DashboardMain";
 import Api from "./Api";
+import { useTranslation } from "react-i18next";
 
 // I really want ADT
 type LoginStatus = {
@@ -171,14 +172,14 @@ function Home() {
         } else {
           return (
             <>
-              <h3>Login</h3>
+              <h3>{t("login-main-title")}</h3>
               <Message
                 showIcon
                 type="warning"
-                header="Warning"
+                header={t("login-warning-title")}
                 style={{ marginTop: "1vh" }}
               >
-                This service is in alpha testing. Use it at your own risk.
+                {t("login-warning-text")}
               </Message>
               <div style={{ marginTop: "8vh" }}></div>
               <div
@@ -193,7 +194,8 @@ function Home() {
                     location.href = Api.backendUrl + "user/sso/github";
                   }}
                 >
-                  <GithubIcon style={{ fontSize: "2em" }} /> Sign in with Github
+                  <GithubIcon style={{ fontSize: "2em" }} />{" "}
+                  {t("login-main-github")}
                 </Button>
               </div>
             </>
@@ -204,6 +206,7 @@ function Home() {
   };
 
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <Container>
@@ -218,9 +221,11 @@ function Home() {
               }}
               href="/"
             >
-              Fog Machine
+              {t("home-main-title")}
             </Breadcrumb.Item>
-            <Breadcrumb.Item active>Time Machine</Breadcrumb.Item>
+            <Breadcrumb.Item active>
+              {t("home-time-machine-title")}
+            </Breadcrumb.Item>
           </Breadcrumb>
 
           <Divider style={{ marginTop: "1vh" }} />
