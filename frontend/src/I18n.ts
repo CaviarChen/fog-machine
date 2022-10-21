@@ -4,9 +4,11 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import moment from "moment";
 import "moment/locale/zh-cn";
 
-i18n.on("languageChanged", (lng: string) => {
+function momentLanguageChang(lng: string) {
   moment.locale(lng == "zh" ? "zh-ch" : "en");
-});
+}
+
+i18n.on("languageChanged", momentLanguageChang);
 
 i18n
   .use(LanguageDetector)
@@ -147,7 +149,7 @@ i18n
       },
     },
     () => {
-      moment.locale(i18n.language);
+      momentLanguageChang(i18n.language);
     }
   );
 export default i18n;
