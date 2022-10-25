@@ -90,10 +90,10 @@ function DashboardMain() {
         let statusText = t("sync-status-running");
         /* TODO: moment i18n */
         const nextSyncMsg =
-          t("sync-nextSyncMsg") +
+          t("sync-next-sync-message") +
           (snapshotTask.lastSuccessSync
             ? moment(snapshotTask.lastSuccessSync).fromNow()
-            : t("sync-nextSyncMsg-none"));
+            : t("sync-next-sync-message-none"));
         if (snapshotTask.status == "Paused") {
           StatusIcon = PauseOutlineIcon;
           statusIconColor = "#575657";
@@ -188,13 +188,16 @@ function DashboardMain() {
   };
 
   const allowedInterval = [
-    ["6 " + t("data-sync-interval-hours"), 6 * 60],
-    ["8 " + t("data-sync-interval-hours"), 8 * 60],
-    ["12 " + t("data-sync-interval-hours"), 12 * 60],
-    ["1 " + t("data-sync-interval-day"), 24 * 60],
-    ["2 " + t("data-sync-interval-days"), 2 * 24 * 60],
-    ["1 " + t("data-sync-interval-week"), 7 * 24 * 60],
-  ].map(([label, value]) => ({ label, value: value }));
+    6 * 60,
+    8 * 60,
+    12 * 60,
+    24 * 60,
+    2 * 24 * 60,
+    7 * 24 * 60,
+  ].map((value) => ({
+    label: moment.duration(value, "minutes").humanize(),
+    value: value,
+  }));
 
   const sourceType = [["OneDrive", "onedrive"]].map(([label, value]) => ({
     label,
@@ -282,7 +285,7 @@ function DashboardMain() {
         } else {
           errorToaster.push(
             errorNotification(
-              t("error-Unknown") + ": " + String(res.unknownError)
+              t("error-unknown") + ": " + String(res.unknownError)
             ),
             { placement: "topCenter" }
           );
@@ -300,7 +303,7 @@ function DashboardMain() {
       await loadData();
     } else {
       errorToaster.push(
-        errorNotification(t("error-Unknown") + ": " + String(res.unknownError)),
+        errorNotification(t("error-unknown") + ": " + String(res.unknownError)),
         { placement: "topCenter" }
       );
     }
@@ -352,12 +355,7 @@ function DashboardMain() {
                 <InputGroup.Addon>{t("data-share-link")}</InputGroup.Addon>
                 <Form.Control name="shareLink" />
               </InputGroup>
-              <div
-                style={{ textAlign: "right",cursor: "pointer" }}
-                onClick={() => {
-                  window.open("/help");
-                }}
-              >
+              <div style={{ textAlign: "right" }}>
                 <HelpOutlineIcon style={{ fontSize: "1.1em" }} />
                 {t("data-share-link-help")}
               </div>
