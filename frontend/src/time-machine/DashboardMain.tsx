@@ -355,7 +355,12 @@ function DashboardMain() {
                 <InputGroup.Addon>{t("data-share-link")}</InputGroup.Addon>
                 <Form.Control name="shareLink" />
               </InputGroup>
-              <div style={{ textAlign: "right" }}>
+              <div
+                style={{ textAlign: "right", cursor: "pointer" }}
+                onClick={() => {
+                  window.open("/help");
+                }}
+              >
                 <HelpOutlineIcon style={{ fontSize: "1.1em" }} />
                 {t("data-share-link-help")}
               </div>

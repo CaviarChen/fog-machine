@@ -5,12 +5,14 @@ import { Breadcrumb, Container, Content, Divider } from "rsuite";
 
 function Home() {
   const HelpContent = () => {
-    return <>
-      <h3>1.Hello world!</h3>
-      <p>Hello world!</p>
-      <h3>2.Hello world!</h3>
-      <p>Hello world!</p>
-    </>
+    return (
+      <>
+        <h3>1.Hello world!</h3>
+        <p>Hello world!</p>
+        <h3>2.Hello world!</h3>
+        <p>Hello world!</p>
+      </>
+    );
   };
 
   const navigate = useNavigate();
