@@ -12,13 +12,11 @@ import {
   Divider,
   Loader,
   Message,
-  Toggle,
-  Stack,
-  CustomProvider,
 } from "rsuite";
 import "./Home.css";
 import DashboardMain from "./DashboardMain";
 import Api from "./Api";
+import { useTranslation } from "react-i18next";
 
 // I really want ADT
 type LoginStatus = {
@@ -174,14 +172,14 @@ function Home() {
         } else {
           return (
             <>
-              <h3>Login</h3>
+              <h3>{t("login-main-title")}</h3>
               <Message
                 showIcon
                 type="warning"
-                header="Warning"
+                header={t("login-warning-title")}
                 style={{ marginTop: "1vh" }}
               >
-                This service is in alpha testing. Use it at your own risk.
+                {t("login-warning-text")}
               </Message>
               <div style={{ marginTop: "8vh" }}></div>
               <div
@@ -196,7 +194,8 @@ function Home() {
                     location.href = Api.backendUrl + "user/sso/github";
                   }}
                 >
-                  <GithubIcon style={{ fontSize: "2em" }} /> Sign in with Github
+                  <GithubIcon style={{ fontSize: "2em" }} />
+                  {t("login-main-github")}
                 </Button>
               </div>
             </>
@@ -207,49 +206,32 @@ function Home() {
   };
 
   const navigate = useNavigate();
-
-  const [themeState, setThemeState] = useState<"dark" | "light">("light");
+  const { t } = useTranslation();
 
   return (
-    <CustomProvider theme={themeState}>
-      <Container>
-        <Content>
-          <div className="time-machine-body">
-            <Stack justifyContent="space-between" wrap={true}>
-              <Breadcrumb
-                style={{
-                  marginTop: "5vh",
-                  marginBottom: "0",
-                  fontSize: "19px",
-                }}
-              >
-                <Breadcrumb.Item
-                  onClick={() => {
-                    navigate("/", { replace: false });
-                  }}
-                  href="/"
-                >
-                  Fog Machine
-                </Breadcrumb.Item>
-                <Breadcrumb.Item active>Time Machine</Breadcrumb.Item>
-              </Breadcrumb>
-              <Toggle
-                size="md"
-                checkedChildren="dark"
-                unCheckedChildren="light"
-                style={{ float: "right" }}
-                onChange={(checked) => {
-                  checked ? setThemeState("dark") : setThemeState("light");
-                }}
-              />
-            </Stack>
-            <Divider style={{ marginTop: "1vh" }} />
+    <Container>
+      <Content>
+        <div className="time-machine-body">
+          <Breadcrumb
+            style={{ marginTop: "5vh", marginBottom: "0", fontSize: "19px" }}
+          >
+            <Breadcrumb.Item
+              onClick={() => {
+                navigate("/", { replace: false });
+              }}
+              href="/"
+            >
+              {t("home-main-title")}
+            </Breadcrumb.Item>
+            <Breadcrumb.Item active>{t("home-time-machine-title")}</Breadcrumb.Item>
+          </Breadcrumb>
 
-            <RenderContent />
-          </div>
-        </Content>
-      </Container>
-    </CustomProvider>
+          <Divider style={{ marginTop: "1vh" }} />
+
+          <RenderContent />
+        </div>
+      </Content>
+    </Container>
   );
 }
 

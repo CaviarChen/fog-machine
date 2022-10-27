@@ -27,8 +27,10 @@ import EditIcon from "@rsuite/icons/Edit";
 import AddOutlineIcon from "@rsuite/icons/AddOutline";
 import HelpOutlineIcon from "@rsuite/icons/HelpOutline";
 import DashboardSnapshot from "./DashboardSnapshot";
+import { useTranslation } from "react-i18next";
 
 function DashboardMain() {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [snapshotTask, setSnapshotTask] = useState<SnapshotTask | null>(null);
   const loadData = async () => {
@@ -78,28 +80,28 @@ function DashboardMain() {
                 setEditModelState({ mode: "create" });
               }}
             >
-              Add data source
+              {t("add-data-source")}
             </IconButton>
           </div>
         );
       } else {
         let StatusIcon = PlayOutlineIcon;
         let statusIconColor = "#53B13A";
-        let statusText = "Running";
+        let statusText = t("sync-status-running");
         /* TODO: moment i18n */
         const nextSyncMsg =
-          "Last success sync: " +
+          t("sync-next-sync-message") +
           (snapshotTask.lastSuccessSync
             ? moment(snapshotTask.lastSuccessSync).fromNow()
-            : "none");
+            : t("sync-next-sync-message-none"));
         if (snapshotTask.status == "Paused") {
           StatusIcon = PauseOutlineIcon;
           statusIconColor = "#575657";
-          statusText = "Paused";
+          statusText = t("sync-status-paused");
         } else if (snapshotTask.status == "Stopped") {
           StatusIcon = CloseOutlineIcon;
           statusIconColor = "#D0342C";
-          statusText = "Stopped";
+          statusText = t("sync-status-stopped");
         }
 
         const updateStatus = async (status: "Running" | "Paused") => {
@@ -145,7 +147,7 @@ function DashboardMain() {
                           updateStatus("Paused");
                         }}
                       >
-                        Pause
+                        {t("sync-button-pause")}
                       </IconButton>
                     ) : (
                       <IconButton
@@ -155,11 +157,11 @@ function DashboardMain() {
                           updateStatus("Running");
                         }}
                       >
-                        Start
+                        {t("sync-button-start")}
                       </IconButton>
                     )}
                     <IconButton icon={<FileTextIcon />} placement="left">
-                      View Log
+                      {t("sync-button-view-Log")}
                     </IconButton>
                     <IconButton
                       icon={<EditIcon />}
@@ -173,7 +175,7 @@ function DashboardMain() {
                         });
                       }}
                     >
-                      Edit
+                      {t("sync-button-edit")}
                     </IconButton>
                   </ButtonToolbar>
                 </div>
@@ -186,13 +188,16 @@ function DashboardMain() {
   };
 
   const allowedInterval = [
-    ["6 hours", 6 * 60],
-    ["8 hours", 8 * 60],
-    ["12 hours", 12 * 60],
-    ["1 day", 24 * 60],
-    ["2 days", 2 * 24 * 60],
-    ["1 week", 7 * 24 * 60],
-  ].map(([label, value]) => ({ label, value: value }));
+    6 * 60,
+    8 * 60,
+    12 * 60,
+    24 * 60,
+    2 * 24 * 60,
+    7 * 24 * 60,
+  ].map((value) => ({
+    label: moment.duration(value, "minutes").humanize(),
+    value: value,
+  }));
 
   const sourceType = [["OneDrive", "onedrive"]].map(([label, value]) => ({
     label,
@@ -208,7 +213,12 @@ function DashboardMain() {
   const errorToaster = useToaster();
   const errorNotification = (msg: string) => {
     return (
-      <Notification type={"error"} header={"Error"} closable duration={0}>
+      <Notification
+        type={"error"}
+        header={t("error-title")}
+        closable
+        duration={0}
+      >
         {msg}
       </Notification>
     );
@@ -264,20 +274,19 @@ function DashboardMain() {
         await loadData();
       } else {
         if (res.error == "invalid_share") {
-          errorToaster.push(
-            errorNotification("The given share link is invalid"),
-            { placement: "topCenter" }
-          );
+          errorToaster.push(errorNotification(t("error-data-share-link")), {
+            placement: "topCenter",
+          });
         } else if (res.error == "invalid_folder_structure") {
           errorToaster.push(
-            errorNotification(
-              "Cannot found the Sync folder created by Fog of World"
-            ),
+            errorNotification(t("error-data-folder-structure")),
             { placement: "topCenter" }
           );
         } else {
           errorToaster.push(
-            errorNotification("Unknown error: " + String(res.unknownError)),
+            errorNotification(
+              t("error-unknown") + ": " + String(res.unknownError)
+            ),
             { placement: "topCenter" }
           );
         }
@@ -294,7 +303,7 @@ function DashboardMain() {
       await loadData();
     } else {
       errorToaster.push(
-        errorNotification("Unknown error: " + String(res.unknownError)),
+        errorNotification(t("error-unknown") + ": " + String(res.unknownError)),
         { placement: "topCenter" }
       );
     }
@@ -318,8 +327,8 @@ function DashboardMain() {
         <Modal.Header>
           <Modal.Title>
             {editModelState.mode == "edit"
-              ? "Edit data source"
-              : "Add data source"}
+              ? t("edit-data-source")
+              : t("add-data-source")}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -334,7 +343,7 @@ function DashboardMain() {
             }}
           >
             <Form.Group controlId="group-data-source">
-              <Form.ControlLabel>Data source</Form.ControlLabel>
+              <Form.ControlLabel>{t("data-source-title")}</Form.ControlLabel>
               <Form.Control
                 name="sourceType"
                 accepter={SelectPicker}
@@ -343,20 +352,20 @@ function DashboardMain() {
                 searchable={false}
               />
               <InputGroup style={{ marginTop: "8px" }}>
-                <InputGroup.Addon>Share link</InputGroup.Addon>
+                <InputGroup.Addon>{t("data-share-link")}</InputGroup.Addon>
                 <Form.Control name="shareLink" />
               </InputGroup>
               <div style={{ textAlign: "right" }}>
-                <HelpOutlineIcon style={{ fontSize: "1.1em" }} /> How to get
-                share link
+                <HelpOutlineIcon style={{ fontSize: "1.1em" }} />
+                {t("data-share-link-help")}
               </div>
             </Form.Group>
             <Form.Group controlId="group-interval">
-              <Form.ControlLabel>Sync interval</Form.ControlLabel>
+              <Form.ControlLabel>{t("data-sync-interval")}</Form.ControlLabel>
               <Form.Control
                 name="interval"
                 accepter={SelectPicker}
-                label="every"
+                label={t("data-share-link-every")}
                 data={allowedInterval}
                 cleanable={false}
                 searchable={false}
@@ -364,7 +373,7 @@ function DashboardMain() {
             </Form.Group>
 
             {editModelState.mode == "create" && (
-              <Message showIcon type="info" header="Disclaimer">
+              <Message showIcon type={"info"} header={t("data-disclaimer")}>
                 TODO
               </Message>
             )}
@@ -377,7 +386,7 @@ function DashboardMain() {
                     appearance="primary"
                     loading={editButtonLoading}
                   >
-                    Submit
+                    {t("data-form-submit")}
                   </Button>
 
                   {editModelState.mode == "edit" && (
@@ -387,7 +396,7 @@ function DashboardMain() {
                       loading={editButtonLoading}
                       onClick={handleDelete}
                     >
-                      Delete
+                      {t("data-form-delete")}
                     </Button>
                   )}
                 </ButtonToolbar>

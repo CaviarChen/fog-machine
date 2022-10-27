@@ -24,10 +24,12 @@ import MoreIcon from "@rsuite/icons/legacy/More";
 import Api, { Snapshot, SnapshotContent } from "./Api";
 import PlusIcon from "@rsuite/icons/Plus";
 import { MessageType } from "rsuite/esm/Notification/Notification";
+import { useTranslation } from "react-i18next";
 
 const { Column, HeaderCell, Cell } = Table;
 
 function DashboardSnapshot() {
+  const { t } = useTranslation();
   type SnapshotsFliterState = {
     nowPage: number;
     perPage: number;
@@ -77,27 +79,46 @@ function DashboardSnapshot() {
     //      We *SHOULDN'T* allow user to open multiple confirmation, that's really confusing.
 
     const message = (
-      <Notification type="info" header="Delete snapshot" closable duration={0}>
-        This item will be deleted immediately. You can't undo this action.
+      <Notification
+        type="warning"
+        header={t("snapshot-list-delete-title")}
+        closable
+        duration={0}
+      >
+        {t("snapshot-list-delete-prompt")}
         <hr />
-        <Button
-          size="sm"
-          onClick={async () => {
-            notificationToaster.clear();
-            const res = await Api.deleteSnapshot(snapshotId);
-            // TODO: Error handling
-            if (res.ok) {
-              notificationToaster.push(notification("success", "success"), {
-                placement: "topCenter",
-              });
-              loadData();
-            } else {
-              console.log(res);
-            }
-          }}
-        >
-          Confirm
-        </Button>
+        <ButtonToolbar style={{ padding: 10 }}>
+          <Button
+            appearance="primary"
+            onClick={async () => {
+              notificationToaster.clear();
+            }}
+          >
+            {t("snapshot-list-delete-cancel")}
+          </Button>
+          <Button
+            color="red"
+            appearance="primary"
+            onClick={async () => {
+              notificationToaster.clear();
+              const res = await Api.deleteSnapshot(snapshotId);
+              // TODO: Error handling
+              if (res.ok) {
+                notificationToaster.push(
+                  notification("success", t("success-title")),
+                  {
+                    placement: "topCenter",
+                  }
+                );
+                loadData();
+              } else {
+                console.log(res);
+              }
+            }}
+          >
+            {t("snapshot-list-delete-confirm")}
+          </Button>
+        </ButtonToolbar>
       </Notification>
     );
     notificationToaster.push(message, {
@@ -118,7 +139,7 @@ function DashboardSnapshot() {
             id="table"
           >
             <Column flexGrow={10}>
-              <HeaderCell>Date</HeaderCell>
+              <HeaderCell>{t("snapshot-list-date")}</HeaderCell>
               <Cell>
                 {(rawData) => {
                   const snapshot = rawData as SnapshotContent;
@@ -142,13 +163,17 @@ function DashboardSnapshot() {
             </Column>
 
             <Column flexGrow={10}>
-              <HeaderCell>Source</HeaderCell>
+              <HeaderCell>{t("snapshot-list-source")}</HeaderCell>
               <Cell>
                 {(rawData) => {
                   const snapshot = rawData as SnapshotContent;
                   return (
                     <Tag>
-                      {snapshot.sourceKind == "Sync" ? "Sync" : "Upload"}
+
+                      {snapshot.sourceKind == "Sync"
+                        ? t("snapshot-list-source-sync")
+                        : t("snapshot-list-source-upload")}
+
                     </Tag>
                   );
                 }}
@@ -172,7 +197,7 @@ function DashboardSnapshot() {
                               "/editor?viewing-snapshot=" + String(snapshot.id);
                           }}
                         >
-                          View
+                          {t("snapshot-list-view")}
                         </Button>
                         <Button
                           size="sm"
@@ -183,8 +208,8 @@ function DashboardSnapshot() {
                             if (token.ok) {
                               window.open(
                                 Api.backendUrl +
-                                  "misc/download?token=" +
-                                  token.ok,
+                                "misc/download?token=" +
+                                token.ok,
                                 "_blank"
                               );
                             } else {
@@ -192,13 +217,13 @@ function DashboardSnapshot() {
                             }
                           }}
                         >
-                          Download
+                          {t("snapshot-list-download")}
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => openDeleteConfirmation(snapshot.id)}
                         >
-                          Delete
+                          {t("snapshot-list-delete")}
                         </Button>
                       </ButtonToolbar>
                     </div>
@@ -263,7 +288,7 @@ function DashboardSnapshot() {
       <Panel
         header={
           <Stack justifyContent="space-between">
-            <span>Snapshots</span>
+            <span>{t("snapshot-list-title")}</span>
             <IconButton
               icon={<PlusIcon />}
               onClick={() => {
@@ -273,7 +298,7 @@ function DashboardSnapshot() {
                 });
               }}
             >
-              upload
+              {t("snapshot-list-upload")}
             </IconButton>
           </Stack>
         }
@@ -289,14 +314,14 @@ function DashboardSnapshot() {
         backdrop={"static"}
       >
         <Modal.Header>
-          <Modal.Title>Upload Data</Modal.Title>
+          <Modal.Title>{t("data-upload-title")}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
             <DatePicker
               format="yyyy-MM-dd HH:mm"
               size="lg"
-              placeholder="Select Date"
+              placeholder={t("data-upload-select-date")}
               onChange={(date) => {
                 if (uploadDialogState == "closed") return;
                 setUploadDialogState({
@@ -343,7 +368,9 @@ function DashboardSnapshot() {
                   ...uploadDialogState,
                   uploadState: "empty",
                 });
-                notificationToaster.push(notification("error", "error"));
+                notificationToaster.push(
+                  notification("error", t("error-title"))
+                );
               }}
               onSuccess={(res) => {
                 if (uploadDialogState == "closed") return;
@@ -364,11 +391,11 @@ function DashboardSnapshot() {
               >
                 <span>
                   {uploadDialogState == "closed" ||
-                  uploadDialogState.uploadState == "empty"
-                    ? "Click or Drag a .zip file to this area to upload"
+                    uploadDialogState.uploadState == "empty"
+                    ? t("data-upload-prompt")
                     : uploadDialogState.uploadState == "uploading"
-                    ? "uploading..."
-                    : "success!"}
+                      ? t("data-upload-uploading")
+                      : t("data-upload-success")}
                 </span>
               </div>
             </Uploader>
@@ -400,19 +427,17 @@ function DashboardSnapshot() {
                       );
                       if (result.ok) {
                         notificationToaster.push(
-                          notification("success", "Success!")
+                          notification("success", t("success-title"))
                         );
                         setUploadDialogState("closed");
                         loadData();
                       } else {
                         console.log(result);
-                        let errorMessage = "Unknown error";
+                        let errorMessage = t("error-unknown");
                         if (result.error == "timestamp_is_in_future") {
-                          errorMessage =
-                            "You cannot select a time that is in the future.";
+                          errorMessage = t("error-upload-timestamp");
                         } else if (result.error == "invalid_upload_token") {
-                          errorMessage =
-                            "Failed to load uploaded file, please reupload and try again.";
+                          errorMessage = t("error-upload-token");
                           // TODO: We should reset the `Uploader` here, but currently this cannot be done because
                           // the way we use the `Uploader` is wrong.
                           // We should: not maintaing our own upload status and use `fileList`.
@@ -424,7 +449,7 @@ function DashboardSnapshot() {
                       }
                     }}
                   >
-                    Submit
+                    {t("data-form-submit")}
                   </Button>
                 </ButtonToolbar>
               </Form.Group>
