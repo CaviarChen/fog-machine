@@ -223,7 +223,9 @@ function Home() {
             >
               {t("home-main-title")}
             </Breadcrumb.Item>
-            <Breadcrumb.Item active>{t("home-time-machine-title")}</Breadcrumb.Item>
+            <Breadcrumb.Item active>
+              {t("home-time-machine-title")}
+            </Breadcrumb.Item>
           </Breadcrumb>
 
           <Divider style={{ marginTop: "1vh" }} />

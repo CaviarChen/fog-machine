@@ -34,18 +34,17 @@ function DashboardSnapshot() {
     currentPage: number;
   };
   const [snapshotList, setSnapshotList] = useState<SnapshotList | null>(null);
-  const [snapshotListState, setSnapshotListState] = useState<SnapshotListState>({
-    currentPage: 1,
-  });
+  const [snapshotListState, setSnapshotListState] = useState<SnapshotListState>(
+    {
+      currentPage: 1,
+    }
+  );
 
   const [isLoading, setIsLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
-    const result = await Api.listSnapshots(
-      snapshotListState.currentPage,
-      10
-    );
+    const result = await Api.listSnapshots(snapshotListState.currentPage, 10);
     if (result.ok) {
       setSnapshotList(result.ok);
     } else {
@@ -166,11 +165,9 @@ function DashboardSnapshot() {
                   const snapshot = rawData as Snapshot;
                   return (
                     <Tag>
-
                       {snapshot.sourceKind == "Sync"
                         ? t("snapshot-list-source-sync")
                         : t("snapshot-list-source-upload")}
-
                     </Tag>
                   );
                 }}
@@ -205,8 +202,8 @@ function DashboardSnapshot() {
                             if (token.ok) {
                               window.open(
                                 Api.backendUrl +
-                                "misc/download?token=" +
-                                token.ok,
+                                  "misc/download?token=" +
+                                  token.ok,
                                 "_blank"
                               );
                             } else {
@@ -371,11 +368,11 @@ function DashboardSnapshot() {
               >
                 <span>
                   {uploadDialogState == "closed" ||
-                    uploadDialogState.uploadState == "empty"
+                  uploadDialogState.uploadState == "empty"
                     ? t("data-upload-prompt")
                     : uploadDialogState.uploadState == "uploading"
-                      ? t("data-upload-uploading")
-                      : t("data-upload-success")}
+                    ? t("data-upload-uploading")
+                    : t("data-upload-success")}
                 </span>
               </div>
             </Uploader>
