@@ -8,7 +8,6 @@ use entity::sea_orm;
 use entity::snapshot;
 use rocket::http::Status;
 use rocket::serde::json::Json;
-use sea_orm::ItemsAndPagesNumber;
 use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
 use serde::{Deserialize, Serialize};
@@ -25,76 +24,52 @@ struct SnapshotJson {
     pub source_kind: snapshot::SourceKind,
     pub note: Option<String>,
 }
-#[derive(Serialize)]
-struct SnapshotFilter {
-    pub page: usize,
-    pub per_page: usize,
-}
-// TODO: pagination looks not good,but it works.
-#[get("/?<page>&<per_page>")]
+
+#[get("/?<page>&<page_size>")]
 async fn list_snapshots(
     conn: Connection<'_, Db>,
     user: User,
     page: Option<usize>,
-    per_page: Option<usize>,
+    page_size: Option<usize>,
 ) -> APIResponse {
     let db = conn.into_inner();
 
-    let snapshot_list_p: Vec<snapshot::Model>;
-    let total: ItemsAndPagesNumber;
-
-    let filter = SnapshotFilter {
-        per_page: per_page.unwrap_or(0),
-        page: page.unwrap_or(1),
-    };
-
-    if filter.per_page != 0 {
-        let snapshots = snapshot::Entity::find()
-            .filter(snapshot::Column::UserId.eq(user.uid))
-            .order_by_desc(snapshot::Column::Timestamp)
-            .paginate(db, filter.per_page);
-        // frontend page start from 1,but sea_orm page start from 0 , so use page-1 here
-        snapshot_list_p = snapshots.fetch_page(filter.page - 1).await?;
-        total = match snapshots.num_items_and_pages().await {
-            Ok(num) => num,
-            Err(_) => ItemsAndPagesNumber {
-                number_of_items: 0,
-                number_of_pages: 0,
-            },
-        };
-    } else {
-        snapshot_list_p = snapshot::Entity::find()
-            .filter(snapshot::Column::UserId.eq(user.uid))
-            .order_by_desc(snapshot::Column::Timestamp)
-            .all(db)
-            .await?;
-        total = ItemsAndPagesNumber {
-            number_of_items: snapshot_list_p.len(),
-            number_of_pages: 1,
-        };
+    let page_size = page_size.unwrap_or(10);
+    if page_size > 200 {
+        return Ok((Status::BadRequest, json!({"error": "invalid_page_size"})));
     }
+    let page = page.unwrap_or(1);
 
-    let mut snapshot_list: Vec<SnapshotJson> = Vec::with_capacity(snapshot_list_p.len());
-    for snapshot in snapshot_list_p {
-        let snapshot::Model {
-            id,
-            user_id: _,
-            timestamp,
-            source_kind,
-            note,
-            sync_files: _,
-        } = snapshot;
-        snapshot_list.push(SnapshotJson {
-            id,
-            timestamp,
-            source_kind,
-            note,
+    let snapshot_page = snapshot::Entity::find()
+        .filter(snapshot::Column::UserId.eq(user.uid))
+        .order_by_desc(snapshot::Column::Timestamp)
+        .paginate(db, page_size);
+    // sea_orm page index start from 0
+    let snapshots = snapshot_page.fetch_page(page - 1).await?;
+    let counts = snapshot_page.num_items_and_pages().await?;
+    let snapshots: Vec<SnapshotJson> = snapshots
+        .into_iter()
+        .map(|snapshot| {
+            let snapshot::Model {
+                id,
+                user_id: _,
+                timestamp,
+                source_kind,
+                note,
+                sync_files: _,
+            } = snapshot;
+            SnapshotJson {
+                id,
+                timestamp,
+                source_kind,
+                note,
+            }
         })
-    }
+        .collect();
 
     Ok((
         Status::Ok,
-        json!({"total":total.number_of_items,"total_pages":total.number_of_pages,"content":snapshot_list}),
+        json!({"number_of_snapshots":counts.number_of_items,"number_of_pages":counts.number_of_pages,"snapshots":snapshots}),
     ))
 }
 

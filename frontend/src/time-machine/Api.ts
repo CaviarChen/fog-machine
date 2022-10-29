@@ -45,17 +45,17 @@ export type SnapshotTask = {
   status: "Running" | "Paused" | "Stopped";
 };
 
-export type SnapshotContent = {
+export type Snapshot = {
   id: number;
   timestamp: Date;
   sourceKind: "Sync" | "Upload";
   note: string | null;
 };
 
-export type Snapshot = {
-  total: number;
-  totalPages: number;
-  content: SnapshotContent[];
+export type SnapshotList = {
+  numberOfSnapshots: number;
+  numberOfPages: number;
+  snapshots: Snapshot[];
 };
 
 export type SnapshotUploadResult = {
@@ -272,9 +272,9 @@ export default class Api {
   public static async listSnapshots(
     page: number,
     perPage: number
-  ): Promise<Result<Snapshot>> {
+  ): Promise<Result<SnapshotList>> {
     const result = await this.requestApi(
-      "snapshot?page=" + String(page) + "&per_page=" + String(perPage),
+      "snapshot?page=" + String(page) + "&page_size=" + String(perPage),
       "get",
       true
     );

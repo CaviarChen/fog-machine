@@ -21,7 +21,7 @@ import {
   IconButton,
 } from "rsuite";
 import MoreIcon from "@rsuite/icons/legacy/More";
-import Api, { Snapshot, SnapshotContent } from "./Api";
+import Api, { SnapshotList, Snapshot } from "./Api";
 import PlusIcon from "@rsuite/icons/Plus";
 import { MessageType } from "rsuite/esm/Notification/Notification";
 import { useTranslation } from "react-i18next";
@@ -30,14 +30,12 @@ const { Column, HeaderCell, Cell } = Table;
 
 function DashboardSnapshot() {
   const { t } = useTranslation();
-  type SnapshotsFliterState = {
-    nowPage: number;
-    perPage: number;
+  type SnapshotListState = {
+    currentPage: number;
   };
-  const [snapshots, setSnapshots] = useState<Snapshot | null>(null);
-  const [activePage, setActivePage] = useState<SnapshotsFliterState>({
-    nowPage: 1,
-    perPage: 10,
+  const [snapshotList, setSnapshotList] = useState<SnapshotList | null>(null);
+  const [snapshotListState, setSnapshotListState] = useState<SnapshotListState>({
+    currentPage: 1,
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -45,17 +43,16 @@ function DashboardSnapshot() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     const result = await Api.listSnapshots(
-      activePage.nowPage,
-      activePage.perPage
+      snapshotListState.currentPage,
+      10
     );
-    console.log(result.ok);
     if (result.ok) {
-      setSnapshots(result.ok);
+      setSnapshotList(result.ok);
     } else {
       console.log(result);
     }
     setIsLoading(false);
-  }, [activePage]);
+  }, [snapshotListState]);
 
   useEffect(() => {
     loadData();
@@ -127,13 +124,13 @@ function DashboardSnapshot() {
   };
 
   const Detail = () => {
-    if (!snapshots) {
+    if (!snapshotList) {
       return <Placeholder.Paragraph />;
     } else {
       return (
         <div>
           <Table
-            data={snapshots.content}
+            data={snapshotList.snapshots}
             loading={isLoading}
             autoHeight={true}
             id="table"
@@ -142,7 +139,7 @@ function DashboardSnapshot() {
               <HeaderCell>{t("snapshot-list-date")}</HeaderCell>
               <Cell>
                 {(rawData) => {
-                  const snapshot = rawData as SnapshotContent;
+                  const snapshot = rawData as Snapshot;
                   return (
                     <Whisper
                       placement="top"
@@ -166,7 +163,7 @@ function DashboardSnapshot() {
               <HeaderCell>{t("snapshot-list-source")}</HeaderCell>
               <Cell>
                 {(rawData) => {
-                  const snapshot = rawData as SnapshotContent;
+                  const snapshot = rawData as Snapshot;
                   return (
                     <Tag>
 
@@ -186,7 +183,7 @@ function DashboardSnapshot() {
               </HeaderCell>
               <Cell>
                 {(rawData) => {
-                  const snapshot = rawData as SnapshotContent;
+                  const snapshot = rawData as Snapshot;
                   return (
                     <div style={{ marginTop: "-3px" }}>
                       <ButtonToolbar>
@@ -234,37 +231,20 @@ function DashboardSnapshot() {
           </Table>
           <hr />
           <Pagination
-            layout={["total", "-", "limit", "|", "pager", "skip"]}
-            size={"sm"}
+            layout={["total", "-", "pager", "skip"]}
+            size={"xs"}
             prev={true}
             next={true}
             first={true}
             last={true}
-            ellipsis={true}
-            boundaryLinks={true}
-            total={snapshots.total}
-            limit={activePage.perPage}
-            limitOptions={[5, 10, 20, 50, 100]}
-            maxButtons={5}
-            activePage={activePage.nowPage}
+            limit={10}
+            total={snapshotList.numberOfSnapshots}
+            maxButtons={4}
+            activePage={snapshotListState.currentPage}
             onChangePage={(page) => {
-              setActivePage({
-                ...activePage,
-                nowPage: page,
+              setSnapshotListState({
+                currentPage: page,
               });
-            }}
-            onChangeLimit={(limit) => {
-              if (limit >= snapshots.total) {
-                setActivePage({
-                  nowPage: 1,
-                  perPage: limit,
-                });
-              } else {
-                setActivePage({
-                  ...activePage,
-                  perPage: limit,
-                });
-              }
             }}
           />
         </div>
