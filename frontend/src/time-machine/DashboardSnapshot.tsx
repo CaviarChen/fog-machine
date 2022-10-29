@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import moment from "moment";
 import {
   Button,
@@ -9,6 +9,7 @@ import {
   Tooltip,
   Whisper,
   Tag,
+  Pagination,
   Notification,
   useToaster,
   Modal,
@@ -20,7 +21,7 @@ import {
   IconButton,
 } from "rsuite";
 import MoreIcon from "@rsuite/icons/legacy/More";
-import Api, { Snapshot } from "./Api";
+import Api, { SnapshotList, Snapshot } from "./Api";
 import PlusIcon from "@rsuite/icons/Plus";
 import { MessageType } from "rsuite/esm/Notification/Notification";
 import { useTranslation } from "react-i18next";
@@ -29,19 +30,32 @@ const { Column, HeaderCell, Cell } = Table;
 
 function DashboardSnapshot() {
   const { t } = useTranslation();
-  const [snapshots, setSnapshots] = useState<Snapshot[] | null>(null);
-  const loadData = async () => {
-    const result = await Api.listSnapshots();
+  type SnapshotListState = {
+    currentPage: number;
+  };
+  const [snapshotList, setSnapshotList] = useState<SnapshotList | null>(null);
+  const [snapshotListState, setSnapshotListState] = useState<SnapshotListState>(
+    {
+      currentPage: 1,
+    }
+  );
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    const result = await Api.listSnapshots(snapshotListState.currentPage, 10);
     if (result.ok) {
-      setSnapshots(result.ok);
+      setSnapshotList(result.ok);
     } else {
       console.log(result);
     }
-  };
+    setIsLoading(false);
+  }, [snapshotListState]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // TODO: we should have a single global toaster for all notifications
   const notificationToaster = useToaster();
@@ -109,101 +123,128 @@ function DashboardSnapshot() {
   };
 
   const Detail = () => {
-    if (!snapshots) {
+    if (!snapshotList) {
       return <Placeholder.Paragraph />;
     } else {
       return (
-        <Table data={snapshots} id="table">
-          <Column flexGrow={10}>
-            <HeaderCell>{t("snapshot-list-date")}</HeaderCell>
-            <Cell>
-              {(rawData) => {
-                const snapshot = rawData as Snapshot;
-                return (
-                  <Whisper
-                    placement="top"
-                    trigger="hover"
-                    speaker={
-                      <Tooltip>
-                        {moment(snapshot.timestamp).format("lll")}
-                      </Tooltip>
-                    }
-                  >
-                    <div>{moment(snapshot.timestamp).format("YYYY-MM-DD")}</div>
-                  </Whisper>
-                );
-              }}
-            </Cell>
-          </Column>
+        <div>
+          <Table
+            data={snapshotList.snapshots}
+            loading={isLoading}
+            autoHeight={true}
+            id="table"
+          >
+            <Column flexGrow={10}>
+              <HeaderCell>{t("snapshot-list-date")}</HeaderCell>
+              <Cell>
+                {(rawData) => {
+                  const snapshot = rawData as Snapshot;
+                  return (
+                    <Whisper
+                      placement="top"
+                      trigger="hover"
+                      speaker={
+                        <Tooltip>
+                          {moment(snapshot.timestamp).format("lll")}
+                        </Tooltip>
+                      }
+                    >
+                      <div>
+                        {moment(snapshot.timestamp).format("YYYY-MM-DD")}
+                      </div>
+                    </Whisper>
+                  );
+                }}
+              </Cell>
+            </Column>
 
-          <Column flexGrow={10}>
-            <HeaderCell>{t("snapshot-list-source")}</HeaderCell>
-            <Cell>
-              {(rawData) => {
-                const snapshot = rawData as Snapshot;
-                return (
-                  <Tag>
-                    {snapshot.sourceKind == "Sync"
-                      ? t("snapshot-list-source-sync")
-                      : t("snapshot-list-source-upload")}
-                  </Tag>
-                );
-              }}
-            </Cell>
-          </Column>
+            <Column flexGrow={10}>
+              <HeaderCell>{t("snapshot-list-source")}</HeaderCell>
+              <Cell>
+                {(rawData) => {
+                  const snapshot = rawData as Snapshot;
+                  return (
+                    <Tag>
+                      {snapshot.sourceKind == "Sync"
+                        ? t("snapshot-list-source-sync")
+                        : t("snapshot-list-source-upload")}
+                    </Tag>
+                  );
+                }}
+              </Cell>
+            </Column>
 
-          <Column flexGrow={10} verticalAlign="middle">
-            <HeaderCell>
-              <MoreIcon />
-            </HeaderCell>
-            <Cell>
-              {(rawData) => {
-                const snapshot = rawData as Snapshot;
-                return (
-                  <div style={{ marginTop: "-3px" }}>
-                    <ButtonToolbar>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          location.href =
-                            "/editor?viewing-snapshot=" + String(snapshot.id);
-                        }}
-                      >
-                        {t("snapshot-list-view")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={async () => {
-                          const token = await Api.getSnapshotDownloadToken(
-                            snapshot.id
-                          );
-                          if (token.ok) {
-                            window.open(
-                              Api.backendUrl +
-                                "misc/download?token=" +
-                                token.ok,
-                              "_blank"
+            <Column flexGrow={10}>
+              <HeaderCell>
+                <MoreIcon />
+              </HeaderCell>
+              <Cell>
+                {(rawData) => {
+                  const snapshot = rawData as Snapshot;
+                  return (
+                    <div style={{ marginTop: "-3px" }}>
+                      <ButtonToolbar>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            location.href =
+                              "/editor?viewing-snapshot=" + String(snapshot.id);
+                          }}
+                        >
+                          {t("snapshot-list-view")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            const token = await Api.getSnapshotDownloadToken(
+                              snapshot.id
                             );
-                          } else {
-                            //TODO: error handling
-                          }
-                        }}
-                      >
-                        {t("snapshot-list-download")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => openDeleteConfirmation(snapshot.id)}
-                      >
-                        {t("snapshot-list-delete")}
-                      </Button>
-                    </ButtonToolbar>
-                  </div>
-                );
-              }}
-            </Cell>
-          </Column>
-        </Table>
+                            if (token.ok) {
+                              window.open(
+                                Api.backendUrl +
+                                  "misc/download?token=" +
+                                  token.ok,
+                                "_blank"
+                              );
+                            } else {
+                              //TODO: error handling
+                            }
+                          }}
+                        >
+                          {t("snapshot-list-download")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => openDeleteConfirmation(snapshot.id)}
+                        >
+                          {t("snapshot-list-delete")}
+                        </Button>
+                      </ButtonToolbar>
+                    </div>
+                  );
+                }}
+              </Cell>
+            </Column>
+          </Table>
+          <hr />
+          <Pagination
+            layout={["total", "-", "pager", "skip"]}
+            size={"xs"}
+            prev={true}
+            next={true}
+            first={true}
+            last={true}
+            limit={10}
+            total={snapshotList.numberOfSnapshots}
+            maxButtons={4}
+            activePage={snapshotListState.currentPage}
+            onChangePage={(page) => {
+              setSnapshotListState({
+                currentPage: page,
+              });
+            }}
+          />
+        </div>
       );
     }
   };
@@ -227,7 +268,6 @@ function DashboardSnapshot() {
             <span>{t("snapshot-list-title")}</span>
             <IconButton
               icon={<PlusIcon />}
-              appearance="ghost"
               onClick={() => {
                 setUploadDialogState({
                   uploadDate: null,
