@@ -11,7 +11,6 @@ import {
   Content,
   Divider,
   Loader,
-  Message,
 } from "rsuite";
 import "./Home.css";
 import DashboardMain from "./DashboardMain";
