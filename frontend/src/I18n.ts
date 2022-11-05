@@ -29,7 +29,7 @@ i18n
             "home-editor-title": "Editor",
             "home-editor-desc":
               "A tool for visualizing and editing the data of Fog of World App.",
-            "home-time-machine-title": "Time Machine (Coming soon)",
+            "home-time-machine-title": "Time Machine (beta)",
             "home-time-machine-desc":
               "A service for backup and preserve history of the data of Fog of World App.",
             "add-data-source": "Add data source",
@@ -93,7 +93,7 @@ i18n
             "home-main-title-desc": "世界迷雾 的第三方扩展工具",
             "home-editor-title": "编辑器",
             "home-editor-desc": "世界迷雾数据的可视化编辑工具。",
-            "home-time-machine-title": "时光机 (即将上线)",
+            "home-time-machine-title": "时光机 (beta)",
             "home-time-machine-desc": "世界迷雾数据快照及历史数据管理服务。",
             "add-data-source": "添加数据源",
             "edit-data-source": "编辑数据源",
