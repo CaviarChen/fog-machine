@@ -173,14 +173,6 @@ function Home() {
           return (
             <>
               <h3>{t("login-main-title")}</h3>
-              <Message
-                showIcon
-                type="warning"
-                header={t("login-warning-title")}
-                style={{ marginTop: "1vh" }}
-              >
-                {t("login-warning-text")}
-              </Message>
               <div style={{ marginTop: "8vh" }}></div>
               <div
                 style={{

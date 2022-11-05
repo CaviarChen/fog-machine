@@ -401,7 +401,7 @@ function DashboardMain() {
 
             {editModelState.mode == "create" && (
               <Message showIcon type={"info"} header={t("data-disclaimer")}>
-                TODO
+                {t("data-disclaimer-content")}
               </Message>
             )}
 
