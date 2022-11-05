@@ -194,7 +194,7 @@ function Home() {
                     location.href = Api.backendUrl + "user/sso/github";
                   }}
                 >
-                  <GithubIcon style={{ fontSize: "2em" }} />{" "}
+                  <GithubIcon style={{ fontSize: "2em" }} />
                   {t("login-main-github")}
                 </Button>
               </div>
