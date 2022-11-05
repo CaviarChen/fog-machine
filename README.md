@@ -1,62 +1,49 @@
 # Fog Machine
 
-**Note:** We are actively working on Fog Machine 2. Things changed a lot and this README is mainly for the Fog Machine editor which is under folder `./editor`. We'll update this README shortly.
+**Fog Machine** is a 3rd party extension tool for the app [Fog of World](https://fogofworld.app/en/). It contains the following components:
+- Editor: A tool for visualizing and editing Fog of World data.
+- Time Machine: A service for snapshotting and preserving history of Fog of World data.
 
+[Use it directly](https://fogmachine.8bits.io/)
 
-Fog Machine is a web tool for visualizing and editing the data of [_Fog of World_](https://fogofworld.app/) App. Currently, it supports:
-
-- import and visualize FoW data
-- delete tracks
-- export data (if you delete any tracks, you need to reinstall your FoW App first, and then sync with modified data.)
-
-You may use fog machine at [https://fogmachine.8bits.io/](https://fogmachine.8bits.io/)
-
-## Examples
-
-![Demo Image (New York)](.github/landscape.png)
-![Demo Image (Edit)](.github/edit.png)
-
-## Security, Privacy, and Consistency
-
-Fog Machine is an open-source static web application. That means all your data stays in your web browser and you can audit our code to verify this.
-
-We render and edit your data at the same resolution as the original file and we'll recompute the checksum when you export. The file exported by Fog Machine should be consistent with the file handled by FoW App.
-
-## Why original FoW App does not support deleting tracks?
-
-By reverse engineering, we found the sync data of FoW 2 contains no version info. Whenever App syncs, it takes a union of cloud data and the local data -- in other words, you can only **add** tracks to the App's internal storage through syncing.
-
-Also because of this, if you delete any track using our tool, you need to reinitialize your FoW App (clean up its internal storage) before syncing with modified data.
-
-# Contributing
-
-PRs are welcomed, and in particular, we are expecting the following features:
-
-- more language support
-- adding tracks (import gpx, etc.)
-
-To understand the internal sync format of FoW App, you may refer to [Fog-of-World-Data-Parser](https://github.com/CaviarChen/Fog-of-World-Data-Parser) project.
+More background story about Fog Machine project can be found on [my blog](https://www.zijun.dev/en/tags/fog-of-world/).
 
 ---
+**迷雾机器** 是 [世界迷雾APP](https://fogofworld.app/zh-hans/) 的第三方扩展工具。它包含如下组件：
+- 编辑器: 世界迷雾数据的可视化编辑工具。
+- 时光机: 世界迷雾数据快照及历史数据管理服务。
 
-Before running FogMachine, you need to have a Mapbox access token. You may register a token at [Mapbox Docs](https://docs.mapbox.com/help/getting-started/access-tokens/), then save the it to `.env.local` file at the repo's root directory. You may refer to `.env.local.example` file as an example.
+[直接使用](https://fogmachine.8bits.io/)
 
-Install required dependency and run the web App:
+更多有关迷雾机器项目的背景故事可以在[我的博客](https://www.zijun.dev/zh/tags/fog-of-world/)上找到。
 
-```bash
-yarn install
-yarn start
+## Screenshot
+---
+<!-- TODO -->
+![Editor Screenshot (New York)](.github/landscape.png)
+
+## Disclaimer
+---
+As a free and open source service, it comes with no warranties, use at your own risk.
+Time Machine will collect and save your Fog of World data. However Editor is fully offline and can be used without Time Machine.
+
+## Project Setup 
+---
+
+Folder structure:
+```c
+.
+├── editor   // frontend for Editor
+├── frontend // frontend for everything else (home page + Time Machine)
+└── server   // backend for everything (Time Machine)
 ```
 
-By default, Fog Machine will be hosted at `http://localhost:3000`.
+For all parts, you need to set up environment variable correctly before running it. You could use `.env.local.example` file as an example and rename it to `.env.local`.
 
-Linter support:
+For frontend parts, we are using `yarn`. You can use `yarn install` to install the required dependencies and use `yarn start` to run it. You might also find `yarn run cicheck` and `yarn run autofix` useful.
 
-```bash
-yarn run cicheck
-yarn run autofix
-```
+For backend parts, we are using `cargo`. You can use `cargo run` to run it.
 
-# License
-
-Fog Machine is available under the [MIT License](https://opensource.org/licenses/MIT).
+## Contributing
+---
+We ❤️ contributions from the open-source community! If you want to contribute to this project, you can look out for issues you'd like or create new issue.

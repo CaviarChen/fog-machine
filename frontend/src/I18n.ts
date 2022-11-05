@@ -28,10 +28,10 @@ i18n
               "A 3rd party extension tool for the app Fog of World",
             "home-editor-title": "Editor",
             "home-editor-desc":
-              "A tool for visualizing and editing the data of Fog of World App.",
+              "A tool for visualizing and editing Fog of World data",
             "home-time-machine-title": "Time Machine (beta)",
             "home-time-machine-desc":
-              "A service for backup and preserve history of the data of Fog of World App.",
+              "A service for snapshotting and preserving history of Fog of World data",
             "add-data-source": "Add data source",
             "edit-data-source": "Edit data source",
             "data-source-title": "Data source",
