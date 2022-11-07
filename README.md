@@ -46,4 +46,4 @@ For backend parts, we are using `cargo`. You can use `cargo run` to run it.
 
 ## Contributing
 ---
-We ❤️ contributions from the open-source community! If you want to contribute to this project, you can look out for issues you'd like or create new issue.
+We ❤️ contributions from the open-source community! If you want to contribute to this project, you can look out for issues you'd like or create new issues.
