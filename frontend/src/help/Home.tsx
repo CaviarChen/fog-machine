@@ -31,7 +31,7 @@ function Home() {
               </p>
               <img
                 style={{ width: "50%" }}
-                src={require("./images/image9.png")}
+                src={require("./images/image9.jpg")}
               />
               <p>
                 Getting the share link of the “Fog of World” folder on OneDrive.
@@ -49,12 +49,12 @@ function Home() {
 
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image3.png")}
+                    src={require("./images/image3.jpg")}
                   />
                   <br />
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image8.png")}
+                    src={require("./images/image8.jpg")}
                   />
                 </Panel>
                 <Panel header="Get from OneDrive mobile app">
@@ -65,12 +65,12 @@ function Home() {
 
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image12.png")}
+                    src={require("./images/image12.jpg")}
                   />
                   <br />
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image13.png")}
+                    src={require("./images/image13.jpg")}
                   />
                 </Panel>
                 <Panel header="Get from Windows">
@@ -81,12 +81,12 @@ function Home() {
 
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image2.png")}
+                    src={require("./images/image2.jpg")}
                   />
                   <br />
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image11.png")}
+                    src={require("./images/image11.jpg")}
                   />
                 </Panel>
               </PanelGroup>
@@ -106,7 +106,7 @@ function Home() {
               <p>确保你的世界迷雾 app 与 OneDrive 同步且打开了自动同步。</p>
               <img
                 style={{ width: "50%" }}
-                src={require("./images/image1.png")}
+                src={require("./images/image1.jpg")}
               />
               <p>
                 从OneDrive上取得 “Fog of
@@ -120,12 +120,12 @@ function Home() {
 
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image10.png")}
+                    src={require("./images/image10.jpg")}
                   />
                   <br />
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image6.png")}
+                    src={require("./images/image6.jpg")}
                   />
                 </Panel>
                 <Panel header="从 OneDrive 手机端获取共享链接">
@@ -133,12 +133,12 @@ function Home() {
 
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image4.png")}
+                    src={require("./images/image4.jpg")}
                   />
                   <br />
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image14.png")}
+                    src={require("./images/image14.jpg")}
                   />
                 </Panel>
                 <Panel header="从 Windows 获取共享链接">
@@ -146,12 +146,12 @@ function Home() {
 
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image7.png")}
+                    src={require("./images/image7.jpg")}
                   />
                   <br />
                   <img
                     style={{ width: "50%" }}
-                    src={require("./images/image5.png")}
+                    src={require("./images/image5.jpg")}
                   />
                 </Panel>
               </PanelGroup>
