@@ -18,18 +18,16 @@ More background story about Fog Machine project can be found on [my blog](https:
 更多有关迷雾机器项目的背景故事可以在[我的博客](https://www.zijun.dev/zh/tags/fog-of-world/)上找到。
 
 ## Screenshot
----
-<!-- TODO -->
+![Home Page](.github/home-page.png)
 ![Editor Screenshot (New York)](.github/landscape.png)
+![Time Machine](.github/timemachine.png)
+![Time Machine Viewer](.github/timemachine-viewer.png)
 
 ## Disclaimer
----
 As a free and open source service, it comes with no warranties, use at your own risk.
 Time Machine will collect and save your Fog of World data. However Editor is fully offline and can be used without Time Machine.
 
 ## Project Setup 
----
-
 Folder structure:
 ```c
 .
@@ -45,5 +43,4 @@ For frontend parts, we are using `yarn`. You can use `yarn install` to install t
 For backend parts, we are using `cargo`. You can use `cargo run` to run it.
 
 ## Contributing
----
 We ❤️ contributions from the open-source community! If you want to contribute to this project, you can look out for issues you'd like or create new issues.
