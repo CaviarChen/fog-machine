@@ -356,7 +356,7 @@ function DashboardMain() {
                 <Form.Control name="shareLink" />
               </InputGroup>
               <a
-                style={{ textAlign: "right", display:"block" }}
+                style={{ textAlign: "right", display: "block" }}
                 target="_blank"
                 href="/help"
               >
