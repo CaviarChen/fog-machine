@@ -28,10 +28,10 @@ i18n
               "A 3rd party extension tool for the app Fog of World",
             "home-editor-title": "Editor",
             "home-editor-desc":
-              "A tool for visualizing and editing the data of Fog of World App.",
-            "home-time-machine-title": "Time Machine (Coming soon)",
+              "A tool for visualizing and editing Fog of World data",
+            "home-time-machine-title": "Time Machine (beta)",
             "home-time-machine-desc":
-              "A service for backup and preserve history of the data of Fog of World App.",
+              "A service for snapshotting and preserving history of Fog of World data",
             "add-data-source": "Add data source",
             "edit-data-source": "Edit data source",
             "data-source-title": "Data source",
@@ -64,12 +64,11 @@ i18n
             "sync-button-view-Log": "View Log",
             "sync-button-edit": "Edit",
             "data-disclaimer": "Disclaimer",
+            "data-disclaimer-content":
+              'By doing this, you are allowing "Fog Machine" to read and save your "Fog of World" data. We are trying our best to make sure your data is safe and secure, but as a free and open source service, it comes with no warranties, use at your own risk.',
             "data-form-submit": "Submit",
             "data-form-delete": "Delete",
             "login-main-title": "Login",
-            "login-warning-title": "Warning",
-            "login-warning-text":
-              "This service is in alpha testing. Use it at your own risk.",
             "login-main-github": "Sign in with Github",
             "snapshot-list-title": "Snapshots",
             "snapshot-list-date": "Date",
@@ -93,7 +92,7 @@ i18n
             "home-main-title-desc": "世界迷雾 的第三方扩展工具",
             "home-editor-title": "编辑器",
             "home-editor-desc": "世界迷雾数据的可视化编辑工具。",
-            "home-time-machine-title": "时光机 (即将上线)",
+            "home-time-machine-title": "时光机 (beta)",
             "home-time-machine-desc": "世界迷雾数据快照及历史数据管理服务。",
             "add-data-source": "添加数据源",
             "edit-data-source": "编辑数据源",
@@ -124,12 +123,11 @@ i18n
             "sync-button-view-Log": "日志",
             "sync-button-edit": "编辑",
             "data-disclaimer": "免责声明",
+            "data-disclaimer-content":
+              '此操作将授予"迷雾机器"读取并储存你的"世界迷雾"数据的权限。我们会竭尽全力保障你的数据安全及隐私，但是作为一个免费的开源服务，我们无法提供担保，请自负风险。',
             "data-form-submit": "提交",
             "data-form-delete": "删除",
             "login-main-title": "登录",
-            "login-warning-title": "警告",
-            "login-warning-text":
-              "该服务正在进行alpha测试。使用时请自行承担风险。",
             "login-main-github": "使用Github登录",
             "snapshot-list-title": "快照列表",
             "snapshot-list-date": "时间",

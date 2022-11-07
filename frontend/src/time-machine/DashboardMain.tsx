@@ -29,6 +29,155 @@ import HelpOutlineIcon from "@rsuite/icons/HelpOutline";
 import DashboardSnapshot from "./DashboardSnapshot";
 import { useTranslation } from "react-i18next";
 
+type EditModelState = {
+  mode: "edit" | "create";
+  shareLink?: string;
+  interval?: number;
+};
+
+const MainStatusPanelContent: React.FC<{
+  isLoading: boolean;
+  setIsLoading: (isLoading: boolean) => void;
+  snapshotTask: SnapshotTask | null;
+  setOpenEditModel: (isOpen: boolean) => void;
+  setEditModelState: (state: EditModelState) => void;
+  loadData: () => Promise<void>;
+}> = ({
+  isLoading,
+  setIsLoading,
+  snapshotTask,
+  setOpenEditModel,
+  setEditModelState,
+  loadData,
+}) => {
+  const { t } = useTranslation();
+
+  if (isLoading) {
+    return <Placeholder.Paragraph />;
+  } else {
+    if (!snapshotTask) {
+      return (
+        <div
+          style={{
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <IconButton
+            icon={<AddOutlineIcon />}
+            appearance="primary"
+            color="green"
+            placement="left"
+            onClick={() => {
+              setOpenEditModel(true);
+              setEditModelState({ mode: "create" });
+            }}
+          >
+            {t("add-data-source")}
+          </IconButton>
+        </div>
+      );
+    } else {
+      let StatusIcon = PlayOutlineIcon;
+      let statusIconColor = "#53B13A";
+      let statusText = t("sync-status-running");
+      const nextSyncMsg =
+        t("sync-next-sync-message") +
+        (snapshotTask.lastSuccessSync
+          ? moment(snapshotTask.lastSuccessSync).fromNow()
+          : t("sync-next-sync-message-none"));
+      if (snapshotTask.status == "Paused") {
+        StatusIcon = PauseOutlineIcon;
+        statusIconColor = "#575657";
+        statusText = t("sync-status-paused");
+      } else if (snapshotTask.status == "Stopped") {
+        StatusIcon = CloseOutlineIcon;
+        statusIconColor = "#D0342C";
+        statusText = t("sync-status-stopped");
+      }
+
+      const updateStatus = async (status: "Running" | "Paused") => {
+        setIsLoading(true);
+        const res = await Api.updateSnapshotTask(null, status, null);
+        if (res.ok != "ok") {
+          console.log(res);
+        }
+        await loadData();
+      };
+
+      return (
+        <Stack spacing={6} alignItems="flex-start">
+          <>
+            <StatusIcon
+              style={{
+                fontSize: "4em",
+                color: statusIconColor,
+                marginTop: "10px",
+                marginRight: "20px",
+              }}
+            />
+          </>
+          <>
+            <Stack direction="column" alignItems="flex-start">
+              <Stack spacing={12} direction="row">
+                <h3>{statusText}</h3>
+                <a href={snapshotTask.source.OneDrive.shareUrl} target="_blank">
+                  <Tag color="blue">OneDrive</Tag>
+                </a>
+              </Stack>
+              <>{nextSyncMsg}</>
+              <div style={{ marginTop: "20px" }}>
+                <ButtonToolbar>
+                  {snapshotTask.status == "Running" ? (
+                    <IconButton
+                      icon={<PauseIcon />}
+                      placement="left"
+                      onClick={() => {
+                        updateStatus("Paused");
+                      }}
+                    >
+                      {t("sync-button-pause")}
+                    </IconButton>
+                  ) : (
+                    <IconButton
+                      icon={<PlayIcon />}
+                      placement="right"
+                      onClick={() => {
+                        updateStatus("Running");
+                      }}
+                    >
+                      {t("sync-button-start")}
+                    </IconButton>
+                  )}
+                  <IconButton disabled icon={<FileTextIcon />} placement="left">
+                    {t("sync-button-view-Log")}
+                  </IconButton>
+                  <IconButton
+                    icon={<EditIcon />}
+                    placement="left"
+                    onClick={() => {
+                      setOpenEditModel(true);
+                      setEditModelState({
+                        mode: "edit",
+                        shareLink: snapshotTask.source.OneDrive.shareUrl,
+                        interval: snapshotTask.interval,
+                      });
+                    }}
+                  >
+                    {t("sync-button-edit")}
+                  </IconButton>
+                </ButtonToolbar>
+              </div>
+            </Stack>
+          </>
+        </Stack>
+      );
+    }
+  }
+};
+
 function DashboardMain() {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -48,144 +197,11 @@ function DashboardMain() {
     loadData();
   }, []);
 
-  const [editModelState, setEditModelState] = useState<{
-    mode: "edit" | "create";
-    shareLink?: string;
-    interval?: number;
-  }>({ mode: "create" });
+  const [editModelState, setEditModelState] = useState<EditModelState>({
+    mode: "create",
+  });
 
   const [openEditModel, setOpenEditModel] = useState(false);
-
-  const renderDetail = () => {
-    if (isLoading) {
-      return <Placeholder.Paragraph />;
-    } else {
-      if (!snapshotTask) {
-        return (
-          <div
-            style={{
-              height: "100%",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <IconButton
-              icon={<AddOutlineIcon />}
-              appearance="primary"
-              color="green"
-              placement="left"
-              onClick={() => {
-                setOpenEditModel(true);
-                setEditModelState({ mode: "create" });
-              }}
-            >
-              {t("add-data-source")}
-            </IconButton>
-          </div>
-        );
-      } else {
-        let StatusIcon = PlayOutlineIcon;
-        let statusIconColor = "#53B13A";
-        let statusText = t("sync-status-running");
-        /* TODO: moment i18n */
-        const nextSyncMsg =
-          t("sync-next-sync-message") +
-          (snapshotTask.lastSuccessSync
-            ? moment(snapshotTask.lastSuccessSync).fromNow()
-            : t("sync-next-sync-message-none"));
-        if (snapshotTask.status == "Paused") {
-          StatusIcon = PauseOutlineIcon;
-          statusIconColor = "#575657";
-          statusText = t("sync-status-paused");
-        } else if (snapshotTask.status == "Stopped") {
-          StatusIcon = CloseOutlineIcon;
-          statusIconColor = "#D0342C";
-          statusText = t("sync-status-stopped");
-        }
-
-        const updateStatus = async (status: "Running" | "Paused") => {
-          setIsLoading(true);
-          const res = await Api.updateSnapshotTask(null, status, null);
-          if (res.ok != "ok") {
-            console.log(res);
-          }
-          await loadData();
-        };
-
-        return (
-          <Stack spacing={6} alignItems="flex-start">
-            <>
-              <StatusIcon
-                style={{
-                  fontSize: "4em",
-                  color: statusIconColor,
-                  marginTop: "10px",
-                  marginRight: "20px",
-                }}
-              />
-            </>
-            <>
-              <Stack direction="column" alignItems="flex-start">
-                <Stack spacing={12} direction="row">
-                  <h3>{statusText}</h3>
-                  <a
-                    href={snapshotTask.source.OneDrive.shareUrl}
-                    target="_blank"
-                  >
-                    <Tag color="blue">OneDrive</Tag>
-                  </a>
-                </Stack>
-                <>{nextSyncMsg}</>
-                <div style={{ marginTop: "20px" }}>
-                  <ButtonToolbar>
-                    {snapshotTask.status == "Running" ? (
-                      <IconButton
-                        icon={<PauseIcon />}
-                        placement="left"
-                        onClick={() => {
-                          updateStatus("Paused");
-                        }}
-                      >
-                        {t("sync-button-pause")}
-                      </IconButton>
-                    ) : (
-                      <IconButton
-                        icon={<PlayIcon />}
-                        placement="right"
-                        onClick={() => {
-                          updateStatus("Running");
-                        }}
-                      >
-                        {t("sync-button-start")}
-                      </IconButton>
-                    )}
-                    <IconButton icon={<FileTextIcon />} placement="left">
-                      {t("sync-button-view-Log")}
-                    </IconButton>
-                    <IconButton
-                      icon={<EditIcon />}
-                      placement="left"
-                      onClick={() => {
-                        setOpenEditModel(true);
-                        setEditModelState({
-                          mode: "edit",
-                          shareLink: snapshotTask.source.OneDrive.shareUrl,
-                          interval: snapshotTask.interval,
-                        });
-                      }}
-                    >
-                      {t("sync-button-edit")}
-                    </IconButton>
-                  </ButtonToolbar>
-                </div>
-              </Stack>
-            </>
-          </Stack>
-        );
-      }
-    }
-  };
 
   const allowedInterval = [
     6 * 60,
@@ -313,7 +329,18 @@ function DashboardMain() {
   return (
     <>
       <Panel bordered>
-        <div style={{ height: "120px" }}>{renderDetail()}</div>
+        <div style={{ height: "120px" }}>
+          <MainStatusPanelContent
+            {...{
+              isLoading,
+              setIsLoading,
+              snapshotTask,
+              setOpenEditModel,
+              setEditModelState,
+              loadData,
+            }}
+          />
+        </div>
       </Panel>
       <DashboardSnapshot />
 
@@ -374,7 +401,7 @@ function DashboardMain() {
 
             {editModelState.mode == "create" && (
               <Message showIcon type={"info"} header={t("data-disclaimer")}>
-                TODO
+                {t("data-disclaimer-content")}
               </Message>
             )}
 

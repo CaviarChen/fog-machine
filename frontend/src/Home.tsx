@@ -19,8 +19,7 @@ function Item(
   title: string,
   Icon: React.FC<IconProps>,
   description: string,
-  onClick: () => void,
-  enable: boolean
+  onClick: () => void
 ) {
   const [hover, setHover] = useState(false);
   return (
@@ -30,19 +29,13 @@ function Item(
       bodyFill
       className="home-item"
       onClick={() => {
-        if (enable) {
-          onClick();
-        }
+        onClick();
       }}
       onMouseEnter={() => {
-        if (enable) {
-          setHover(true);
-        }
+        setHover(true);
       }}
       onMouseLeave={() => {
-        if (enable) {
-          setHover(false);
-        }
+        setHover(false);
       }}
     >
       <Stack spacing={6}>
@@ -91,24 +84,16 @@ function Home() {
             </ButtonGroup>
           </div>
 
-          {Item(
-            t("home-editor-title"),
-            EditIcon,
-            t("home-editor-desc"),
-            () => {
-              location.href = "/editor";
-            },
-            true
-          )}
+          {Item(t("home-editor-title"), EditIcon, t("home-editor-desc"), () => {
+            location.href = "/editor";
+          })}
           {Item(
             t("home-time-machine-title"),
             HistoryIcon,
             t("home-time-machine-desc"),
             () => {
               navigate("/time-machine", { replace: false });
-            },
-            // hide this before public beta
-            false
+            }
           )}
         </div>
       </Content>
