@@ -355,15 +355,14 @@ function DashboardMain() {
                 <InputGroup.Addon>{t("data-share-link")}</InputGroup.Addon>
                 <Form.Control name="shareLink" />
               </InputGroup>
-              <div
-                style={{ textAlign: "right", cursor: "pointer" }}
-                onClick={() => {
-                  window.open("/help");
-                }}
+              <a
+                style={{ textAlign: "right", display:"block" }}
+                target="_blank"
+                href="/help"
               >
                 <HelpOutlineIcon style={{ fontSize: "1.1em" }} />
                 {t("data-share-link-help")}
-              </div>
+              </a>
             </Form.Group>
             <Form.Group controlId="group-interval">
               <Form.ControlLabel>{t("data-sync-interval")}</Form.ControlLabel>

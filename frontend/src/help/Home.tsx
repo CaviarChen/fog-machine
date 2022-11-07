@@ -22,7 +22,7 @@ function Home() {
   const EnglishContent = () => {
     return (
       <PanelGroup accordion bordered>
-        <Panel header="How to get sharing links" defaultExpanded>
+        <Panel header="How to get sharing links (OneDrive)" defaultExpanded>
           <Container>
             <Content>
               <p>
@@ -100,7 +100,7 @@ function Home() {
   const ChinaContent = () => {
     return (
       <PanelGroup accordion bordered>
-        <Panel header="如何获取共享链接" defaultExpanded>
+        <Panel header="如何获取共享链接 (OneDrive)" defaultExpanded>
           <Container>
             <Content>
               <p>确保你的世界迷雾 app 与 OneDrive 同步且打开了自动同步。</p>

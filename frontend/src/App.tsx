@@ -6,7 +6,7 @@ import zhCN from "rsuite/locales/zh_CN";
 import enUS from "rsuite/locales/en_US";
 import { CustomProvider } from "rsuite";
 import { useTranslation } from "react-i18next";
-import HlepHome from "./help/Home";
+import HelpHome from "./help/Home";
 
 function GithubSsoRedirect() {
   const [searchParams, _] = useSearchParams();
@@ -23,7 +23,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/time-machine" element={<TimeMachineHome />} />
-        <Route path="/help" element={<HlepHome />} />
+        <Route path="/help" element={<HelpHome />} />
         {/* github sso */}
         <Route path="/callback/github" element={<GithubSsoRedirect />} />
       </Routes>
