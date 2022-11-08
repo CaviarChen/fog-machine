@@ -18,7 +18,7 @@ function GithubSsoRedirect() {
 function App() {
   const { i18n } = useTranslation();
   return (
-    <CustomProvider locale={i18n.language == "zh" ? zhCN : enUS}>
+    <CustomProvider locale={i18n.language.startsWith("zh") ? zhCN : enUS}>
       <GithubCorner />
       <Routes>
         <Route path="/" element={<Home />} />

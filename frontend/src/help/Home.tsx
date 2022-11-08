@@ -13,7 +13,11 @@ import "./Home.css";
 const EnContent = () => {
   return (
     <PanelGroup accordion bordered>
-      <Panel header="How to get sharing links (OneDrive)" defaultExpanded>
+      <Panel
+        header="How to get sharing links (OneDrive)"
+        defaultExpanded
+        shaded
+      >
         <Container>
           <Content>
             <p>
@@ -177,7 +181,7 @@ function Home() {
 
           <Divider style={{ marginTop: "1vh" }} />
 
-          {i18n.language == "zh" ? ZhContent() : EnContent()}
+          {i18n.language.startsWith("zh") ? ZhContent() : EnContent()}
         </div>
       </Content>
     </Container>
