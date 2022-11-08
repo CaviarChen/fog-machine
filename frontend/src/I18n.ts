@@ -4,8 +4,8 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import moment from "moment";
 import "moment/locale/zh-cn";
 
-function setMomentLanguage(lng: string) {
-  moment.locale(lng.startsWith("zh") ? "zh-ch" : "en");
+function setMomentLanguage() {
+  moment.locale(i18n.resolvedLanguage == "zh" ? "zh-ch" : "en");
 }
 
 i18n.on("languageChanged", setMomentLanguage);

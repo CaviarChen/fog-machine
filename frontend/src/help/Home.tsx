@@ -181,7 +181,7 @@ function Home() {
 
           <Divider style={{ marginTop: "1vh" }} />
 
-          {i18n.language.startsWith("zh") ? ZhContent() : EnContent()}
+          {i18n.resolvedLanguage == "zh" ? ZhContent() : EnContent()}
         </div>
       </Content>
     </Container>
