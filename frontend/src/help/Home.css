@@ -1,3 +1,6 @@
 p {
-  font-size: 1.2em;
+  font-size: 17px;
+}
+.rs-panel-header{
+  font-size: 18px!important;
 }
