@@ -25,8 +25,8 @@ const EnContent = () => {
               auto sync is on.
             </p>
             <img
-              style={{ width: "50%" }}
-              src={require("./images/image9.jpg")}
+              className={"img-onedrive"}
+              src={require("./images/help-onedrive-en-1.jpg")}
             />
             <p>
               Getting the share link of the “Fog of World” folder on OneDrive.
@@ -43,13 +43,13 @@ const EnContent = () => {
                 </p>
 
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image3.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-en-2.jpg")}
                 />
                 <br />
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image8.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-en-3.jpg")}
                 />
               </Panel>
               <Panel header="Get from OneDrive mobile app">
@@ -59,13 +59,13 @@ const EnContent = () => {
                 </p>
 
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image12.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-en-4.jpg")}
                 />
                 <br />
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image13.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-en-5.jpg")}
                 />
               </Panel>
               <Panel header="Get from Windows">
@@ -75,13 +75,13 @@ const EnContent = () => {
                 </p>
 
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image2.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-en-6.jpg")}
                 />
                 <br />
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image11.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-en-7.jpg")}
                 />
               </Panel>
             </PanelGroup>
@@ -100,8 +100,8 @@ const ZhContent = () => {
           <Content>
             <p>确保你的世界迷雾 app 与 OneDrive 同步且打开了自动同步。</p>
             <img
-              style={{ width: "50%" }}
-              src={require("./images/image1.jpg")}
+              className={"img-onedrive"}
+              src={require("./images/help-onedrive-zh-1.jpg")}
             />
             <p>
               从OneDrive上取得 “Fog of
@@ -114,39 +114,39 @@ const ZhContent = () => {
                 <p>在 “应用” 目录中找到 “Fog of World” 目录</p>
 
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image10.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-zh-2.jpg")}
                 />
                 <br />
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image6.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-zh-3.jpg")}
                 />
               </Panel>
               <Panel header="从 OneDrive 手机端获取共享链接">
                 <p>在 “应用” 目录中找到 “Fog of World” 目录</p>
 
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image4.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-zh-4.jpg")}
                 />
                 <br />
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image14.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-zh-5.jpg")}
                 />
               </Panel>
               <Panel header="从 Windows 获取共享链接">
                 <p>在 “应用” 目录中找到 “Fog of World” 目录</p>
 
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image7.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-zh-6.jpg")}
                 />
                 <br />
                 <img
-                  style={{ width: "50%" }}
-                  src={require("./images/image5.jpg")}
+                  className={"img-onedrive"}
+                  src={require("./images/help-onedrive-zh-7.jpg")}
                 />
               </Panel>
             </PanelGroup>
