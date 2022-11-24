@@ -159,49 +159,60 @@ async fn snapshot_internal(
             let link_for_sync_folder = onedrive_find_sync_folder_link(share_url)
                 .await?
                 .ok_or_else(|| anyhow!("missing sync folder"))?;
-            let resp = reqwest::get(onedrive_api_of_link(&link_for_sync_folder) + "/root/children")
-                .await?
-                .error_for_status()?
-                .json::<serde_json::Value>()
-                .await?;
             let time = Utc::now();
 
             let mut files = Vec::new();
             let mut total_size: u64 = 0;
-            for child in resp["value"]
-                .as_array()
-                .ok_or_else(|| anyhow!("invalid api response"))?
-            {
-                let name = child["name"]
-                    .as_str()
-                    .ok_or_else(|| anyhow!("invalid api response"))?;
-                if name == "FoW-Sync-Lock" {
-                    return Ok(SnapshotResultInternal::Locked);
-                }
-                if child["file"].is_null() {
-                    logs.push(format!("unexpected folder: {}", name));
-                } else {
-                    let sha256_lowercase = child["file"]["hashes"]["sha256Hash"]
-                        .as_str()
-                        .ok_or_else(|| anyhow!("invalid api response"))?
-                        .to_lowercase();
-                    let download_url = child["@content.downloadUrl"]
-                        .as_str()
-                        .ok_or_else(|| anyhow!("invalid api response"))?;
-                    let file_size = child["size"]
-                        .as_i64()
-                        .ok_or_else(|| anyhow!("invalid api response"))?;
-                    match SyncFile::create_from_filename(name, &sha256_lowercase) {
-                        Err(_) => {
-                            logs.push(format!("unexpected file: {}", name));
-                        }
-                        Ok(sync_file) => {
-                            total_size += file_size as u64;
-                            files.push((sync_file, download_url));
+            let mut next_link =
+                Some(onedrive_api_of_link(&link_for_sync_folder) + "/root/children");
+            loop {
+                match &next_link {
+                    None => break,
+                    Some(current_link) => {
+                        let resp = reqwest::get(current_link)
+                            .await?
+                            .error_for_status()?
+                            .json::<serde_json::Value>()
+                            .await?;
+                        next_link = resp["@odata.nextLink"].as_str().map(str::to_string);
+                        for child in resp["value"]
+                            .as_array()
+                            .ok_or_else(|| anyhow!("invalid api response"))?
+                        {
+                            let name = child["name"]
+                                .as_str()
+                                .ok_or_else(|| anyhow!("invalid api response"))?;
+                            if name == "FoW-Sync-Lock" {
+                                return Ok(SnapshotResultInternal::Locked);
+                            }
+                            if child["file"].is_null() {
+                                logs.push(format!("unexpected folder: {}", name));
+                            } else {
+                                let sha256_lowercase = child["file"]["hashes"]["sha256Hash"]
+                                    .as_str()
+                                    .ok_or_else(|| anyhow!("invalid api response"))?
+                                    .to_lowercase();
+                                let download_url = child["@content.downloadUrl"]
+                                    .as_str()
+                                    .ok_or_else(|| anyhow!("invalid api response"))?;
+                                let file_size = child["size"]
+                                    .as_i64()
+                                    .ok_or_else(|| anyhow!("invalid api response"))?;
+                                match SyncFile::create_from_filename(name, &sha256_lowercase) {
+                                    Err(_) => {
+                                        logs.push(format!("unexpected file: {}", name));
+                                    }
+                                    Ok(sync_file) => {
+                                        total_size += file_size as u64;
+                                        files.push((sync_file, String::from(download_url)));
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
+
             // validate size
             if total_size > limit::SYNC_FILE_LIMIT_PER_SNAPSHOT {
                 return Err(anyhow!(
