@@ -1,0 +1,41 @@
+[package]
+name = "fog-machine-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace]
+members = [".", "entity", "migration"]
+
+[dependencies]
+tokio = { version = "1.19.2", features = ["full"] }
+serde = "1.0"
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["json"] }
+rocket = { version = "0.5.0-rc.2", features = ["json"] }
+envconfig = "0.10"
+dotenv = "0.15"
+anyhow = "1.0"
+entity = { path = "entity" }
+migration = { path = "migration" }
+async-trait = { version = "0.1" }
+chrono = "0.4"
+hmac = "0.12"
+sha2 = "0.10"
+jwt = "0.16"
+rand = "0.8.5"
+email_address = "0.2.1"
+# Change back to crates.io version when https://github.com/lawliet89/rocket_cors/pull/108 is published
+rocket_cors = { git = "https://github.com/lawliet89/rocket_cors.git", rev = "54fae070"  }
+base64 = "0.13.0"
+byte-unit = "4.0.14"
+tempfile = "3.3.0"
+md5 = "0.7.0"
+lazy_static = "1.4.0"
+zip = "0.6.2"
+endorphin = "0.1.9"
+log = "0.4"
+
+[dependencies.sea-orm-rocket]
+git = "https://github.com/SeaQL/sea-orm"

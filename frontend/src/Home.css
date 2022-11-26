@@ -1,0 +1,27 @@
+.home-body {
+  max-width: 768px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.home-title {
+  margin-top: 50px;
+  text-align: center;
+}
+
+.home-title h1 {
+  color: #000000;
+}
+
+.home-title h4 {
+  color: #888888;
+}
+
+.home-item {
+  display: inline-block;
+  width: 100%;
+  cursor: pointer;
+  margin-top: 2vh;
+}

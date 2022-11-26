@@ -1,24 +1,80 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Created by https://www.toptal.com/developers/gitignore/api/windows,macos,linux
+# Edit at https://www.toptal.com/developers/gitignore?templates=windows,macos,linux
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+### Linux ###
+*~
 
-# testing
-/coverage
+# temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
 
-# production
-/build
+# KDE directory preferences
+.directory
 
-# misc
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
+
+# .nfs files are created when an open file is removed but is still being accessed
+.nfs*
+
+### macOS ###
+# General
 .DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.AppleDouble
+.LSOverride
 
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.vscode/settings.json
+# Icon must end with two \r
+Icon
+
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+### macOS Patch ###
+# iCloud generated files
+*.icloud
+
+### Windows ###
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# End of https://www.toptal.com/developers/gitignore/api/windows,macos,linux
+
+build

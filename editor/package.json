@@ -1,0 +1,77 @@
+{
+  "name": "fog-machine-editor",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@craco/craco": "^6.2.0",
+    "@headlessui/react": "^1.4.1",
+    "@heroicons/react": "^1.0.4",
+    "@mapbox/mapbox-gl-draw": "^1.3.0",
+    "@mapbox/mapbox-gl-language": "^1.0.0",
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "@types/jest": "^26.0.15",
+    "@types/lodash": "^4.14.186",
+    "@types/mapbox-gl": "^2.4.1",
+    "@types/mousetrap": "^1.6.9",
+    "@types/node": "^12.0.0",
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "axios": "^0.27.2",
+    "deck.gl": "^8.5.7",
+    "i18next": "^21.3.3",
+    "i18next-browser-languagedetector": "^6.1.2",
+    "jszip": "^3.7.1",
+    "loadsh": "^0.0.4",
+    "mapbox-gl": "^2.4.1",
+    "moment": "^2.29.4",
+    "mousetrap": "^1.6.5",
+    "pako": "^2.0.4",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-dropzone": "^11.4.2",
+    "react-i18next": "^11.12.0",
+    "react-scripts": "5.0.0",
+    "ts-md5": "^1.3.1",
+    "typescript": "^4.7.4",
+    "web-vitals": "^1.0.1"
+  },
+  "scripts": {
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test",
+    "eject": "react-scripts eject",
+    "cicheck": "prettier --check . && eslint . --ext .js,.jsx,.ts,.tsx",
+    "autofix": "prettier --write . && eslint . --ext .js,.jsx,.ts,.tsx --fix"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/pako": "^1.0.2",
+    "@typescript-eslint/eslint-plugin": "^5.5.0",
+    "@typescript-eslint/parser": "^5.5.0",
+    "autoprefixer": "^10.4.2",
+    "eslint": "^8.19.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "postcss": "^8.4.5",
+    "prettier": "^2.7.1",
+    "tailwindcss": "^3.0.15"
+  }
+}
