@@ -362,7 +362,9 @@ export class MapRenderer {
     } else {
       mapboxCanvas.style.cursor = "";
       this.map?.dragPan.enable();
-      // this.map?.removeControl(this.mapglDraw);
+      if (this.map?.hasControl(this.mapglDraw)) {
+        this.map?.removeControl(this.mapglDraw);
+      }
     }
   }
 
