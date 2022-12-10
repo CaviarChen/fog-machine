@@ -142,17 +142,11 @@ export default function MyModal(props: Props): JSX.Element {
                 {t("import")}
               </Dialog.Title>
               <div className="mt-2">
-                <p className="text-sm text-gray-500">
-                  {t("import-dialog-description")
-                    .split("\n")
-                    .map((item) => {
-                      return (
-                        <>
-                          {" "}
-                          {item} <br />
-                        </>
-                      );
-                    })}
+                <p
+                  className="text-sm text-gray-500"
+                  style={{ whiteSpace: "pre-wrap" }}
+                >
+                  {t("import-dialog-description")}
                 </p>
               </div>
               <div className="pt-4">

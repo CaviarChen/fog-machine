@@ -112,17 +112,11 @@ function App(): JSX.Element {
                 {t_(msgboxState.title)}
               </Dialog.Title>
               <div className="mt-2">
-                <p className="text-sm text-gray-500">
-                  {t_(msgboxState.msg)
-                    .split("\n")
-                    .map((item) => {
-                      return (
-                        <>
-                          {" "}
-                          {item} <br />
-                        </>
-                      );
-                    })}
+                <p
+                  className="text-sm text-gray-500"
+                  style={{ whiteSpace: "pre-wrap" }}
+                >
+                  {t_(msgboxState.msg)}
                 </p>
               </div>
 
