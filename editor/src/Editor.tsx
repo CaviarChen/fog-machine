@@ -34,6 +34,8 @@ function Editor(props: Props): JSX.Element {
         canUndo: mapRenderer.historyManager.canUndo(),
       });
     });
+    props.setLoaded(true);
+
     return function cleanup() {
       mapRenderer.unregisterOnChangeCallback("editor");
     };
@@ -45,10 +47,10 @@ function Editor(props: Props): JSX.Element {
   Mousetrap.bind(["mod+shift+z"], (_) => {
     mapRenderer.redo();
   });
-  props.setLoaded(true);
 
   const toolButtons = [
     {
+      key: "undo",
       icon: iconUndo,
       clickable: historyStatus.canUndo,
       enabled: false,
@@ -57,6 +59,7 @@ function Editor(props: Props): JSX.Element {
       },
     },
     {
+      key: "redo",
       icon: iconRedo,
       clickable: historyStatus.canRedo,
       enabled: false,
@@ -66,6 +69,7 @@ function Editor(props: Props): JSX.Element {
     },
     null,
     {
+      key: "eraser",
       icon: iconEraserSolid,
       clickable: true,
       enabled: eraserMode,
@@ -99,6 +103,7 @@ function Editor(props: Props): JSX.Element {
         {toolButtons.map((toolButton) =>
           toolButton !== null ? (
             <button
+              key={toolButton.key}
               className={
                 "flex items-center justify-center mx-2 w-9 h-9 p-2 bg-white shadow rounded-lg hover:bg-gray-200 active:bg-gray-400" +
                 (toolButton.enabled ? " ring-4 ring-gray-700" : "") +
@@ -116,6 +121,7 @@ function Editor(props: Props): JSX.Element {
             </button>
           ) : (
             <div
+              key="|"
               className={
                 "flex items-center justify-center rounded mx-7 w-1 h-9 bg-black shadow"
               }
