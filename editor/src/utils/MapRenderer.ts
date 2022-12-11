@@ -113,6 +113,9 @@ export class MapRenderer {
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
     this.map.on("draw.create", this.handleDrawComplete.bind(this));
+    this.map.on("draw.modechange", (ev) => {
+      this.mapglDraw.changeMode("draw_line_string", {});
+    });
     this.setEraserMod(this.eraserMode);
     this.onChange();
   }
@@ -303,14 +306,6 @@ export class MapRenderer {
       }
     }
     this.mapglDraw.trash(); // clean up the user drawing
-    // TODO: solving this delay problem
-    setTimeout(
-      function (that) {
-        that.mapglDraw.changeMode("draw_line_string", {});
-      },
-      100,
-      this
-    );
   }
 
   setEraserMod(isActivated: boolean): void {
