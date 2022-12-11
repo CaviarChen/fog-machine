@@ -28,6 +28,12 @@ function isBboxOverlap(a: deckgl.Bbox, b: deckgl.Bbox) {
   );
 }
 
+export enum ControlMode {
+  View,
+  Eraser,
+  DrawLine,
+}
+
 export class MapRenderer {
   private static instance: MapRenderer | null = null;
   private map: mapboxgl.Map | null;
@@ -35,12 +41,10 @@ export class MapRenderer {
   public fogMap: fogMap.FogMap;
   public historyManager: HistoryManager;
   private loadedFogCanvases: { [key: string]: FogCanvas };
-  private eraserMode: boolean;
-  private paintMode: boolean;
+  private controlMode: ControlMode;
   private lineMode: boolean;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
   private mapglDraw: MapboxDraw;
-  private paintEnabled: boolean;
   private onChangeCallback: { [key: string]: () => void };
 
   private constructor() {
@@ -48,8 +52,7 @@ export class MapRenderer {
     this.deckgl = null;
     this.fogMap = fogMap.FogMap.empty;
     this.loadedFogCanvases = {};
-    this.eraserMode = false;
-    this.paintMode = false;
+    this.controlMode = ControlMode.View;
     this.lineMode = false;
     this.eraserArea = null;
     this.mapglDraw = new MapboxDraw({
@@ -78,7 +81,6 @@ export class MapRenderer {
         },
       ],
     });
-    this.paintEnabled = false;
     this.historyManager = new HistoryManager(this.fogMap);
     this.onChangeCallback = {};
   }
@@ -116,7 +118,7 @@ export class MapRenderer {
     this.map.on("draw.modechange", (ev) => {
       this.mapglDraw.changeMode("draw_line_string", {});
     });
-    this.setEraserMod(this.eraserMode);
+    this.setControlMode(this.controlMode);
     this.onChange();
   }
 
@@ -178,7 +180,7 @@ export class MapRenderer {
   }
 
   handleMouseClick(e: mapboxgl.MapMouseEvent): void {
-    if (this.eraserMode) {
+    if (this.controlMode === ControlMode.Eraser) {
       console.log(
         `A click event has occurred on a visible portion of the poi-label layer at ${e.lngLat}`
       );
@@ -229,7 +231,7 @@ export class MapRenderer {
   }
 
   handleMouseMove(e: mapboxgl.MapMouseEvent): void {
-    if (this.eraserMode && this.eraserArea) {
+    if (this.controlMode === ControlMode.Eraser && this.eraserArea) {
       const [startPoint, eraserSource] = this.eraserArea;
       const west = Math.min(e.lngLat.lng, startPoint.lng);
       const north = Math.max(e.lngLat.lat, startPoint.lat);
@@ -256,7 +258,7 @@ export class MapRenderer {
   }
 
   handleMouseRelease(e: mapboxgl.MapMouseEvent): void {
-    if (this.eraserMode && this.eraserArea) {
+    if (this.controlMode === ControlMode.Eraser && this.eraserArea) {
       const startPoint = this.eraserArea[0];
       const west = Math.min(e.lngLat.lng, startPoint.lng);
       const north = Math.max(e.lngLat.lat, startPoint.lat);
@@ -308,59 +310,50 @@ export class MapRenderer {
     this.mapglDraw.trash(); // clean up the user drawing
   }
 
-  setEraserMod(isActivated: boolean): void {
-    this.eraserMode = isActivated;
+  setControlMode(mode: ControlMode): void {
     const mapboxCanvas = this.map?.getCanvasContainer();
     if (!mapboxCanvas) {
       return;
     }
-    if (this.eraserMode) {
-      mapboxCanvas.style.cursor = "cell";
-      this.map?.dragPan.disable();
-    } else {
-      mapboxCanvas.style.cursor = "";
-      this.map?.dragPan.enable();
-      if (this.eraserArea) {
-        this.map?.removeLayer("eraser");
-        this.map?.removeLayer("eraser-outline");
-        this.map?.removeSource("eraser");
-        this.eraserArea = null;
-      }
-    }
-  }
 
-  setPaintMod(isActivated: boolean): void {
-    this.paintMode = isActivated;
-    const mapboxCanvas = this.map?.getCanvasContainer();
-    if (!mapboxCanvas) {
-      return;
+    // disable the current active mode
+    switch (this.controlMode) {
+      case ControlMode.View:
+        break;
+      case ControlMode.Eraser:
+        mapboxCanvas.style.cursor = "";
+        this.map?.dragPan.enable();
+        if (this.eraserArea) {
+          this.map?.removeLayer("eraser");
+          this.map?.removeLayer("eraser-outline");
+          this.map?.removeSource("eraser");
+          this.eraserArea = null;
+        }
+        break;
+      case ControlMode.DrawLine:
+        mapboxCanvas.style.cursor = "";
+        this.map?.dragPan.enable();
+        if (this.map?.hasControl(this.mapglDraw)) {
+          this.map?.removeControl(this.mapglDraw);
+        }
+        break;
     }
-    if (this.paintMode) {
-      mapboxCanvas.style.cursor = "crosshair";
-      this.map?.dragPan.disable();
-    } else {
-      mapboxCanvas.style.cursor = "";
-      this.map?.dragPan.enable();
-    }
-  }
 
-  setLineMod(isActivated: boolean): void {
-    this.lineMode = isActivated;
-    const mapboxCanvas = this.map?.getCanvasContainer();
-    if (!mapboxCanvas) {
-      return;
+    // enable the new mode
+    switch (mode) {
+      case ControlMode.View:
+        break;
+      case ControlMode.Eraser:
+        mapboxCanvas.style.cursor = "cell";
+        this.map?.dragPan.disable();
+        break;
+      case ControlMode.DrawLine:
+        mapboxCanvas.style.cursor = "crosshair";
+        this.map?.dragPan.disable();
+        this.map?.addControl(this.mapglDraw, "bottom-left");
+        break;
     }
-    if (this.lineMode) {
-      mapboxCanvas.style.cursor = "crosshair";
-      this.map?.dragPan.disable();
-      this.map?.addControl(this.mapglDraw, "bottom-left");
-    } else {
-      mapboxCanvas.style.cursor = "";
-      this.map?.dragPan.enable();
-      if (this.map?.hasControl(this.mapglDraw)) {
-        this.map?.removeControl(this.mapglDraw);
-      }
-    }
+    this.controlMode = mode;
   }
 
   static renderTileOnCanvas(

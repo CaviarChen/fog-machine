@@ -1,4 +1,4 @@
-import { MapRenderer } from "./utils/MapRenderer";
+import { ControlMode, MapRenderer } from "./utils/MapRenderer";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
@@ -11,16 +11,10 @@ type Props = {
 
 function Editor(props: Props): JSX.Element {
   const mapRenderer = props.mapRenderer;
-  const [eraserMode, setEraserMode] = useState(false);
-  // const [paintMode, setPaintMode] = useState(false);
-  const [lineMode, setLineMode] = useState(false);
-  // const []
+  const [controlMode, setControlMode] = useState(ControlMode.View);
   useEffect(() => {
-    mapRenderer.setEraserMod(eraserMode);
-  }, [eraserMode]);
-  useEffect(() => {
-    mapRenderer.setLineMod(lineMode);
-  }, [lineMode]);
+    mapRenderer.setControlMode(controlMode);
+  }, [controlMode]);
 
   const [historyStatus, setHistoryStatus] = useState({
     canRedo: false,
@@ -72,25 +66,26 @@ function Editor(props: Props): JSX.Element {
       key: "eraser",
       icon: iconEraserSolid,
       clickable: true,
-      enabled: eraserMode,
+      enabled: controlMode === ControlMode.Eraser,
       onClick: () => {
-        setEraserMode(!eraserMode);
+        if (controlMode === ControlMode.Eraser) {
+          setControlMode(ControlMode.View);
+        } else {
+          setControlMode(ControlMode.Eraser);
+        }
       },
     },
-    // {
-    //   icon: iconPaint,
-    //   clickable: true,
-    //   enabled: paintMode,
-    //   onClick: () => {
-    //     setPaintMode(!paintMode);
-    //   },
-    // },
     {
+      key: "line",
       icon: iconLine,
       clickable: true,
-      enabled: lineMode,
+      enabled: controlMode === ControlMode.DrawLine,
       onClick: () => {
-        setLineMode(!lineMode);
+        if (controlMode === ControlMode.DrawLine) {
+          setControlMode(ControlMode.View);
+        } else {
+          setControlMode(ControlMode.DrawLine);
+        }
       },
     },
   ];
