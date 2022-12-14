@@ -128,48 +128,51 @@ const MainStatusPanelContent: React.FC<{
                 </a>
               </Stack>
               <>{nextSyncMsg}</>
-              <div style={{ marginTop: "20px" }}>
-                <ButtonToolbar>
-                  {snapshotTask.status == "Running" ? (
-                    <IconButton
-                      icon={<PauseIcon />}
-                      placement="left"
-                      onClick={() => {
-                        updateStatus("Paused");
-                      }}
-                    >
-                      {t("sync-button-pause")}
-                    </IconButton>
-                  ) : (
-                    <IconButton
-                      icon={<PlayIcon />}
-                      placement="right"
-                      onClick={() => {
-                        updateStatus("Running");
-                      }}
-                    >
-                      {t("sync-button-start")}
-                    </IconButton>
-                  )}
-                  <IconButton disabled icon={<FileTextIcon />} placement="left">
-                    {t("sync-button-view-Log")}
-                  </IconButton>
+              <Stack
+                spacing={12}
+                alignItems="flex-start"
+                wrap
+                style={{ marginTop: "20px" }}
+              >
+                {snapshotTask.status == "Running" ? (
                   <IconButton
-                    icon={<EditIcon />}
+                    icon={<PauseIcon />}
                     placement="left"
                     onClick={() => {
-                      setOpenEditModel(true);
-                      setEditModelState({
-                        mode: "edit",
-                        shareLink: snapshotTask.source.OneDrive.shareUrl,
-                        interval: snapshotTask.interval,
-                      });
+                      updateStatus("Paused");
                     }}
                   >
-                    {t("sync-button-edit")}
+                    {t("sync-button-pause")}
                   </IconButton>
-                </ButtonToolbar>
-              </div>
+                ) : (
+                  <IconButton
+                    icon={<PlayIcon />}
+                    placement="right"
+                    onClick={() => {
+                      updateStatus("Running");
+                    }}
+                  >
+                    {t("sync-button-start")}
+                  </IconButton>
+                )}
+                <IconButton disabled icon={<FileTextIcon />} placement="left">
+                  {t("sync-button-view-Log")}
+                </IconButton>
+                <IconButton
+                  icon={<EditIcon />}
+                  placement="left"
+                  onClick={() => {
+                    setOpenEditModel(true);
+                    setEditModelState({
+                      mode: "edit",
+                      shareLink: snapshotTask.source.OneDrive.shareUrl,
+                      interval: snapshotTask.interval,
+                    });
+                  }}
+                >
+                  {t("sync-button-edit")}
+                </IconButton>
+              </Stack>
             </Stack>
           </>
         </Stack>
@@ -329,7 +332,7 @@ function DashboardMain() {
   return (
     <>
       <Panel bordered>
-        <div style={{ height: "120px" }}>
+        <div>
           <MainStatusPanelContent
             {...{
               isLoading,
