@@ -1,4 +1,4 @@
-import { MapRenderer } from "./utils/MapRenderer";
+import { ControlMode, MapRenderer } from "./utils/MapRenderer";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
@@ -11,10 +11,10 @@ type Props = {
 
 function Editor(props: Props): JSX.Element {
   const mapRenderer = props.mapRenderer;
-  const [eraserMode, setEraserMode] = useState(false);
+  const [controlMode, setControlMode] = useState(ControlMode.View);
   useEffect(() => {
-    mapRenderer.setEraserMod(eraserMode);
-  }, [eraserMode]);
+    mapRenderer.setControlMode(controlMode);
+  }, [controlMode]);
 
   const [historyStatus, setHistoryStatus] = useState({
     canRedo: false,
@@ -66,9 +66,26 @@ function Editor(props: Props): JSX.Element {
       key: "eraser",
       icon: iconEraserSolid,
       clickable: true,
-      enabled: eraserMode,
+      enabled: controlMode === ControlMode.Eraser,
       onClick: () => {
-        setEraserMode(!eraserMode);
+        if (controlMode === ControlMode.Eraser) {
+          setControlMode(ControlMode.View);
+        } else {
+          setControlMode(ControlMode.Eraser);
+        }
+      },
+    },
+    {
+      key: "line",
+      icon: iconLine,
+      clickable: true,
+      enabled: controlMode === ControlMode.DrawLine,
+      onClick: () => {
+        if (controlMode === ControlMode.DrawLine) {
+          setControlMode(ControlMode.View);
+        } else {
+          setControlMode(ControlMode.DrawLine);
+        }
       },
     },
   ];
@@ -164,5 +181,24 @@ const iconUndo = (
       fill="currentColor"
       d="M212.333 224.333H12c-6.627 0-12-5.373-12-12V12C0 5.373 5.373 0 12 0h48c6.627 0 12 5.373 12 12v78.112C117.773 39.279 184.26 7.47 258.175 8.007c136.906.994 246.448 111.623 246.157 248.532C504.041 393.258 393.12 504 256.333 504c-64.089 0-122.496-24.313-166.51-64.215-5.099-4.622-5.334-12.554-.467-17.42l33.967-33.967c4.474-4.474 11.662-4.717 16.401-.525C170.76 415.336 211.58 432 256.333 432c97.268 0 176-78.716 176-176 0-97.267-78.716-176-176-176-58.496 0-110.28 28.476-142.274 72.333h98.274c6.627 0 12 5.373 12 12v48c0 6.627-5.373 12-12 12z"
     ></path>
+  </svg>
+);
+
+// const iconPaint = <p>P</p>;
+const iconLine = (
+  <svg
+    aria-hidden="true"
+    focusable="false"
+    data-prefix="fas"
+    data-icon="redo"
+    role="img"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 512 512"
+    className="w-full h-full"
+  >
+    <path
+      fill="currentColor"
+      d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"
+    />
   </svg>
 );
