@@ -42,7 +42,6 @@ export class MapRenderer {
   public historyManager: HistoryManager;
   private loadedFogCanvases: { [key: string]: FogCanvas };
   private controlMode: ControlMode;
-  private lineMode: boolean;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
   private mapglDraw: MapboxDraw;
   private onChangeCallback: { [key: string]: () => void };
@@ -53,7 +52,6 @@ export class MapRenderer {
     this.fogMap = fogMap.FogMap.empty;
     this.loadedFogCanvases = {};
     this.controlMode = ControlMode.View;
-    this.lineMode = false;
     this.eraserArea = null;
     this.mapglDraw = new MapboxDraw({
       displayControlsDefault: false,
