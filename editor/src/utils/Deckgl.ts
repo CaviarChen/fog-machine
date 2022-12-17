@@ -48,9 +48,7 @@ export class Bbox {
 }
 
 export class Tile {
-  x: number;
-  y: number;
-  z: number;
+  index: { x: number; y: number; z: number };
   bbox: Bbox;
 }
 

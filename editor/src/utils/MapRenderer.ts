@@ -15,7 +15,7 @@ const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + fogMap.TILE_WIDTH_OFFSET;
 type TileKey = string;
 
 function tileToKey(tile: deckgl.Tile): TileKey {
-  return `${tile.x}-${tile.y}-${tile.z}`;
+  return `${tile.index.x}-${tile.index.y}-${tile.index.z}`;
 }
 
 // NOTE: this does not handle wraparound
@@ -113,7 +113,7 @@ export class MapRenderer {
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
     this.map.on("draw.create", this.handleDrawComplete.bind(this));
-    this.map.on("draw.modechange", (ev) => {
+    this.map.on("draw.modechange", (_ev) => {
       this.mapglDraw.changeMode("draw_line_string", {});
     });
     this.setControlMode(this.controlMode);
@@ -420,13 +420,13 @@ export class MapRenderer {
       return;
     }
 
-    if (tile.z <= FOW_TILE_ZOOM) {
+    if (tile.index.z <= FOW_TILE_ZOOM) {
       // render multiple fow tiles
-      const CANVAS_NUM_FOW_TILE_OFFSET = FOW_TILE_ZOOM - tile.z;
-      const fowTileXMin = tile.x << CANVAS_NUM_FOW_TILE_OFFSET;
-      const fowTileXMax = (tile.x + 1) << CANVAS_NUM_FOW_TILE_OFFSET;
-      const fowTileYMin = tile.y << CANVAS_NUM_FOW_TILE_OFFSET;
-      const fowTileYMax = (tile.y + 1) << CANVAS_NUM_FOW_TILE_OFFSET;
+      const CANVAS_NUM_FOW_TILE_OFFSET = FOW_TILE_ZOOM - tile.index.z;
+      const fowTileXMin = tile.index.x << CANVAS_NUM_FOW_TILE_OFFSET;
+      const fowTileXMax = (tile.index.x + 1) << CANVAS_NUM_FOW_TILE_OFFSET;
+      const fowTileYMin = tile.index.y << CANVAS_NUM_FOW_TILE_OFFSET;
+      const fowTileYMax = (tile.index.y + 1) << CANVAS_NUM_FOW_TILE_OFFSET;
       for (let fowTileX = fowTileXMin; fowTileX < fowTileXMax; fowTileX++) {
         for (let fowTileY = fowTileYMin; fowTileY < fowTileYMax; fowTileY++) {
           const fowTile =
@@ -447,20 +447,20 @@ export class MapRenderer {
         }
       }
     } else {
-      const TILE_OVER_OFFSET = tile.z - FOW_TILE_ZOOM;
-      const fowTileX = tile.x >> TILE_OVER_OFFSET;
-      const fowTileY = tile.y >> TILE_OVER_OFFSET;
+      const TILE_OVER_OFFSET = tile.index.z - FOW_TILE_ZOOM;
+      const fowTileX = tile.index.x >> TILE_OVER_OFFSET;
+      const fowTileY = tile.index.y >> TILE_OVER_OFFSET;
       const subTileMask = (1 << TILE_OVER_OFFSET) - 1;
 
       const CANVAS_NUM_FOW_BLOCK_OFFSET =
         fogMap.TILE_WIDTH_OFFSET - TILE_OVER_OFFSET;
 
-      if (tile.z > FOW_BLOCK_ZOOM) {
+      if (tile.index.z > FOW_BLOCK_ZOOM) {
         // sub-block rendering
         const fowBlockX =
-          (tile.x & subTileMask) >> -CANVAS_NUM_FOW_BLOCK_OFFSET;
+          (tile.index.x & subTileMask) >> -CANVAS_NUM_FOW_BLOCK_OFFSET;
         const fowBlockY =
-          (tile.y & subTileMask) >> -CANVAS_NUM_FOW_BLOCK_OFFSET;
+          (tile.index.y & subTileMask) >> -CANVAS_NUM_FOW_BLOCK_OFFSET;
         const subBlockMask =
           (1 << (TILE_OVER_OFFSET - fogMap.TILE_WIDTH_OFFSET)) - 1;
 
@@ -468,13 +468,13 @@ export class MapRenderer {
           CANVAS_NUM_FOW_BLOCK_OFFSET + fogMap.BITMAP_WIDTH_OFFSET;
 
         const fowBlockPixelXMin =
-          (tile.x & subBlockMask) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+          (tile.index.x & subBlockMask) << CANVAS_NUM_FOW_PIXEL_OFFSET;
         const fowBlockPixelXMax =
-          ((tile.x & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+          ((tile.index.x & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
         const fowBlockPixelYMin =
-          (tile.y & subBlockMask) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+          (tile.index.y & subBlockMask) << CANVAS_NUM_FOW_PIXEL_OFFSET;
         const fowBlockPixelYMax =
-          ((tile.y & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
+          ((tile.index.y & subBlockMask) + 1) << CANVAS_NUM_FOW_PIXEL_OFFSET;
 
         const block =
           this.fogMap.tiles[fogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]
@@ -515,13 +515,13 @@ export class MapRenderer {
       } else {
         // sub-tile rendering
         const fowBlockXMin =
-          (tile.x & subTileMask) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+          (tile.index.x & subTileMask) << CANVAS_NUM_FOW_BLOCK_OFFSET;
         const fowBlockXMax =
-          ((tile.x & subTileMask) + 1) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+          ((tile.index.x & subTileMask) + 1) << CANVAS_NUM_FOW_BLOCK_OFFSET;
         const fowBlockYMin =
-          (tile.y & subTileMask) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+          (tile.index.y & subTileMask) << CANVAS_NUM_FOW_BLOCK_OFFSET;
         const fowBlockYMax =
-          ((tile.y & subTileMask) + 1) << CANVAS_NUM_FOW_BLOCK_OFFSET;
+          ((tile.index.y & subTileMask) + 1) << CANVAS_NUM_FOW_BLOCK_OFFSET;
 
         const CANVAS_FOW_BLOCK_SIZE_OFFSET =
           CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_BLOCK_OFFSET;
