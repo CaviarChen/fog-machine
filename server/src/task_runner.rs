@@ -143,6 +143,27 @@ pub async fn do_one_task(
                         .insert(&txn)
                         .await?;
 
+                        // only keep recent 10 logs
+                        let most_recent_log_to_delete = snapshot_log::Entity::find()
+                            .filter(snapshot_log::Column::UserId.eq(task.user_id))
+                            .order_by_desc(snapshot_log::Column::Timestamp)
+                            .offset(10)
+                            .one(&txn)
+                            .await?;
+                        match most_recent_log_to_delete {
+                            None => (),
+                            Some(most_recent_log_to_delete) => {
+                                snapshot_log::Entity::delete_many()
+                                    .filter(snapshot_log::Column::UserId.eq(task.user_id))
+                                    .filter(
+                                        snapshot_log::Column::Timestamp
+                                            .lte(most_recent_log_to_delete.timestamp),
+                                    )
+                                    .exec(&txn)
+                                    .await?;
+                            }
+                        }
+
                         true
                     }
                 }

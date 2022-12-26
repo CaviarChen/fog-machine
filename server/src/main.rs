@@ -25,6 +25,7 @@ mod limit;
 mod misc_handler;
 mod pool;
 mod snapshot_handler;
+mod snapshot_log_handler;
 mod snapshot_task_handler;
 mod task_runner;
 mod user_handler;
@@ -168,6 +169,7 @@ fn rocket() -> _ {
         .manage(server_state)
         .mount("/api/v1/user", user_handler::routes())
         .mount("/api/v1/snapshot_task", snapshot_task_handler::routes())
+        .mount("/api/v1/snapshot_log", snapshot_log_handler::routes())
         .mount("/api/v1/snapshot", snapshot_handler::routes())
         .mount("/api/v1/misc", misc_handler::routes())
 }
