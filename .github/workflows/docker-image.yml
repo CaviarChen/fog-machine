@@ -10,7 +10,8 @@ on:
 jobs:
   fog_machine_server:
     name: Build and publish [fog-machine-server]
-    runs-on: ubuntu-latest
+    # ubuntu-22.04 with libssl 3 seems to be too new for our docker base image
+    runs-on: ubuntu-20.04
     defaults:
       run:
         working-directory: server
