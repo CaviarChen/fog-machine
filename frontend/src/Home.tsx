@@ -9,12 +9,15 @@ import {
   Divider,
   Stack,
   CustomProvider,
+  IconButton,
 } from "rsuite";
 import EditIcon from "@rsuite/icons/Edit";
 import HistoryIcon from "@rsuite/icons/History";
 import { IconProps } from "@rsuite/icons/lib/Icon";
+import { Icon } from '@rsuite/icons';
 import { useTranslation } from "react-i18next";
 import "./Home.css";
+import { FiMoon,FiSun } from "react-icons/fi";
 
 function Item(
   title: string,
@@ -73,6 +76,7 @@ function Home() {
             <Divider />
 
             <div style={{ width: "100%" }}>
+            <Stack spacing={20} justifyContent="center">
               <ButtonGroup
                 style={{ display: "table", margin: "0 auto" }}
                 size="lg"
@@ -89,15 +93,18 @@ function Home() {
                 >
                   English
                 </Button>
-                <Button
-                  active={true}
-                  onClick={() => {
-                    isDark ? setIsDark(false) : setIsDark(true);
-                  }}
-                >
-                  {isDark ? "夜间模式" : "日间模式"}
-                </Button>
               </ButtonGroup>
+
+              <IconButton
+              size="lg"
+                icon={isDark?<Icon as={FiMoon}/>:<Icon as={FiSun}/>}
+                onClick={() => {
+                  isDark ? setIsDark(false) : setIsDark(true);
+                }}
+              >
+                {isDark ? "夜间模式" : "日间模式"}
+              </IconButton>
+              </Stack>
             </div>
 
             {Item(
