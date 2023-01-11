@@ -14,10 +14,10 @@ import {
 import EditIcon from "@rsuite/icons/Edit";
 import HistoryIcon from "@rsuite/icons/History";
 import { IconProps } from "@rsuite/icons/lib/Icon";
-import { Icon } from '@rsuite/icons';
+import { Icon } from "@rsuite/icons";
 import { useTranslation } from "react-i18next";
 import "./Home.css";
-import { FiMoon,FiSun } from "react-icons/fi";
+import { FiMoon, FiSun } from "react-icons/fi";
 
 function Item(
   title: string,
@@ -76,34 +76,34 @@ function Home() {
             <Divider />
 
             <div style={{ width: "100%" }}>
-            <Stack spacing={20} justifyContent="center">
-              <ButtonGroup
-                style={{ display: "table", margin: "0 auto" }}
-                size="lg"
-              >
-                <Button
-                  active={i18n.resolvedLanguage == "zh"}
-                  onClick={() => i18n.changeLanguage("zh")}
+              <Stack spacing={20} justifyContent="center">
+                <ButtonGroup
+                  style={{ display: "table", margin: "0 auto" }}
+                  size="lg"
                 >
-                  简体中文
-                </Button>
-                <Button
-                  active={i18n.resolvedLanguage == "en"}
-                  onClick={() => i18n.changeLanguage("en")}
-                >
-                  English
-                </Button>
-              </ButtonGroup>
+                  <Button
+                    active={i18n.resolvedLanguage == "zh"}
+                    onClick={() => i18n.changeLanguage("zh")}
+                  >
+                    简体中文
+                  </Button>
+                  <Button
+                    active={i18n.resolvedLanguage == "en"}
+                    onClick={() => i18n.changeLanguage("en")}
+                  >
+                    English
+                  </Button>
+                </ButtonGroup>
 
-              <IconButton
-              size="lg"
-                icon={isDark?<Icon as={FiMoon}/>:<Icon as={FiSun}/>}
-                onClick={() => {
-                  isDark ? setIsDark(false) : setIsDark(true);
-                }}
-              >
-                {isDark ? "夜间模式" : "日间模式"}
-              </IconButton>
+                <IconButton
+                  size="lg"
+                  icon={isDark ? <Icon as={FiMoon} /> : <Icon as={FiSun} />}
+                  onClick={() => {
+                    isDark ? setIsDark(false) : setIsDark(true);
+                  }}
+                >
+                  {isDark ? "夜间模式" : "日间模式"}
+                </IconButton>
               </Stack>
             </div>
 
