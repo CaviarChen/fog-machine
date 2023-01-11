@@ -19,6 +19,19 @@
   color: #888888;
 }
 
+.home-title-dark {
+  margin-top: 50px;
+  text-align: center;
+}
+
+.home-title-dark h1 {
+  color: #ffffff;
+}
+
+.home-title-dark h4 {
+  color: #888888;
+}
+
 .home-item {
   display: inline-block;
   width: 100%;

@@ -11,6 +11,7 @@ import {
   Content,
   Divider,
   Loader,
+  CustomProvider,
 } from "rsuite";
 import "./Home.css";
 import DashboardMain from "./DashboardMain";
@@ -199,32 +200,36 @@ function Home() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  const isDark = localStorage.getItem("isDark") == "true" ? true : false;
+
   return (
-    <Container>
-      <Content>
-        <div className="time-machine-body">
-          <Breadcrumb
-            style={{ marginTop: "5vh", marginBottom: "0", fontSize: "19px" }}
-          >
-            <Breadcrumb.Item
-              onClick={() => {
-                navigate("/", { replace: false });
-              }}
-              href="/"
+    <CustomProvider theme={isDark ? "dark" : "light"}>
+      <Container>
+        <Content>
+          <div className="time-machine-body">
+            <Breadcrumb
+              style={{ marginTop: "5vh", marginBottom: "0", fontSize: "19px" }}
             >
-              {t("home-main-title")}
-            </Breadcrumb.Item>
-            <Breadcrumb.Item active>
-              {t("home-time-machine-title")}
-            </Breadcrumb.Item>
-          </Breadcrumb>
+              <Breadcrumb.Item
+                onClick={() => {
+                  navigate("/", { replace: false });
+                }}
+                href="/"
+              >
+                {t("home-main-title")}
+              </Breadcrumb.Item>
+              <Breadcrumb.Item active>
+                {t("home-time-machine-title")}
+              </Breadcrumb.Item>
+            </Breadcrumb>
 
-          <Divider style={{ marginTop: "1vh" }} />
+            <Divider style={{ marginTop: "1vh" }} />
 
-          <RenderContent />
-        </div>
-      </Content>
-    </Container>
+            <RenderContent />
+          </div>
+        </Content>
+      </Container>
+    </CustomProvider>
   );
 }
 

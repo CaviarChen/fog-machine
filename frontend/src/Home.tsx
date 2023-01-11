@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Button,
@@ -8,6 +8,7 @@ import {
   Content,
   Divider,
   Stack,
+  CustomProvider,
 } from "rsuite";
 import EditIcon from "@rsuite/icons/Edit";
 import HistoryIcon from "@rsuite/icons/History";
@@ -53,51 +54,72 @@ function Item(
 function Home() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const [isDark, setIsDark] = useState(
+    localStorage.getItem("isDark") == "true" ? true : false
+  );
+  useEffect(() => {
+    localStorage.setItem("isDark", isDark ? "true" : "false");
+  }, [isDark]);
   return (
-    <Container>
-      <Content>
-        <div className="home-body">
-          <div className="home-title">
-            <h1>{t("home-main-title")}</h1>
-            <h4>{t("home-main-title-desc")}</h4>
-          </div>
+    <CustomProvider theme={isDark ? "dark" : "light"}>
+      <Container>
+        <Content>
+          <div className="home-body">
+            <div className={isDark ? "home-title-dark" : "home-title"}>
+              <h1>{t("home-main-title")}</h1>
+              <h4>{t("home-main-title-desc")}</h4>
+            </div>
 
-          <Divider />
+            <Divider />
 
-          <div style={{ width: "100%" }}>
-            <ButtonGroup
-              style={{ display: "table", margin: "0 auto" }}
-              size="lg"
-            >
-              <Button
-                active={i18n.resolvedLanguage == "zh"}
-                onClick={() => i18n.changeLanguage("zh")}
+            <div style={{ width: "100%" }}>
+              <ButtonGroup
+                style={{ display: "table", margin: "0 auto" }}
+                size="lg"
               >
-                简体中文
-              </Button>
-              <Button
-                active={i18n.resolvedLanguage == "en"}
-                onClick={() => i18n.changeLanguage("en")}
-              >
-                English
-              </Button>
-            </ButtonGroup>
-          </div>
+                <Button
+                  active={i18n.resolvedLanguage == "zh"}
+                  onClick={() => i18n.changeLanguage("zh")}
+                >
+                  简体中文
+                </Button>
+                <Button
+                  active={i18n.resolvedLanguage == "en"}
+                  onClick={() => i18n.changeLanguage("en")}
+                >
+                  English
+                </Button>
+                <Button
+                  active={true}
+                  onClick={() => {
+                    isDark ? setIsDark(false) : setIsDark(true);
+                  }}
+                >
+                  {isDark ? "夜间模式" : "日间模式"}
+                </Button>
+              </ButtonGroup>
+            </div>
 
-          {Item(t("home-editor-title"), EditIcon, t("home-editor-desc"), () => {
-            location.href = "/editor";
-          })}
-          {Item(
-            t("home-time-machine-title"),
-            HistoryIcon,
-            t("home-time-machine-desc"),
-            () => {
-              navigate("/time-machine", { replace: false });
-            }
-          )}
-        </div>
-      </Content>
-    </Container>
+            {Item(
+              t("home-editor-title"),
+              EditIcon,
+              t("home-editor-desc"),
+              () => {
+                location.href = "/editor";
+              }
+            )}
+            {Item(
+              t("home-time-machine-title"),
+              HistoryIcon,
+              t("home-time-machine-desc"),
+              () => {
+                navigate("/time-machine", { replace: false });
+              }
+            )}
+          </div>
+        </Content>
+      </Container>
+    </CustomProvider>
   );
 }
 
