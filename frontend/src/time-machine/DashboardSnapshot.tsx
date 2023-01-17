@@ -197,7 +197,7 @@ function DashboardSnapshot() {
     loadData();
   }, [loadData]);
 
-  // 10s后开始轮询
+  // Start polling after 10s
   useEffect(() => {
     timerRef.current = window.setInterval(() => {
       loadData();
