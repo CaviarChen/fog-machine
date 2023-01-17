@@ -195,15 +195,12 @@ function DashboardSnapshot() {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
-
-  // Start polling after 10s
-  useEffect(() => {
+    // Start polling after 10s
     timerRef.current = window.setInterval(() => {
       loadData();
     }, 10000);
     return () => window.clearInterval(timerRef.current);
-  }, []);
+  }, [loadData]);
 
   // TODO: we should have a single global toaster for all notifications
   const notificationToaster = useToaster();
