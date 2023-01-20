@@ -32,6 +32,8 @@ i18n
           "home-time-machine-desc":
             "A service for snapshotting and preserving history of Fog of World data",
           "home-help-title": "Help",
+          "home-theme-dark": "dark",
+          "home-theme-light": "light",
           "add-data-source": "Add data source",
           "edit-data-source": "Edit data source",
           "data-source-title": "Data source",
@@ -95,6 +97,8 @@ i18n
           "home-time-machine-title": "时光机 (beta)",
           "home-time-machine-desc": "世界迷雾数据快照及历史数据管理服务。",
           "home-help-title": "帮助",
+          "home-theme-dark": "夜间模式",
+          "home-theme-light": "日间模式",
           "add-data-source": "添加数据源",
           "edit-data-source": "编辑数据源",
           "data-source-title": "数据源",

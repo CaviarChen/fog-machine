@@ -102,7 +102,7 @@ function Home() {
                     isDark ? setIsDark(false) : setIsDark(true);
                   }}
                 >
-                  {isDark ? "夜间模式" : "日间模式"}
+                  {isDark ? t("home-theme-dark") : t("home-theme-light")}
                 </IconButton>
               </Stack>
             </div>
