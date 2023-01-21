@@ -58,7 +58,7 @@ function Home() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [isDark, setIsDark] = useState(
-    localStorage.getItem("isDark") == "true" ? true : false
+    localStorage.getItem("isDark") == "true"
   );
   useEffect(() => {
     localStorage.setItem("isDark", isDark ? "true" : "false");
