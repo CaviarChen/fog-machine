@@ -32,8 +32,8 @@ i18n
           "home-time-machine-desc":
             "A service for snapshotting and preserving history of Fog of World data",
           "home-help-title": "Help",
-          "home-theme-dark": "dark",
-          "home-theme-light": "light",
+          "home-theme-dark": "Dark",
+          "home-theme-light": "Light",
           "add-data-source": "Add data source",
           "edit-data-source": "Edit data source",
           "data-source-title": "Data source",
