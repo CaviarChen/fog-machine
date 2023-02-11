@@ -77,9 +77,9 @@ export default class Api {
     return token;
   }
 
-  public static readonly tokenHeaders = {
-    Authorization: "Bearer " + this.getToken(),
-  };
+  public static tokenHeaders() {
+    return { Authorization: "Bearer " + this.getToken() };
+  }
 
   private static clearToken() {
     sessionStorage.removeItem(this.tokenKey);
@@ -98,7 +98,7 @@ export default class Api {
   ): Promise<Result<any>> {
     try {
       console.log("requesting api:", method, " ", url);
-      const headers = needToken ? this.tokenHeaders : undefined;
+      const headers = needToken ? this.tokenHeaders() : undefined;
       const response = await axios({
         method,
         url: this.backendUrl + url,
