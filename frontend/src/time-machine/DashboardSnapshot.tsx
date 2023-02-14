@@ -262,7 +262,7 @@ function DashboardSnapshot() {
   };
 
   const fileUploadUrl = Api.backendUrl + "misc/upload";
-  const headers = Api.tokenHeaders;
+  const headers = Api.tokenHeaders();
 
   type UploadDialogState = {
     uploadDate: Date | null;
