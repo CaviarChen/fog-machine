@@ -11,6 +11,12 @@ jobs:
         working-directory: server
     steps:
       - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
