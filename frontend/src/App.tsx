@@ -7,6 +7,7 @@ import enUS from "rsuite/locales/en_US";
 import { CustomProvider } from "rsuite";
 import { useTranslation } from "react-i18next";
 import HelpHome from "./help/Home";
+import Error404 from "./ErrorPage/Error404";
 
 function GithubSsoRedirect() {
   const [searchParams, _] = useSearchParams();
@@ -26,6 +27,7 @@ function App() {
         <Route path="/help" element={<HelpHome />} />
         {/* github sso */}
         <Route path="/callback/github" element={<GithubSsoRedirect />} />
+        <Route path="*" element={<Error404 />} />
       </Routes>
     </CustomProvider>
   );
