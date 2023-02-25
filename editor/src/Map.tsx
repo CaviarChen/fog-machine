@@ -64,7 +64,7 @@ function Map(props: Props): JSX.Element {
       <div ref={mapContainer} className="absolute w-full h-full inset-0" />
       <canvas
         ref={deckglContainer}
-        className="absolute w-full h-full inset-0 z-10 pointer-events-none opacity-50"
+        className="absolute w-full h-full inset-0 z-10 pointer-events-none opacity-70"
       />
     </div>
   );
