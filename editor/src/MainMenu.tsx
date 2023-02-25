@@ -7,6 +7,7 @@ import { MapRenderer } from "./utils/MapRenderer";
 import Import from "./Import";
 
 function MapTap(props: { mapRenderer: MapRenderer }): JSX.Element {
+  const { t } = useTranslation();
   const mapRenderer = props.mapRenderer;
   const mapStyles = ["standard", "satellite", "hybrid"];
 
@@ -20,7 +21,7 @@ function MapTap(props: { mapRenderer: MapRenderer }): JSX.Element {
         defaultIndex={mapStyles.indexOf(mapRenderer.getMapStyle())}
       >
         <Tab.List className="flex p-1 space-x-1 bg-gray-300 rounded-xl">
-          {["标准", "卫星", "混合"].map((category) => (
+          {[t("map-type-standard"), t("map-type-satellite"), t("map-type-hybrid")].map((category) => (
             <Tab
               key={category}
               className={({ selected }) => {
@@ -195,7 +196,7 @@ export default function MainMenu(props: Props): JSX.Element {
                       <div className="p-4 bg-gray-50">
                         <span className="flex items-center">
                           <span className="text-sm font-medium text-gray-900">
-                            地图类型
+                            {t("map-type")}
                           </span>
                         </span>
                         <MapTap mapRenderer={mapRenderer} />
