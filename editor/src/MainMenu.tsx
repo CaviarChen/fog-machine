@@ -21,7 +21,11 @@ function MapTap(props: { mapRenderer: MapRenderer }): JSX.Element {
         defaultIndex={mapStyles.indexOf(mapRenderer.getMapStyle())}
       >
         <Tab.List className="flex p-1 space-x-1 bg-gray-300 rounded-xl">
-          {[t("map-type-standard"), t("map-type-satellite"), t("map-type-hybrid")].map((category) => (
+          {[
+            t("map-type-standard"),
+            t("map-type-satellite"),
+            t("map-type-hybrid"),
+          ].map((category) => (
             <Tab
               key={category}
               className={({ selected }) => {
