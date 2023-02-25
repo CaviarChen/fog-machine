@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { createMapFromZip } from "./Import";
 import TimeMachineApi, { SnapshotInfo } from "./utils/TimeMachineApi";
 import moment from "moment";
+import MainMenu from "./MainMenu";
 
 type Props = {
   mapRenderer: MapRenderer;
@@ -66,6 +67,12 @@ function Viewer(props: Props): JSX.Element {
       "flex items-center justify-center mx-2 h-9 p-2 bg-white shadow rounded-lg";
     return (
       <>
+        <MainMenu
+          mapRenderer={mapRenderer}
+          msgboxShow={props.msgboxShow}
+          mode="viewer"
+        />
+
         <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
           <button
             className={
