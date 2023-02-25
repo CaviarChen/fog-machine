@@ -4,7 +4,6 @@ import "./Map.css";
 import mapboxgl from "mapbox-gl";
 import { MapRenderer } from "./utils/MapRenderer";
 import { useTranslation } from "react-i18next";
-import { initLanguageControl } from "./utils/MapLanguage";
 
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || "";
 
@@ -29,22 +28,21 @@ function Map(props: Props): JSX.Element {
     if (!mapContainer.current) return;
     if (!deckglContainer.current) return;
     console.log("initializing");
+    const mapRenderer = MapRenderer.create();
     const mapboxMap = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/streets-v11",
+      style: mapRenderer.mapboxStyleURL(),
     });
     mapboxMap.addControl(new mapboxgl.NavigationControl(), "bottom-right");
-    const setMapboxLanguage = initLanguageControl(
-      mapboxMap,
-      i18n.resolvedLanguage
-    );
 
     mapboxMap.on("load", () => {
-      const mapRenderer = MapRenderer.create();
-      mapRenderer.registerMap(mapboxMap, deckglContainer.current!);
-      setMapboxLanguage(i18n.resolvedLanguage);
+      mapRenderer.registerMap(
+        mapboxMap,
+        deckglContainer.current!,
+        i18n.resolvedLanguage
+      );
       i18n.on("languageChanged", (_) => {
-        setMapboxLanguage(i18n.resolvedLanguage);
+        mapRenderer.setResolvedLanguage(i18n.resolvedLanguage);
       });
       mapboxMap.resize();
 
@@ -66,7 +64,7 @@ function Map(props: Props): JSX.Element {
       <div ref={mapContainer} className="absolute w-full h-full inset-0" />
       <canvas
         ref={deckglContainer}
-        className="absolute w-full h-full inset-0 z-10 pointer-events-none opacity-50"
+        className="absolute w-full h-full inset-0 z-10 pointer-events-none opacity-70"
       />
     </div>
   );

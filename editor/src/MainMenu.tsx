@@ -6,9 +6,48 @@ import { useTranslation } from "react-i18next";
 import { MapRenderer } from "./utils/MapRenderer";
 import Import from "./Import";
 
+function MapTap(props: { mapRenderer: MapRenderer }): JSX.Element {
+  const { t } = useTranslation();
+  const mapRenderer = props.mapRenderer;
+  const mapStyles = ["standard", "satellite", "hybrid"];
+
+  return (
+    <div className="w-full pt-4 grid lg:grid-cols-2">
+      <Tab.Group
+        onChange={(index) => {
+          const style = mapStyles[index];
+          mapRenderer.setMapStyle(style as "standard" | "satellite" | "hybrid");
+        }}
+        defaultIndex={mapStyles.indexOf(mapRenderer.getMapStyle())}
+      >
+        <Tab.List className="flex p-1 space-x-1 bg-gray-300 rounded-xl">
+          {[
+            t("map-type-standard"),
+            t("map-type-satellite"),
+            t("map-type-hybrid"),
+          ].map((category) => (
+            <Tab
+              key={category}
+              className={({ selected }) => {
+                return (
+                  "w-full py-1 text-sm leading-5 font-medium text-grey-500 rounded-lg focus:outline-none" +
+                  (selected ? " bg-white" : " hover:bg-gray-200")
+                );
+              }}
+            >
+              {category}
+            </Tab>
+          ))}
+        </Tab.List>
+      </Tab.Group>
+    </div>
+  );
+}
+
 type Props = {
   mapRenderer: MapRenderer;
   msgboxShow(title: string, msg: string): void;
+  mode: "editor" | "viewer";
 };
 
 export default function MainMenu(props: Props): JSX.Element {
@@ -17,45 +56,49 @@ export default function MainMenu(props: Props): JSX.Element {
 
   const [importDialog, setImportDialog] = useState(false);
 
-  const menuItems = [
-    {
-      name: t("import"),
-      description: t("import-description"),
-      action: () => {
-        setImportDialog(true);
-      },
-      icon: IconImport,
-    },
-    {
-      name: t("export"),
-      description: t("export-description"),
-      action: async () => {
-        // TODO: seems pretty fast, but we should consider handle this async properly
-        const blob = await mapRenderer.fogMap.exportArchive();
-        if (blob) {
-          const name = "Sync.zip";
-          const blobUrl = URL.createObjectURL(blob);
-          const link = document.createElement("a");
+  const menuItems =
+    props.mode == "viewer"
+      ? []
+      : // Import and Export is only allowed in editor
+        [
+          {
+            name: t("import"),
+            description: t("import-description"),
+            action: () => {
+              setImportDialog(true);
+            },
+            icon: IconImport,
+          },
+          {
+            name: t("export"),
+            description: t("export-description"),
+            action: async () => {
+              // TODO: seems pretty fast, but we should consider handle this async properly
+              const blob = await mapRenderer.fogMap.exportArchive();
+              if (blob) {
+                const name = "Sync.zip";
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement("a");
 
-          link.href = blobUrl;
-          link.download = name;
+                link.href = blobUrl;
+                link.download = name;
 
-          document.body.appendChild(link);
-          // This is necessary as link.click() does not work on the latest firefox
-          link.dispatchEvent(
-            new MouseEvent("click", {
-              bubbles: true,
-              cancelable: true,
-              view: window,
-            })
-          );
-          document.body.removeChild(link);
-          props.msgboxShow("info", "export-done-message");
-        }
-      },
-      icon: IconExport,
-    },
-  ];
+                document.body.appendChild(link);
+                // This is necessary as link.click() does not work on the latest firefox
+                link.dispatchEvent(
+                  new MouseEvent("click", {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                  })
+                );
+                document.body.removeChild(link);
+                props.msgboxShow("info", "export-done-message");
+              }
+            },
+            icon: IconExport,
+          },
+        ];
 
   const languageTab = (
     <div className="w-full pt-4 grid lg:grid-cols-2">
@@ -152,6 +195,15 @@ export default function MainMenu(props: Props): JSX.Element {
                             </div>
                           </a>
                         ))}
+                      </div>
+
+                      <div className="p-4 bg-gray-50">
+                        <span className="flex items-center">
+                          <span className="text-sm font-medium text-gray-900">
+                            {t("map-type")}
+                          </span>
+                        </span>
+                        <MapTap mapRenderer={mapRenderer} />
                       </div>
 
                       <div className="p-4 bg-gray-50">
