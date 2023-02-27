@@ -11,7 +11,6 @@ import {
   Content,
   Divider,
   Loader,
-  CustomProvider,
 } from "rsuite";
 import "./Home.css";
 import DashboardMain from "./DashboardMain";
@@ -200,10 +199,7 @@ function Home() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const isDark = localStorage.getItem("isDark") == "true" ? true : false;
-
   return (
-    <CustomProvider theme={isDark ? "dark" : "light"}>
       <Container>
         <Content>
           <div className="time-machine-body">
@@ -229,7 +225,6 @@ function Home() {
           </div>
         </Content>
       </Container>
-    </CustomProvider>
   );
 }
 
