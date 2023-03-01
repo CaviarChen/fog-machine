@@ -85,6 +85,7 @@ fn get_and_remove_uploaded_item(
 struct CreateData {
     timestamp: DateTime<Utc>,
     upload_token: String,
+    note: Option<String>,
 }
 #[post("/", data = "<data>")]
 async fn create(
@@ -171,7 +172,10 @@ async fn create(
                 timestamp: Set(data.timestamp),
                 sync_files: Set(entity::snapshot::SyncFiles(sync_files)),
                 source_kind: Set(snapshot::SourceKind::Upload),
-                note: Set(None),
+                note: Set(match &data.note {
+                    Some(n) => Some(n.to_string()),
+                    None => None,
+                }),
             }
             .insert(db)
             .await?;

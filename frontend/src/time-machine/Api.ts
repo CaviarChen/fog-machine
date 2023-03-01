@@ -230,10 +230,12 @@ export default class Api {
 
   public static async uploadSnapshot(
     timestamp: Date,
-    uploadToken: string
+    uploadToken: string,
+    note?: string, 
   ): Promise<Result<SnapshotUploadResult>> {
     const data: any = {};
     data["timestamp"] = timestamp;
+    data["note"] = note;
     data["upload_token"] = uploadToken;
     const result = await this.requestApi("snapshot", "post", true, data);
     if (result.ok) {
