@@ -11,13 +11,21 @@ jobs:
         working-directory: server
     steps:
       - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
       - name: Install toolchain
+        if: steps.filter.outputs.server == 'true'
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+        if: steps.filter.outputs.server == 'true'
         with:
           # An explicit cache key that is used instead of the automatic `job`-based
           # cache key and is thus stable across jobs.
@@ -46,13 +54,17 @@ jobs:
           cache-on-failure: true
       
       - name: Check
+        if: steps.filter.outputs.server == 'true'
         run: cargo check
 
       - name: Tests
+        if: steps.filter.outputs.server == 'true'
         run: cargo test
       
       - name: Rustfmt
+        if: steps.filter.outputs.server == 'true'
         run: cargo fmt --all -- --check
       
       - name: Clippy
+        if: steps.filter.outputs.server == 'true'
         run: cargo clippy -- -D warnings

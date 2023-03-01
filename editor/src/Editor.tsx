@@ -92,7 +92,11 @@ function Editor(props: Props): JSX.Element {
 
   return (
     <>
-      <MainMenu mapRenderer={mapRenderer} msgboxShow={props.msgboxShow} />
+      <MainMenu
+        mapRenderer={mapRenderer}
+        msgboxShow={props.msgboxShow}
+        mode="editor"
+      />
 
       <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
         {toolButtons.map((toolButton) =>

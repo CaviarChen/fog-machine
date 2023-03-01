@@ -86,6 +86,8 @@ i18n
           "snapshot-list-delete-cancel": "Cancel",
           "snapshot-list-delete-prompt":
             "This item will be deleted immediately. You can't undo this action！",
+          "error-page-404-text": "Page not found (404)",
+          "error-page-404-button": "Back to home",
         },
       },
       zh: {
@@ -147,6 +149,8 @@ i18n
           "snapshot-list-delete-confirm": "确认",
           "snapshot-list-delete-cancel": "取消",
           "snapshot-list-delete-prompt": "此快照将被删除，该操作无法撤销！",
+          "error-page-404-text": "页面无法找到 (404)",
+          "error-page-404-button": "返回主页",
         },
       },
     },
