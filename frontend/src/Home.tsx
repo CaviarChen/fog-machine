@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, Dispatch } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Button,
@@ -53,21 +53,14 @@ function Item(
   );
 }
 
-function Home(props: { onSelectTheme: (isDark: boolean) => void }) {
+function Home(props: { isDark: boolean; setIsDark: Dispatch<boolean> }) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const [isDark, setIsDark] = useState(
-    localStorage.getItem("isDark") == "true"
-  );
-  useEffect(() => {
-    localStorage.setItem("isDark", isDark ? "true" : "false");
-  }, [isDark]);
-  props.onSelectTheme(isDark);
   return (
     <Container>
       <Content>
         <div className="home-body">
-          <div className={isDark ? "home-title-dark" : "home-title"}>
+          <div className={props.isDark ? "home-title-dark" : "home-title"}>
             <h1>{t("home-main-title")}</h1>
             <h4>{t("home-main-title-desc")}</h4>
           </div>
@@ -96,12 +89,12 @@ function Home(props: { onSelectTheme: (isDark: boolean) => void }) {
 
               <IconButton
                 size="lg"
-                icon={isDark ? <Icon as={FiMoon} /> : <Icon as={FiSun} />}
+                icon={props.isDark ? <Icon as={FiMoon} /> : <Icon as={FiSun} />}
                 onClick={() => {
-                  isDark ? setIsDark(false) : setIsDark(true);
+                  props.isDark ? props.setIsDark(false) : props.setIsDark(true);
                 }}
               >
-                {isDark ? t("home-theme-dark") : t("home-theme-light")}
+                {props.isDark ? t("home-theme-dark") : t("home-theme-light")}
               </IconButton>
             </Stack>
           </div>

@@ -7,7 +7,7 @@ import enUS from "rsuite/locales/en_US";
 import { CustomProvider } from "rsuite";
 import { useTranslation } from "react-i18next";
 import HelpHome from "./help/Home";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Error404 from "./ErrorPage/Error404";
 
 function GithubSsoRedirect() {
@@ -21,11 +21,10 @@ function App() {
   const [isDark, setIsDark] = useState(
     localStorage.getItem("isDark") == "true"
   );
+  useEffect(() => {
+    localStorage.setItem("isDark", isDark ? "true" : "false");
+  }, [isDark]);
   const { i18n } = useTranslation();
-
-  function handleTheme(isDark: boolean) {
-    setIsDark(isDark);
-  }
 
   return (
     <CustomProvider
@@ -34,7 +33,10 @@ function App() {
     >
       <GithubCorner />
       <Routes>
-        <Route path="/" element={<Home onSelectTheme={handleTheme} />} />
+        <Route
+          path="/"
+          element={<Home isDark={isDark} setIsDark={setIsDark} />}
+        />
         <Route path="/time-machine" element={<TimeMachineHome />} />
         <Route path="/help" element={<HelpHome />} />
         {/* github sso */}
