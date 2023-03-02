@@ -18,24 +18,24 @@ function GithubSsoRedirect() {
 }
 
 function App() {
-  const [isDark, setIsDark] = useState(
-    localStorage.getItem("isDark") == "true"
+  const [isDarkTheme, setIsDarkTheme] = useState(
+    localStorage.getItem("isDarkTheme") == "true"
   );
   useEffect(() => {
-    localStorage.setItem("isDark", isDark ? "true" : "false");
-  }, [isDark]);
+    localStorage.setItem("isDarkTheme", isDarkTheme ? "true" : "false");
+  }, [isDarkTheme]);
   const { i18n } = useTranslation();
 
   return (
     <CustomProvider
-      theme={isDark ? "dark" : "light"}
+      theme={isDarkTheme ? "dark" : "light"}
       locale={i18n.resolvedLanguage == "zh" ? zhCN : enUS}
     >
       <GithubCorner />
       <Routes>
         <Route
           path="/"
-          element={<Home isDark={isDark} setIsDark={setIsDark} />}
+          element={<Home isDarkTheme={isDarkTheme} setIsDarkTheme={setIsDarkTheme} />}
         />
         <Route path="/time-machine" element={<TimeMachineHome />} />
         <Route path="/help" element={<HelpHome />} />
