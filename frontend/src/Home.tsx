@@ -96,9 +96,7 @@ function Home(props: {
                   props.isDarkTheme ? <Icon as={FiMoon} /> : <Icon as={FiSun} />
                 }
                 onClick={() => {
-                  props.isDarkTheme
-                    ? props.setIsDarkTheme(false)
-                    : props.setIsDarkTheme(true);
+                  props.setIsDarkTheme(!props.isDarkTheme);
                 }}
               >
                 {props.isDarkTheme
