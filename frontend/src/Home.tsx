@@ -53,7 +53,10 @@ function Item(
   );
 }
 
-function Home(props: { isDarkTheme: boolean; setIsDarkTheme: Dispatch<boolean> }) {
+function Home(props: {
+  isDarkTheme: boolean;
+  setIsDarkTheme: Dispatch<boolean>;
+}) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   return (
@@ -89,12 +92,18 @@ function Home(props: { isDarkTheme: boolean; setIsDarkTheme: Dispatch<boolean> }
 
               <IconButton
                 size="lg"
-                icon={props.isDarkTheme ? <Icon as={FiMoon} /> : <Icon as={FiSun} />}
+                icon={
+                  props.isDarkTheme ? <Icon as={FiMoon} /> : <Icon as={FiSun} />
+                }
                 onClick={() => {
-                  props.isDarkTheme ? props.setIsDarkTheme(false) : props.setIsDarkTheme(true);
+                  props.isDarkTheme
+                    ? props.setIsDarkTheme(false)
+                    : props.setIsDarkTheme(true);
                 }}
               >
-                {props.isDarkTheme ? t("home-theme-dark") : t("home-theme-light")}
+                {props.isDarkTheme
+                  ? t("home-theme-dark")
+                  : t("home-theme-light")}
               </IconButton>
             </Stack>
           </div>

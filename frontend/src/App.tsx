@@ -35,7 +35,9 @@ function App() {
       <Routes>
         <Route
           path="/"
-          element={<Home isDarkTheme={isDarkTheme} setIsDarkTheme={setIsDarkTheme} />}
+          element={
+            <Home isDarkTheme={isDarkTheme} setIsDarkTheme={setIsDarkTheme} />
+          }
         />
         <Route path="/time-machine" element={<TimeMachineHome />} />
         <Route path="/help" element={<HelpHome />} />
