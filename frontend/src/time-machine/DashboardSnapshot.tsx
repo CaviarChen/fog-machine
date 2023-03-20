@@ -21,9 +21,13 @@ import {
   IconButton,
   Input,
 } from "rsuite";
+import VisibleIcon from "@rsuite/icons/Visible";
+import FileDownloadIcon from "@rsuite/icons/FileDownload";
+import TrashIcon from "@rsuite/icons/Trash";
+import PlusIcon from "@rsuite/icons/Plus";
+import EditIcon from "@rsuite/icons/Edit";
 import MoreIcon from "@rsuite/icons/legacy/More";
 import Api, { SnapshotList, Snapshot } from "./Api";
-import PlusIcon from "@rsuite/icons/Plus";
 import { MessageType } from "rsuite/esm/Notification/Notification";
 import { useTranslation } from "react-i18next";
 
@@ -58,7 +62,7 @@ const SnapshotListPanel: React.FC<{
           autoHeight={true}
           id="table"
         >
-          <Column flexGrow={10}>
+          <Column flexGrow={6}>
             <HeaderCell>{t("snapshot-list-date")}</HeaderCell>
             <Cell>
               {(rawData) => {
@@ -76,6 +80,16 @@ const SnapshotListPanel: React.FC<{
                     <div>{moment(snapshot.timestamp).format("YYYY-MM-DD")}</div>
                   </Whisper>
                 );
+              }}
+            </Cell>
+          </Column>
+
+          <Column flexGrow={10}>
+            <HeaderCell>note</HeaderCell>
+            <Cell>
+              {(rawData) => {
+                const snapshot = rawData as Snapshot;
+                return <div>{snapshot.note}</div>;
               }}
             </Cell>
           </Column>
@@ -106,41 +120,77 @@ const SnapshotListPanel: React.FC<{
                 return (
                   <div style={{ marginTop: "-3px" }}>
                     <ButtonToolbar>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          location.href =
-                            "/editor?viewing-snapshot=" + String(snapshot.id);
-                        }}
+                      <Whisper
+                        placement="bottom"
+                        controlId="control-id-hover"
+                        trigger="hover"
+                        speaker={<Tooltip>{t("snapshot-list-view")}</Tooltip>}
                       >
-                        {t("snapshot-list-view")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={async () => {
-                          const token = await Api.getSnapshotDownloadToken(
-                            snapshot.id
-                          );
-                          if (token.ok) {
-                            window.open(
-                              Api.backendUrl +
-                                "misc/download?token=" +
-                                token.ok,
-                              "_blank"
+                        <Button
+                          size="sm"
+                          appearance="subtle"
+                          onClick={() => {
+                            location.href =
+                              "/editor?viewing-snapshot=" + String(snapshot.id);
+                          }}
+                        >
+                          <VisibleIcon />
+                        </Button>
+                      </Whisper>
+                      <Whisper
+                        placement="bottom"
+                        controlId="control-id-hover"
+                        trigger="hover"
+                        speaker={<Tooltip>edit</Tooltip>}
+                      >
+                        <Button appearance="subtle" size="sm">
+                          <EditIcon />
+                        </Button>
+                      </Whisper>
+                      <Whisper
+                        placement="bottom"
+                        controlId="control-id-hover"
+                        trigger="hover"
+                        speaker={
+                          <Tooltip>{t("snapshot-list-download")}</Tooltip>
+                        }
+                      >
+                        <Button
+                          size="sm"
+                          appearance="subtle"
+                          onClick={async () => {
+                            const token = await Api.getSnapshotDownloadToken(
+                              snapshot.id
                             );
-                          } else {
-                            //TODO: error handling
-                          }
-                        }}
+                            if (token.ok) {
+                              window.open(
+                                Api.backendUrl +
+                                  "misc/download?token=" +
+                                  token.ok,
+                                "_blank"
+                              );
+                            } else {
+                              //TODO: error handling
+                            }
+                          }}
+                        >
+                          <FileDownloadIcon />
+                        </Button>
+                      </Whisper>
+                      <Whisper
+                        placement="bottom"
+                        controlId="control-id-hover"
+                        trigger="hover"
+                        speaker={<Tooltip>{t("snapshot-list-delete")}</Tooltip>}
                       >
-                        {t("snapshot-list-download")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => openDeleteConfirmation(snapshot.id)}
-                      >
-                        {t("snapshot-list-delete")}
-                      </Button>
+                        <Button
+                          size="sm"
+                          appearance="subtle"
+                          onClick={() => openDeleteConfirmation(snapshot.id)}
+                        >
+                          <TrashIcon />
+                        </Button>
+                      </Whisper>
                     </ButtonToolbar>
                   </div>
                 );
