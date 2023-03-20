@@ -43,6 +43,7 @@ i18n
           "data-share-link-every": "every",
           "data-upload-title": "Upload Data",
           "data-upload-select-date": "Select Date",
+          "data-upload-note": "Note(optional)",
           "data-upload-prompt":
             "Click or Drag a .zip file to this area to upload",
           "data-upload-uploading": "uploading",
@@ -110,6 +111,7 @@ i18n
           "data-share-link-every": "每隔",
           "data-upload-title": "上传",
           "data-upload-select-date": "选择时间",
+          "data-upload-note": "备注（可选）",
           "data-upload-prompt": "点击上传或拖拽.zip文件上传",
           "data-upload-uploading": "上传中",
           "data-upload-success": "上传成功!",

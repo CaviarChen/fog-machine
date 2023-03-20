@@ -19,6 +19,7 @@ import {
   Uploader,
   Form,
   IconButton,
+  Input,
 } from "rsuite";
 import MoreIcon from "@rsuite/icons/legacy/More";
 import Api, { SnapshotList, Snapshot } from "./Api";
@@ -266,6 +267,7 @@ function DashboardSnapshot() {
 
   type UploadDialogState = {
     uploadDate: Date | null;
+    uploadNote: string | null;
     uploadState: "empty" | "uploading" | { token: string };
   };
   const [uploadDialogState, setUploadDialogState] = useState<
@@ -283,6 +285,7 @@ function DashboardSnapshot() {
               onClick={() => {
                 setUploadDialogState({
                   uploadDate: null,
+                  uploadNote: null,
                   uploadState: "empty",
                 });
               }}
@@ -315,20 +318,6 @@ function DashboardSnapshot() {
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <DatePicker
-              format="yyyy-MM-dd HH:mm"
-              size="lg"
-              placeholder={t("data-upload-select-date")}
-              onChange={(date) => {
-                if (uploadDialogState == "closed") return;
-                setUploadDialogState({
-                  ...uploadDialogState,
-                  uploadDate: date,
-                });
-              }}
-              style={{ width: 200, display: "block", marginBottom: 10 }}
-            />
-
             {/*
             TODO: `Uploader` will send the upload request directly. So the file will be uploaded when the user selected the file not when they click the submit button.
             I guess this is fine except that `upload_token` is only valid for 1 min, so if the user click submit after 1 min then this is not going to work.
@@ -399,8 +388,34 @@ function DashboardSnapshot() {
 
             <Modal.Footer style={{ marginTop: "16px" }}>
               <Form.Group>
-                <ButtonToolbar>
+                <Stack spacing={6} justifyContent={"flex-end"}>
+                  <DatePicker
+                    format="yyyy-MM-dd HH:mm"
+                    size="lg"
+                    placeholder={t("data-upload-select-date")}
+                    onChange={(date) => {
+                      if (uploadDialogState == "closed") return;
+                      setUploadDialogState({
+                        ...uploadDialogState,
+                        uploadDate: date,
+                      });
+                    }}
+                    style={{ width: 200, display: "block", marginBottom: 10 }}
+                  />
+                  <Input
+                    size="lg"
+                    style={{ width: 200, display: "block", marginBottom: 10 }}
+                    placeholder={t("data-upload-note")}
+                    onChange={(note) => {
+                      if (uploadDialogState == "closed") return;
+                      setUploadDialogState({
+                        ...uploadDialogState,
+                        uploadNote: note,
+                      });
+                    }}
+                  />
                   <Button
+                    style={{ display: "block", marginBottom: 10 }}
                     disabled={
                       uploadDialogState == "closed" ||
                       !uploadDialogState.uploadDate ||
@@ -420,8 +435,10 @@ function DashboardSnapshot() {
 
                       const result = await Api.uploadSnapshot(
                         uploadDialogState.uploadDate,
-                        uploadDialogState.uploadState.token
+                        uploadDialogState.uploadState.token,
+                        uploadDialogState.uploadNote
                       );
+
                       if (result.ok) {
                         notificationToaster.push(
                           notification("success", t("success-title"))
@@ -448,7 +465,7 @@ function DashboardSnapshot() {
                   >
                     {t("data-form-submit")}
                   </Button>
-                </ButtonToolbar>
+                </Stack>
               </Form.Group>
             </Modal.Footer>
           </Form>

@@ -231,7 +231,7 @@ export default class Api {
   public static async uploadSnapshot(
     timestamp: Date,
     uploadToken: string,
-    note?: string, 
+    note?: string | null
   ): Promise<Result<SnapshotUploadResult>> {
     const data: any = {};
     data["timestamp"] = timestamp;
