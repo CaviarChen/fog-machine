@@ -9,14 +9,16 @@ import Import from "./Import";
 function MapTap(props: { mapRenderer: MapRenderer }): JSX.Element {
   const { t } = useTranslation();
   const mapRenderer = props.mapRenderer;
-  const mapStyles = ["standard", "satellite", "hybrid"];
+  const mapStyles = ["standard", "satellite", "hybrid", "none"];
 
   return (
     <div className="w-full pt-4 grid lg:grid-cols-2">
       <Tab.Group
         onChange={(index) => {
           const style = mapStyles[index];
-          mapRenderer.setMapStyle(style as "standard" | "satellite" | "hybrid");
+          mapRenderer.setMapStyle(
+            style as "standard" | "satellite" | "hybrid" | "none"
+          );
         }}
         defaultIndex={mapStyles.indexOf(mapRenderer.getMapStyle())}
       >
@@ -25,6 +27,7 @@ function MapTap(props: { mapRenderer: MapRenderer }): JSX.Element {
             t("map-type-standard"),
             t("map-type-satellite"),
             t("map-type-hybrid"),
+            t("map-type-none"),
           ].map((category) => (
             <Tab
               key={category}
