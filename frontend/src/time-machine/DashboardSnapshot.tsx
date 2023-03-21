@@ -94,7 +94,7 @@ const SnapshotListPanel: React.FC<{
             </Cell>
           </Column>
 
-          <Column flexGrow={10}>
+          <Column flexGrow={6}>
             <HeaderCell>{t("snapshot-list-source")}</HeaderCell>
             <Cell>
               {(rawData) => {
