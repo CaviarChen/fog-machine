@@ -20,6 +20,7 @@ import {
   Form,
   IconButton,
   Input,
+  InputGroup,
 } from "rsuite";
 import VisibleIcon from "@rsuite/icons/Visible";
 import FileDownloadIcon from "@rsuite/icons/FileDownload";
@@ -27,6 +28,7 @@ import TrashIcon from "@rsuite/icons/Trash";
 import PlusIcon from "@rsuite/icons/Plus";
 import EditIcon from "@rsuite/icons/Edit";
 import MoreIcon from "@rsuite/icons/legacy/More";
+import CheckIcon from "@rsuite/icons/Check";
 import Api, { SnapshotList, Snapshot } from "./Api";
 import { MessageType } from "rsuite/esm/Notification/Notification";
 import { useTranslation } from "react-i18next";
@@ -37,18 +39,27 @@ type SnapshotListState = {
   currentPage: number;
 };
 
+type EditNoteState = {
+  activeId: number | null;
+  note: string | null;
+};
+
 const SnapshotListPanel: React.FC<{
   isLoading: boolean;
   snapshotList: SnapshotList | null;
   snapshotListState: SnapshotListState;
   setSnapshotListState: (state: SnapshotListState) => void;
   openDeleteConfirmation: (snapshotId: number) => void;
+  editNoteState: EditNoteState;
+  setEditNoteState: (state: EditNoteState) => void;
 }> = ({
   isLoading,
   snapshotList,
   snapshotListState,
   setSnapshotListState,
   openDeleteConfirmation,
+  editNoteState,
+  setEditNoteState,
 }) => {
   const { t } = useTranslation();
   if (!snapshotList) {
@@ -89,7 +100,40 @@ const SnapshotListPanel: React.FC<{
             <Cell>
               {(rawData) => {
                 const snapshot = rawData as Snapshot;
-                return <div>{snapshot.note}</div>;
+                return editNoteState.activeId ? (
+                  editNoteState.activeId == snapshot.id ? (
+                    snapshot.note ? (
+                      <InputGroup>
+                        <input
+                          className="rs-input"
+                          defaultValue={snapshot.note}
+                        />
+                        <InputGroup.Button
+                          onClick={() => {
+                            setEditNoteState({ activeId: null, note: null });
+                          }}
+                        >
+                          <CheckIcon />
+                        </InputGroup.Button>
+                      </InputGroup>
+                    ) : (
+                      <InputGroup>
+                        <input className="rs-input" />
+                        <InputGroup.Button
+                          onClick={() => {
+                            setEditNoteState({ activeId: null, note: null });
+                          }}
+                        >
+                          <CheckIcon />
+                        </InputGroup.Button>
+                      </InputGroup>
+                    )
+                  ) : (
+                    <div>{snapshot.note}</div>
+                  )
+                ) : (
+                  <div>{snapshot.note}</div>
+                );
               }}
             </Cell>
           </Column>
@@ -143,7 +187,16 @@ const SnapshotListPanel: React.FC<{
                         trigger="hover"
                         speaker={<Tooltip>edit</Tooltip>}
                       >
-                        <Button appearance="subtle" size="sm">
+                        <Button
+                          appearance="subtle"
+                          size="sm"
+                          onClick={() => {
+                            setEditNoteState({
+                              activeId: snapshot.id,
+                              note: snapshot.note,
+                            });
+                          }}
+                        >
                           <EditIcon />
                         </Button>
                       </Whisper>
@@ -324,6 +377,11 @@ function DashboardSnapshot() {
     UploadDialogState | "closed"
   >("closed");
 
+  const [editNoteState, setEditNoteState] = useState<EditNoteState>({
+    activeId: null,
+    note: null,
+  });
+
   return (
     <div style={{ marginTop: "2vh" }}>
       <Panel
@@ -352,6 +410,8 @@ function DashboardSnapshot() {
             snapshotListState,
             setSnapshotListState,
             openDeleteConfirmation,
+            editNoteState,
+            setEditNoteState,
           }}
         />
       </Panel>
