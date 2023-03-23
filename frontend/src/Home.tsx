@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, Dispatch } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Button,
@@ -8,12 +8,15 @@ import {
   Content,
   Divider,
   Stack,
+  IconButton,
 } from "rsuite";
 import EditIcon from "@rsuite/icons/Edit";
 import HistoryIcon from "@rsuite/icons/History";
 import { IconProps } from "@rsuite/icons/lib/Icon";
+import { Icon } from "@rsuite/icons";
 import { useTranslation } from "react-i18next";
 import "./Home.css";
+import { FiMoon, FiSun } from "react-icons/fi";
 
 function Item(
   title: string,
@@ -50,14 +53,17 @@ function Item(
   );
 }
 
-function Home() {
+function Home(props: {
+  isDarkTheme: boolean;
+  setIsDarkTheme: Dispatch<boolean>;
+}) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   return (
     <Container>
       <Content>
         <div className="home-body">
-          <div className="home-title">
+          <div className={props.isDarkTheme ? "home-title-dark" : "home-title"}>
             <h1>{t("home-main-title")}</h1>
             <h4>{t("home-main-title-desc")}</h4>
           </div>
@@ -65,23 +71,39 @@ function Home() {
           <Divider />
 
           <div style={{ width: "100%" }}>
-            <ButtonGroup
-              style={{ display: "table", margin: "0 auto" }}
-              size="lg"
-            >
-              <Button
-                active={i18n.resolvedLanguage == "zh"}
-                onClick={() => i18n.changeLanguage("zh")}
+            <Stack spacing={20} justifyContent="center">
+              <ButtonGroup
+                style={{ display: "table", margin: "0 auto" }}
+                size="lg"
               >
-                简体中文
-              </Button>
-              <Button
-                active={i18n.resolvedLanguage == "en"}
-                onClick={() => i18n.changeLanguage("en")}
+                <Button
+                  active={i18n.resolvedLanguage == "zh"}
+                  onClick={() => i18n.changeLanguage("zh")}
+                >
+                  简体中文
+                </Button>
+                <Button
+                  active={i18n.resolvedLanguage == "en"}
+                  onClick={() => i18n.changeLanguage("en")}
+                >
+                  English
+                </Button>
+              </ButtonGroup>
+
+              <IconButton
+                size="lg"
+                icon={
+                  props.isDarkTheme ? <Icon as={FiMoon} /> : <Icon as={FiSun} />
+                }
+                onClick={() => {
+                  props.setIsDarkTheme(!props.isDarkTheme);
+                }}
               >
-                English
-              </Button>
-            </ButtonGroup>
+                {props.isDarkTheme
+                  ? t("home-theme-dark")
+                  : t("home-theme-light")}
+              </IconButton>
+            </Stack>
           </div>
 
           {Item(t("home-editor-title"), EditIcon, t("home-editor-desc"), () => {

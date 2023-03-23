@@ -32,6 +32,8 @@ i18n
           "home-time-machine-desc":
             "A service for snapshotting and preserving history of Fog of World data",
           "home-help-title": "Help",
+          "home-theme-dark": "Dark",
+          "home-theme-light": "Light",
           "add-data-source": "Add data source",
           "edit-data-source": "Edit data source",
           "data-source-title": "Data source",
@@ -84,6 +86,8 @@ i18n
           "snapshot-list-delete-cancel": "Cancel",
           "snapshot-list-delete-prompt":
             "This item will be deleted immediately. You can't undo this action！",
+          "error-page-404-text": "Page not found (404)",
+          "error-page-404-button": "Back to home",
         },
       },
       zh: {
@@ -95,6 +99,8 @@ i18n
           "home-time-machine-title": "时光机 (beta)",
           "home-time-machine-desc": "世界迷雾数据快照及历史数据管理服务。",
           "home-help-title": "帮助",
+          "home-theme-dark": "夜间模式",
+          "home-theme-light": "日间模式",
           "add-data-source": "添加数据源",
           "edit-data-source": "编辑数据源",
           "data-source-title": "数据源",
@@ -143,6 +149,8 @@ i18n
           "snapshot-list-delete-confirm": "确认",
           "snapshot-list-delete-cancel": "取消",
           "snapshot-list-delete-prompt": "此快照将被删除，该操作无法撤销！",
+          "error-page-404-text": "页面无法找到 (404)",
+          "error-page-404-button": "返回主页",
         },
       },
     },

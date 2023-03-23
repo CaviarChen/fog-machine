@@ -14,6 +14,8 @@ const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + fogMap.TILE_WIDTH_OFFSET;
 
 type TileKey = string;
 
+type MapStyle = "standard" | "satellite" | "hybrid" | "none";
+
 function tileToKey(tile: deckgl.Tile): TileKey {
   return `${tile.index.x}-${tile.index.y}-${tile.index.z}`;
 }
@@ -45,6 +47,8 @@ export class MapRenderer {
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
   private mapglDraw: MapboxDraw;
   private onChangeCallback: { [key: string]: () => void };
+  private mapStyle: MapStyle;
+  private resolvedLanguage: string;
 
   private constructor() {
     this.map = null;
@@ -81,6 +85,8 @@ export class MapRenderer {
     });
     this.historyManager = new HistoryManager(this.fogMap);
     this.onChangeCallback = {};
+    this.mapStyle = "standard";
+    this.resolvedLanguage = "en";
   }
 
   static create(): MapRenderer {
@@ -94,6 +100,58 @@ export class MapRenderer {
     return MapRenderer.instance;
   }
 
+  private setMapboxLanguage(): void {
+    const mapboxLanguage = this.resolvedLanguage == "zh" ? "zh-Hans" : "en";
+    const map = this.map;
+    if (!map) {
+      return;
+    }
+
+    map.getStyle().layers.forEach(function (thisLayer) {
+      if (thisLayer.id.indexOf("-label") > 0) {
+        map.setLayoutProperty(thisLayer.id, "text-field", [
+          "get",
+          "name_" + mapboxLanguage,
+        ]);
+      }
+    });
+  }
+
+  mapboxStyleURL(): string {
+    if (this.mapStyle == "standard" || this.mapStyle == "none") {
+      return "mapbox://styles/mapbox/streets-v11";
+    } else if (this.mapStyle == "satellite") {
+      return "mapbox://styles/mapbox/satellite-v9";
+    } else {
+      return "mapbox://styles/mapbox/satellite-streets-v11";
+    }
+  }
+
+  private setMapVisibility(visibility: "visible" | "none"): void {
+    this.map?.getStyle().layers.forEach((thisLayer) => {
+      this.map?.setLayoutProperty(thisLayer.id, "visibility", visibility);
+    });
+  }
+
+  setMapStyle(style: MapStyle): void {
+    if (style != this.mapStyle) {
+      if (style == "none") {
+        this.mapStyle = style;
+        this.setMapVisibility("none");
+      } else {
+        if (this.mapStyle == "none") {
+          this.setMapVisibility("visible");
+        }
+        this.mapStyle = style;
+        this.map?.setStyle(this.mapboxStyleURL());
+      }
+    }
+  }
+
+  getMapStyle(): MapStyle {
+    return this.mapStyle;
+  }
+
   private onChange() {
     Object.keys(this.onChangeCallback).map((key) => {
       const callback = this.onChangeCallback[key];
@@ -101,7 +159,11 @@ export class MapRenderer {
     });
   }
 
-  registerMap(map: mapboxgl.Map, deckglContainer: HTMLCanvasElement): void {
+  registerMap(
+    map: mapboxgl.Map,
+    deckglContainer: HTMLCanvasElement,
+    resolvedLanguage: string
+  ): void {
     this.map = map;
     this.deckgl = new deckgl.Deckgl(
       map,
@@ -116,8 +178,19 @@ export class MapRenderer {
     this.map.on("draw.modechange", (_ev) => {
       this.mapglDraw.changeMode("draw_line_string", {});
     });
+    map.on("styledata", () => {
+      this.setMapboxLanguage();
+    });
     this.setControlMode(this.controlMode);
     this.onChange();
+    this.resolvedLanguage = resolvedLanguage;
+  }
+
+  setResolvedLanguage(resolvedLanguage: string) {
+    if (resolvedLanguage != this.resolvedLanguage) {
+      this.resolvedLanguage = resolvedLanguage;
+      this.setMapboxLanguage();
+    }
   }
 
   unregisterMap(_map: mapboxgl.Map): void {
