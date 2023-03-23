@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import moment from "moment";
 import {
   Button,
@@ -182,6 +182,7 @@ const MainStatusPanelContent: React.FC<{
 };
 
 function DashboardMain() {
+  const timerRef = useRef(0);
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [snapshotTask, setSnapshotTask] = useState<SnapshotTask | null>(null);
@@ -198,6 +199,11 @@ function DashboardMain() {
 
   useEffect(() => {
     loadData();
+    // Start polling after 60s
+    timerRef.current = window.setInterval(() => {
+      loadData();
+    }, 60000);
+    return () => window.clearInterval(timerRef.current);
   }, []);
 
   const [editModelState, setEditModelState] = useState<EditModelState>({
