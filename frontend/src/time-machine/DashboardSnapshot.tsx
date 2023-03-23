@@ -100,37 +100,20 @@ const SnapshotListPanel: React.FC<{
             <Cell>
               {(rawData) => {
                 const snapshot = rawData as Snapshot;
-                return editNoteState.activeId ? (
-                  editNoteState.activeId == snapshot.id ? (
-                    snapshot.note ? (
-                      <InputGroup>
-                        <input
-                          className="rs-input"
-                          defaultValue={snapshot.note}
-                        />
-                        <InputGroup.Button
-                          onClick={() => {
-                            setEditNoteState({ activeId: null, note: null });
-                          }}
-                        >
-                          <CheckIcon />
-                        </InputGroup.Button>
-                      </InputGroup>
-                    ) : (
-                      <InputGroup>
-                        <input className="rs-input" />
-                        <InputGroup.Button
-                          onClick={() => {
-                            setEditNoteState({ activeId: null, note: null });
-                          }}
-                        >
-                          <CheckIcon />
-                        </InputGroup.Button>
-                      </InputGroup>
-                    )
-                  ) : (
-                    <div>{snapshot.note}</div>
-                  )
+                return editNoteState.activeId == snapshot.id ? (
+                  <InputGroup style={{ marginBottom: 10 }}>
+                    <input
+                      className="rs-input"
+                      defaultValue={snapshot.note ? snapshot.note : undefined}
+                    />
+                    <InputGroup.Button
+                      onClick={() => {
+                        setEditNoteState({ activeId: null, note: null });
+                      }}
+                    >
+                      <CheckIcon />
+                    </InputGroup.Button>
+                  </InputGroup>
                 ) : (
                   <div>{snapshot.note}</div>
                 );
@@ -154,7 +137,7 @@ const SnapshotListPanel: React.FC<{
             </Cell>
           </Column>
 
-          <Column flexGrow={10}>
+          <Column flexGrow={10} fixed="right">
             <HeaderCell>
               <MoreIcon />
             </HeaderCell>
