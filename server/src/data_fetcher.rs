@@ -3,6 +3,7 @@ use crate::limit;
 use crate::user_handler::User;
 use anyhow::Error;
 use chrono::prelude::*;
+use chrono::Duration;
 use entity::snapshot::SyncFiles;
 use entity::snapshot_task::Source;
 use std::collections::HashMap;
@@ -183,7 +184,15 @@ async fn snapshot_internal(
                                 .as_str()
                                 .ok_or_else(|| anyhow!("invalid api response"))?;
                             if name == "FoW-Sync-Lock" {
-                                return Ok(SnapshotResultInternal::Locked);
+                                let last_modified_time: DateTime<Utc> =
+                                    serde_json::from_value(child["lastModifiedDateTime"].clone())?;
+                                // TODO: starting from a recent FoW version, the semantic of lock file changed. 
+                                // It doesn't remove the lock file after finishing syncing, I guess it might encode
+                                // the lock status inside the file, I haven't figure out the new behavior, but in order
+                                // to make things work, let's just ignore locks that are older than 15 minutes.
+                                if time - last_modified_time <= Duration::minutes(15) {
+                                    return Ok(SnapshotResultInternal::Locked);
+                                }
                             }
                             if child["file"].is_null() {
                                 logs.push(format!("unexpected folder: {}", name));
@@ -253,6 +262,7 @@ async fn snapshot_internal(
     }
 }
 
+#[derive(Debug)]
 pub struct SnapshotResult {
     pub result: Result<(SyncFiles, DateTime<Utc>), ()>,
     pub logs: Vec<String>,
@@ -275,8 +285,8 @@ pub async fn snapshot(
             }
             Ok(SnapshotResultInternal::Locked) => {
                 if n < 3 {
-                    logs.push("Locked, trying again in 1 min.".into());
-                    sleep(std::time::Duration::from_secs(60)).await;
+                    logs.push("Locked, trying again in 2 min.".into());
+                    sleep(std::time::Duration::from_secs(120)).await;
                 }
             }
             Err(error) => {
