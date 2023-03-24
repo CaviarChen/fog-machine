@@ -186,7 +186,7 @@ async fn snapshot_internal(
                             if name == "FoW-Sync-Lock" {
                                 let last_modified_time: DateTime<Utc> =
                                     serde_json::from_value(child["lastModifiedDateTime"].clone())?;
-                                // TODO: starting from a recent FoW version, the semantic of lock file changed. 
+                                // TODO: starting from a recent FoW version, the semantic of lock file changed.
                                 // It doesn't remove the lock file after finishing syncing, I guess it might encode
                                 // the lock status inside the file, I haven't figure out the new behavior, but in order
                                 // to make things work, let's just ignore locks that are older than 15 minutes.
