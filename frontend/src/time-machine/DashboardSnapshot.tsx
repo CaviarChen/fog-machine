@@ -41,7 +41,7 @@ type SnapshotListState = {
 
 type EditNoteState = {
   activeId: number | null;
-  note: string | null;
+  updateNote: string | null;
 };
 
 const SnapshotListPanel: React.FC<{
@@ -52,6 +52,7 @@ const SnapshotListPanel: React.FC<{
   openDeleteConfirmation: (snapshotId: number) => void;
   editNoteState: EditNoteState;
   setEditNoteState: (state: EditNoteState) => void;
+  loadData: () => void;
 }> = ({
   isLoading,
   snapshotList,
@@ -60,6 +61,7 @@ const SnapshotListPanel: React.FC<{
   openDeleteConfirmation,
   editNoteState,
   setEditNoteState,
+  loadData,
 }) => {
   const { t } = useTranslation();
   if (!snapshotList) {
@@ -96,19 +98,35 @@ const SnapshotListPanel: React.FC<{
           </Column>
 
           <Column flexGrow={10}>
-            <HeaderCell>note</HeaderCell>
+            <HeaderCell>{t("snapshot-list-note")}</HeaderCell>
             <Cell>
               {(rawData) => {
                 const snapshot = rawData as Snapshot;
                 return editNoteState.activeId == snapshot.id ? (
-                  <InputGroup style={{ marginBottom: 10 }}>
+                  <InputGroup inside size="sm">
                     <input
                       className="rs-input"
                       defaultValue={snapshot.note ? snapshot.note : undefined}
+                      onChange={(note) => {
+                        setEditNoteState({
+                          ...editNoteState,
+                          updateNote: note.target.value,
+                        });
+                      }}
                     />
                     <InputGroup.Button
-                      onClick={() => {
-                        setEditNoteState({ activeId: null, note: null });
+                      onClick={async () => {
+                        const res = await Api.editSnapshot(
+                          editNoteState.activeId!,
+                          editNoteState.updateNote
+                        );
+                        // TODO: Error handling
+                        if (res.ok) {
+                          loadData();
+                        } else {
+                          console.log(res);
+                        }
+                        setEditNoteState({ activeId: null, updateNote: null });
                       }}
                     >
                       <CheckIcon />
@@ -168,7 +186,9 @@ const SnapshotListPanel: React.FC<{
                         placement="bottom"
                         controlId="control-id-hover"
                         trigger="hover"
-                        speaker={<Tooltip>edit</Tooltip>}
+                        speaker={
+                          <Tooltip>{t("snapshot-list-note-edit")}</Tooltip>
+                        }
                       >
                         <Button
                           appearance="subtle"
@@ -176,7 +196,7 @@ const SnapshotListPanel: React.FC<{
                           onClick={() => {
                             setEditNoteState({
                               activeId: snapshot.id,
-                              note: snapshot.note,
+                              updateNote: snapshot.note,
                             });
                           }}
                         >
@@ -362,7 +382,7 @@ function DashboardSnapshot() {
 
   const [editNoteState, setEditNoteState] = useState<EditNoteState>({
     activeId: null,
-    note: null,
+    updateNote: null,
   });
 
   return (
@@ -395,6 +415,7 @@ function DashboardSnapshot() {
             openDeleteConfirmation,
             editNoteState,
             setEditNoteState,
+            loadData,
           }}
         />
       </Panel>

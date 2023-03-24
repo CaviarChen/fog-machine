@@ -87,6 +87,7 @@ struct CreateData {
     upload_token: String,
     note: Option<String>,
 }
+
 #[post("/", data = "<data>")]
 async fn create(
     conn: Connection<'_, Db>,
@@ -185,6 +186,41 @@ async fn create(
                 json!({"id": snapshot.id, "file_count": file_count, "logs": logs.join("\n")}),
             ))
         }
+    }
+}
+
+#[derive(Deserialize)]
+struct EditData {
+    note: Option<String>,
+}
+
+#[post("/<snapshot_id>", data = "<data>")]
+async fn edit(
+    conn: Connection<'_, Db>,
+    user: User,
+    snapshot_id: i64,
+    data: Json<EditData>,
+) -> APIResponse {
+    let db = conn.into_inner();
+    let txn = db.begin().await?;
+    match snapshot::Entity::find()
+        .filter(snapshot::Column::UserId.eq(user.uid))
+        .filter(snapshot::Column::Id.eq(snapshot_id))
+        .lock_exclusive()
+        .one(&txn)
+        .await?
+    {
+        Some(snapshot) => {
+            let mut snapshot_this: snapshot::ActiveModel = snapshot.into();
+            snapshot_this.note = Set(match &data.note {
+                Some(n) => Some(n.to_string()),
+                None => None,
+            });
+            snapshot_this.update(&txn).await?;
+            txn.commit().await?;
+            Ok((Status::Ok, json!({})))
+        }
+        None => Ok((Status::NotFound, json!({}))),
     }
 }
 
@@ -307,6 +343,7 @@ pub fn routes() -> Vec<rocket::Route> {
         list_snapshots,
         create,
         delete,
+        edit,
         get_download_token,
         get_editor_view
     ]
