@@ -142,11 +142,7 @@ const SnapshotListPanel: React.FC<{
                   <Whisper
                     placement="topStart"
                     trigger="hover"
-                    speaker={
-                      <Tooltip>
-                        {snapshot.note}
-                      </Tooltip>
-                    }
+                    speaker={<Tooltip>{snapshot.note}</Tooltip>}
                   >
                     <div>{snapshot.note}</div>
                   </Whisper>
