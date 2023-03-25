@@ -34,9 +34,10 @@ type Result<T> = Ok<T> | Error | UnknownError;
 export type SnapshotInfo = {
   id: number;
   timestamp: Date;
+  note: string | null;
   downloadToken: string;
-  prev: { id: number; timestamp: Date } | null;
-  next: { id: number; timestamp: Date } | null;
+  prev: { id: number; timestamp: Date; note: string | null } | null;
+  next: { id: number; timestamp: Date; note: string | null } | null;
 };
 
 // TODO: [snakeToCamel] and [camelToSnake] are very silly.

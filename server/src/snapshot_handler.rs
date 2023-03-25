@@ -313,12 +313,14 @@ async fn get_editor_view(
             let prev = prev_snapshot.map(|s| {
                 json!({
                     "id": s.id,
+                    "note": s.note,
                     "timestamp":  s.timestamp,
                 })
             });
             let next = next_snapshot.map(|s| {
                 json!({
                     "id": s.id,
+                    "note": s.note,
                     "timestamp":  s.timestamp,
                 })
             });
@@ -327,6 +329,7 @@ async fn get_editor_view(
                 Status::Ok,
                 json!({
                     "id": this_snapshot.id,
+                    "note": this_snapshot.note,
                     "timestamp": this_snapshot.timestamp,
                     "prev": prev,
                     "next": next,
