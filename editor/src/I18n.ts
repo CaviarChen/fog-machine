@@ -37,6 +37,7 @@ i18n
           "map-type-standard": "Standard",
           "map-type-satellite": "Satellite",
           "map-type-hybrid": "Hybrid",
+          "map-type-none": "None",
         },
       },
       zh: {
@@ -63,6 +64,7 @@ i18n
           "map-type-standard": "标准",
           "map-type-satellite": "卫星",
           "map-type-hybrid": "混合",
+          "map-type-none": "无",
         },
       },
     },

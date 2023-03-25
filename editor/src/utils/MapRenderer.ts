@@ -14,7 +14,7 @@ const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + fogMap.TILE_WIDTH_OFFSET;
 
 type TileKey = string;
 
-type MapStyle = "standard" | "satellite" | "hybrid";
+type MapStyle = "standard" | "satellite" | "hybrid" | "none";
 
 function tileToKey(tile: deckgl.Tile): TileKey {
   return `${tile.index.x}-${tile.index.y}-${tile.index.z}`;
@@ -118,7 +118,7 @@ export class MapRenderer {
   }
 
   mapboxStyleURL(): string {
-    if (this.mapStyle == "standard") {
+    if (this.mapStyle == "standard" || this.mapStyle == "none") {
       return "mapbox://styles/mapbox/streets-v11";
     } else if (this.mapStyle == "satellite") {
       return "mapbox://styles/mapbox/satellite-v9";
@@ -127,10 +127,24 @@ export class MapRenderer {
     }
   }
 
+  private setMapVisibility(visibility: "visible" | "none"): void {
+    this.map?.getStyle().layers.forEach((thisLayer) => {
+      this.map?.setLayoutProperty(thisLayer.id, "visibility", visibility);
+    });
+  }
+
   setMapStyle(style: MapStyle): void {
     if (style != this.mapStyle) {
-      this.mapStyle = style;
-      this.map?.setStyle(this.mapboxStyleURL());
+      if (style == "none") {
+        this.mapStyle = style;
+        this.setMapVisibility("none");
+      } else {
+        if (this.mapStyle == "none") {
+          this.setMapVisibility("visible");
+        }
+        this.mapStyle = style;
+        this.map?.setStyle(this.mapboxStyleURL());
+      }
     }
   }
 
