@@ -139,7 +139,17 @@ const SnapshotListPanel: React.FC<{
                     </InputGroup>
                   </div>
                 ) : (
-                  <div>{snapshot.note}</div>
+                  <Whisper
+                    placement="topStart"
+                    trigger="hover"
+                    speaker={
+                      <Tooltip>
+                        {snapshot.note}
+                      </Tooltip>
+                    }
+                  >
+                    <div>{snapshot.note}</div>
+                  </Whisper>
                 );
               }}
             </Cell>
