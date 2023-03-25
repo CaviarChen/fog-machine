@@ -1,0 +1,5 @@
+.note-input {
+  position: absolute;
+  top: 50%;
+  transform: translate(-5%, -50%);
+}

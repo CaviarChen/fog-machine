@@ -32,6 +32,7 @@ import CheckIcon from "@rsuite/icons/Check";
 import Api, { SnapshotList, Snapshot } from "./Api";
 import { MessageType } from "rsuite/esm/Notification/Notification";
 import { useTranslation } from "react-i18next";
+import "./DashboardSnapshot.css";
 
 const { Column, HeaderCell, Cell } = Table;
 
@@ -103,35 +104,40 @@ const SnapshotListPanel: React.FC<{
               {(rawData) => {
                 const snapshot = rawData as Snapshot;
                 return editNoteState.activeId == snapshot.id ? (
-                  <InputGroup inside size="sm">
-                    <input
-                      className="rs-input"
-                      defaultValue={snapshot.note ? snapshot.note : undefined}
-                      onChange={(note) => {
-                        setEditNoteState({
-                          ...editNoteState,
-                          updateNote: note.target.value,
-                        });
-                      }}
-                    />
-                    <InputGroup.Button
-                      onClick={async () => {
-                        const res = await Api.editSnapshot(
-                          editNoteState.activeId!,
-                          editNoteState.updateNote
-                        );
-                        // TODO: Error handling
-                        if (res.ok) {
-                          loadData();
-                        } else {
-                          console.log(res);
-                        }
-                        setEditNoteState({ activeId: null, updateNote: null });
-                      }}
-                    >
-                      <CheckIcon />
-                    </InputGroup.Button>
-                  </InputGroup>
+                  <div className="note-input">
+                    <InputGroup inside size="sm">
+                      <input
+                        className="rs-input"
+                        defaultValue={snapshot.note ? snapshot.note : undefined}
+                        onChange={(note) => {
+                          setEditNoteState({
+                            ...editNoteState,
+                            updateNote: note.target.value,
+                          });
+                        }}
+                      />
+                      <InputGroup.Button
+                        onClick={async () => {
+                          const res = await Api.editSnapshot(
+                            editNoteState.activeId!,
+                            editNoteState.updateNote
+                          );
+                          // TODO: Error handling
+                          if (res.ok) {
+                            loadData();
+                          } else {
+                            console.log(res);
+                          }
+                          setEditNoteState({
+                            activeId: null,
+                            updateNote: null,
+                          });
+                        }}
+                      >
+                        <CheckIcon />
+                      </InputGroup.Button>
+                    </InputGroup>
+                  </div>
                 ) : (
                   <div>{snapshot.note}</div>
                 );
