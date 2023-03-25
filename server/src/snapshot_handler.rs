@@ -173,10 +173,7 @@ async fn create(
                 timestamp: Set(data.timestamp),
                 sync_files: Set(entity::snapshot::SyncFiles(sync_files)),
                 source_kind: Set(snapshot::SourceKind::Upload),
-                note: Set(match &data.note {
-                    Some(n) => Some(n.to_string()),
-                    None => None,
-                }),
+                note: Set(data.note.as_ref().map(|n| n.to_string())),
             }
             .insert(db)
             .await?;
@@ -212,10 +209,7 @@ async fn edit(
     {
         Some(snapshot) => {
             let mut snapshot_this: snapshot::ActiveModel = snapshot.into();
-            snapshot_this.note = Set(match &data.note {
-                Some(n) => Some(n.to_string()),
-                None => None,
-            });
+            snapshot_this.note = Set(data.note.as_ref().map(|n| n.to_string()));
             snapshot_this.update(&txn).await?;
             txn.commit().await?;
             Ok((Status::Ok, json!({})))
