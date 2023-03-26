@@ -15,6 +15,7 @@ const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + fogMap.TILE_WIDTH_OFFSET;
 type TileKey = string;
 
 type MapStyle = "standard" | "satellite" | "hybrid" | "none";
+type FogConcentration = "low" | "medium" | "high";
 
 function tileToKey(tile: deckgl.Tile): TileKey {
   return `${tile.index.x}-${tile.index.y}-${tile.index.z}`;
@@ -39,6 +40,7 @@ export enum ControlMode {
 export class MapRenderer {
   private static instance: MapRenderer | null = null;
   private map: mapboxgl.Map | null;
+  private deckglContainer: HTMLCanvasElement | null;
   private deckgl: deckgl.Deckgl | null;
   public fogMap: fogMap.FogMap;
   public historyManager: HistoryManager;
@@ -49,6 +51,7 @@ export class MapRenderer {
   private onChangeCallback: { [key: string]: () => void };
   private mapStyle: MapStyle;
   private resolvedLanguage: string;
+  private fogConcentration: FogConcentration;
 
   private constructor() {
     this.map = null;
@@ -87,6 +90,7 @@ export class MapRenderer {
     this.onChangeCallback = {};
     this.mapStyle = "standard";
     this.resolvedLanguage = "en";
+    this.fogConcentration = "medium";
   }
 
   static create(): MapRenderer {
@@ -152,6 +156,32 @@ export class MapRenderer {
     return this.mapStyle;
   }
 
+  private updateFogConcentrationInternal(): void {
+    let opacity;
+    if (this.fogConcentration == "high") {
+      opacity = "0.7";
+    } else if (this.fogConcentration == "medium") {
+      opacity = "0.6";
+    } else {
+      opacity = "0.4";
+    }
+
+    if (this.deckglContainer) {
+      this.deckglContainer.style.opacity = opacity;
+    }
+  }
+
+  setFogConcentration(fogConcentration: FogConcentration): void {
+    if (fogConcentration != this.fogConcentration) {
+      this.fogConcentration = fogConcentration;
+      this.updateFogConcentrationInternal();
+    }
+  }
+
+  getFogConcentration(): FogConcentration {
+    return this.fogConcentration;
+  }
+
   private onChange() {
     Object.keys(this.onChangeCallback).map((key) => {
       const callback = this.onChangeCallback[key];
@@ -165,6 +195,7 @@ export class MapRenderer {
     resolvedLanguage: string
   ): void {
     this.map = map;
+    this.deckglContainer = deckglContainer;
     this.deckgl = new deckgl.Deckgl(
       map,
       deckglContainer,
@@ -184,6 +215,7 @@ export class MapRenderer {
     this.setControlMode(this.controlMode);
     this.onChange();
     this.resolvedLanguage = resolvedLanguage;
+    this.updateFogConcentrationInternal();
   }
 
   setResolvedLanguage(resolvedLanguage: string) {

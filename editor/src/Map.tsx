@@ -62,10 +62,12 @@ function Map(props: Props): JSX.Element {
   return (
     <div className="absolute inset-0">
       <div ref={mapContainer} className="absolute w-full h-full inset-0" />
-      <canvas
-        ref={deckglContainer}
-        className="absolute w-full h-full inset-0 z-10 pointer-events-none opacity-70"
-      />
+      <div className="absolute w-full h-full inset-0 z-10 pointer-events-none">
+        <canvas
+          // `mapRenderer` will set the opacity of this canvas to control the fog concentration.
+          ref={deckglContainer}
+        />
+      </div>
     </div>
   );
 }
