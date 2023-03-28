@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import moment from "moment";
 import {
   Button,
@@ -171,7 +171,6 @@ const SnapshotListPanel: React.FC<{
 };
 
 function DashboardSnapshot() {
-  const timerRef = useRef(0);
   const { t } = useTranslation();
   const [snapshotList, setSnapshotList] = useState<SnapshotList | null>(null);
   const [snapshotListState, setSnapshotListState] = useState<SnapshotListState>(
@@ -195,11 +194,10 @@ function DashboardSnapshot() {
 
   useEffect(() => {
     loadData();
-    // Start polling after 10s
-    timerRef.current = window.setInterval(() => {
+    const reloadTimer = setInterval(() => {
       loadData();
-    }, 10000);
-    return () => window.clearInterval(timerRef.current);
+    }, 20 * 1000);
+    return () => clearInterval(reloadTimer);
   }, [loadData]);
 
   // TODO: we should have a single global toaster for all notifications
