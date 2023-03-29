@@ -181,19 +181,30 @@ function DashboardSnapshot() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
-    const result = await Api.listSnapshots(snapshotListState.currentPage, 10);
-    if (result.ok) {
-      setSnapshotList(result.ok);
-    } else {
-      console.log(result);
-    }
-    setIsLoading(false);
-  }, [snapshotListState]);
+  const loadData = useCallback(
+    async (showProgress = true) => {
+      if (showProgress) {
+        setIsLoading(true);
+      }
+      const result = await Api.listSnapshots(snapshotListState.currentPage, 10);
+      if (result.ok) {
+        setSnapshotList(result.ok);
+      } else {
+        console.log(result);
+      }
+      if (showProgress) {
+        setIsLoading(false);
+      }
+    },
+    [snapshotListState]
+  );
 
   useEffect(() => {
     loadData();
+    const reloadTimer = setInterval(() => {
+      loadData(false);
+    }, 20 * 1000);
+    return () => clearInterval(reloadTimer);
   }, [loadData]);
 
   // TODO: we should have a single global toaster for all notifications
