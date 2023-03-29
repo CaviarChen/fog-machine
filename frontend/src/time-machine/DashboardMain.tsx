@@ -185,21 +185,25 @@ function DashboardMain() {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [snapshotTask, setSnapshotTask] = useState<SnapshotTask | null>(null);
-  const loadData = async () => {
-    setIsLoading(true);
+  const loadData = async (showProgress = true) => {
+    if (showProgress) {
+      setIsLoading(true);
+    }
     const result = await Api.getSnapshotTask();
     if (result.ok) {
       setSnapshotTask(result.ok == "none" ? null : result.ok);
     } else {
       console.log(result);
     }
-    setIsLoading(false);
+    if (showProgress) {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
     loadData();
     const reloadTimer = setInterval(() => {
-      loadData();
+      loadData(false);
     }, 20 * 1000);
     return () => clearInterval(reloadTimer);
   }, []);
