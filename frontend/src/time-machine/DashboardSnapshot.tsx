@@ -76,7 +76,7 @@ const SnapshotListPanel: React.FC<{
           autoHeight={true}
           id="table"
         >
-          <Column flexGrow={6}>
+          <Column flexGrow={7}>
             <HeaderCell>{t("snapshot-list-date")}</HeaderCell>
             <Cell>
               {(rawData) => {
@@ -98,14 +98,14 @@ const SnapshotListPanel: React.FC<{
             </Cell>
           </Column>
 
-          <Column flexGrow={10}>
+          <Column flexGrow={13}>
             <HeaderCell>{t("snapshot-list-note")}</HeaderCell>
             <Cell>
               {(rawData) => {
                 const snapshot = rawData as Snapshot;
                 return editNoteState.activeId == snapshot.id ? (
                   <div className="note-input">
-                    <InputGroup inside size="sm">
+                    <InputGroup inside>
                       <input
                         className="rs-input"
                         defaultValue={snapshot.note ? snapshot.note : undefined}
@@ -141,17 +141,28 @@ const SnapshotListPanel: React.FC<{
                 ) : (
                   <Whisper
                     placement="topStart"
-                    trigger="hover"
+                    trigger={snapshot.note?("hover"):("none")}
                     speaker={<Tooltip>{snapshot.note}</Tooltip>}
                   >
-                    <div>{snapshot.note}</div>
-                  </Whisper>
-                );
+                    <Button
+                      className="note-input"
+                      block
+                      appearance="subtle"
+                      onClick={() => {
+                        setEditNoteState({
+                          activeId: snapshot.id,
+                          updateNote: snapshot.note,
+                        });
+                      }}
+                    >
+                      <div className="note-button">{snapshot.note}</div>
+                    </Button>
+                  </Whisper>)
               }}
             </Cell>
           </Column>
 
-          <Column flexGrow={6}>
+          <Column flexGrow={7}>
             <HeaderCell>{t("snapshot-list-source")}</HeaderCell>
             <Cell>
               {(rawData) => {
@@ -167,7 +178,7 @@ const SnapshotListPanel: React.FC<{
             </Cell>
           </Column>
 
-          <Column flexGrow={10} fixed="right">
+          <Column flexGrow={8} fixed="right">
             <HeaderCell>
               <MoreIcon />
             </HeaderCell>
@@ -192,27 +203,6 @@ const SnapshotListPanel: React.FC<{
                           }}
                         >
                           <VisibleIcon />
-                        </Button>
-                      </Whisper>
-                      <Whisper
-                        placement="bottom"
-                        controlId="control-id-hover"
-                        trigger="hover"
-                        speaker={
-                          <Tooltip>{t("snapshot-list-note-edit")}</Tooltip>
-                        }
-                      >
-                        <Button
-                          appearance="subtle"
-                          size="sm"
-                          onClick={() => {
-                            setEditNoteState({
-                              activeId: snapshot.id,
-                              updateNote: snapshot.note,
-                            });
-                          }}
-                        >
-                          <EditIcon />
                         </Button>
                       </Whisper>
                       <Whisper
