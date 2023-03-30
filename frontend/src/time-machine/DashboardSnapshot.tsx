@@ -26,7 +26,6 @@ import VisibleIcon from "@rsuite/icons/Visible";
 import FileDownloadIcon from "@rsuite/icons/FileDownload";
 import TrashIcon from "@rsuite/icons/Trash";
 import PlusIcon from "@rsuite/icons/Plus";
-import EditIcon from "@rsuite/icons/Edit";
 import MoreIcon from "@rsuite/icons/legacy/More";
 import CheckIcon from "@rsuite/icons/Check";
 import Api, { SnapshotList, Snapshot } from "./Api";
@@ -141,7 +140,7 @@ const SnapshotListPanel: React.FC<{
                 ) : (
                   <Whisper
                     placement="topStart"
-                    trigger={snapshot.note?("hover"):("none")}
+                    trigger={snapshot.note ? "hover" : "none"}
                     speaker={<Tooltip>{snapshot.note}</Tooltip>}
                   >
                     <Button
@@ -157,7 +156,8 @@ const SnapshotListPanel: React.FC<{
                     >
                       <div className="note-button">{snapshot.note}</div>
                     </Button>
-                  </Whisper>)
+                  </Whisper>
+                );
               }}
             </Cell>
           </Column>
