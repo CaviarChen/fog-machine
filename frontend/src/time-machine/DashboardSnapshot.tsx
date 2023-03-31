@@ -139,26 +139,6 @@ const SnapshotListPanel: React.FC<{
                         >
                           <CheckIcon />
                         </InputGroup.Button>
-                        <InputGroup.Button
-                          onClick={async () => {
-                            const res = await Api.editSnapshot(
-                              editNoteState.activeId!,
-                              editNoteState.updateNote
-                            );
-                            // TODO: Error handling
-                            if (res.ok) {
-                              loadData();
-                            } else {
-                              console.log(res);
-                            }
-                            setEditNoteState({
-                              activeId: null,
-                              updateNote: null,
-                            });
-                          }}
-                        >
-                          <CheckIcon />
-                        </InputGroup.Button>
                       </InputGroup>
                       <Button
                         size="sm"
