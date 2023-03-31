@@ -28,6 +28,7 @@ import TrashIcon from "@rsuite/icons/Trash";
 import PlusIcon from "@rsuite/icons/Plus";
 import MoreIcon from "@rsuite/icons/legacy/More";
 import CheckIcon from "@rsuite/icons/Check";
+import CloseIcon from "@rsuite/icons/Close";
 import Api, { SnapshotList, Snapshot } from "./Api";
 import { MessageType } from "rsuite/esm/Notification/Notification";
 import { useTranslation } from "react-i18next";
@@ -104,38 +105,74 @@ const SnapshotListPanel: React.FC<{
                 const snapshot = rawData as Snapshot;
                 return editNoteState.activeId == snapshot.id ? (
                   <div className="note-input">
-                    <InputGroup inside>
-                      <input
-                        className="rs-input"
-                        defaultValue={snapshot.note ? snapshot.note : undefined}
-                        onChange={(note) => {
-                          setEditNoteState({
-                            ...editNoteState,
-                            updateNote: note.target.value,
-                          });
-                        }}
-                      />
-                      <InputGroup.Button
-                        onClick={async () => {
-                          const res = await Api.editSnapshot(
-                            editNoteState.activeId!,
-                            editNoteState.updateNote
-                          );
-                          // TODO: Error handling
-                          if (res.ok) {
-                            loadData();
-                          } else {
-                            console.log(res);
+                    <Stack justifyContent="space-between">
+                      <InputGroup inside>
+                        <input
+                          className="rs-input"
+                          defaultValue={
+                            snapshot.note ? snapshot.note : undefined
                           }
+                          onChange={(note) => {
+                            setEditNoteState({
+                              ...editNoteState,
+                              updateNote: note.target.value,
+                            });
+                          }}
+                        />
+                        <InputGroup.Button
+                          onClick={async () => {
+                            const res = await Api.editSnapshot(
+                              editNoteState.activeId!,
+                              editNoteState.updateNote
+                            );
+                            // TODO: Error handling
+                            if (res.ok) {
+                              loadData();
+                            } else {
+                              console.log(res);
+                            }
+                            setEditNoteState({
+                              activeId: null,
+                              updateNote: null,
+                            });
+                          }}
+                        >
+                          <CheckIcon />
+                        </InputGroup.Button>
+                        <InputGroup.Button
+                          onClick={async () => {
+                            const res = await Api.editSnapshot(
+                              editNoteState.activeId!,
+                              editNoteState.updateNote
+                            );
+                            // TODO: Error handling
+                            if (res.ok) {
+                              loadData();
+                            } else {
+                              console.log(res);
+                            }
+                            setEditNoteState({
+                              activeId: null,
+                              updateNote: null,
+                            });
+                          }}
+                        >
+                          <CheckIcon />
+                        </InputGroup.Button>
+                      </InputGroup>
+                      <Button
+                        size="sm"
+                        appearance="subtle"
+                        onClick={() => {
                           setEditNoteState({
                             activeId: null,
                             updateNote: null,
                           });
                         }}
                       >
-                        <CheckIcon />
-                      </InputGroup.Button>
-                    </InputGroup>
+                        <CloseIcon />
+                      </Button>
+                    </Stack>
                   </div>
                 ) : (
                   <Whisper
