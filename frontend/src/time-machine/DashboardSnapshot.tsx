@@ -51,8 +51,6 @@ const SnapshotListPanel: React.FC<{
   snapshotListState: SnapshotListState;
   setSnapshotListState: (state: SnapshotListState) => void;
   openDeleteConfirmation: (snapshotId: number) => void;
-  editNoteState: EditNoteState;
-  setEditNoteState: (state: EditNoteState) => void;
   loadData: () => void;
 }> = ({
   isLoading,
@@ -60,11 +58,13 @@ const SnapshotListPanel: React.FC<{
   snapshotListState,
   setSnapshotListState,
   openDeleteConfirmation,
-  editNoteState,
-  setEditNoteState,
   loadData,
 }) => {
   const { t } = useTranslation();
+  const [editNoteState, setEditNoteState] = useState<EditNoteState>({
+    activeId: null,
+    updateNote: null,
+  });
   if (!snapshotList) {
     return <Placeholder.Paragraph />;
   } else {
@@ -398,12 +398,6 @@ function DashboardSnapshot() {
   const [uploadDialogState, setUploadDialogState] = useState<
     UploadDialogState | "closed"
   >("closed");
-
-  const [editNoteState, setEditNoteState] = useState<EditNoteState>({
-    activeId: null,
-    updateNote: null,
-  });
-
   return (
     <div style={{ marginTop: "2vh" }}>
       <Panel
@@ -432,8 +426,6 @@ function DashboardSnapshot() {
             snapshotListState,
             setSnapshotListState,
             openDeleteConfirmation,
-            editNoteState,
-            setEditNoteState,
             loadData,
           }}
         />

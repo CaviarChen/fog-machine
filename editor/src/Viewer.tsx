@@ -86,11 +86,7 @@ function Viewer(props: Props): JSX.Element {
               }
             }}
           >
-            {snapshotInfo.prev?.note
-              ? moment(snapshotInfo.prev?.timestamp).format("YYYY-MM-DD") +
-                ("(" + snapshotInfo.prev?.note + ") <")
-              : moment(snapshotInfo.prev?.timestamp).format("YYYY-MM-DD") +
-                " <"}
+            {moment(snapshotInfo.prev?.timestamp).format("YYYY-MM-DD") + " <"}
           </button>
 
           <button
@@ -98,12 +94,7 @@ function Viewer(props: Props): JSX.Element {
               commonClassName + " active:bg-gray-400 ring-4 ring-gray-700"
             }
           >
-            {snapshotInfo.note
-              ? moment(snapshotInfo.timestamp).format("YYYY-MM-DD") +
-                "(" +
-                snapshotInfo.note +
-                ")"
-              : moment(snapshotInfo.timestamp).format("YYYY-MM-DD")}
+            {moment(snapshotInfo.timestamp).format("YYYY-MM-DD")}
           </button>
 
           <button
@@ -118,14 +109,7 @@ function Viewer(props: Props): JSX.Element {
               }
             }}
           >
-            {snapshotInfo.next?.note
-              ? "> " +
-                moment(snapshotInfo.next?.timestamp).format("YYYY-MM-DD") +
-                "(" +
-                snapshotInfo.next?.note +
-                ")"
-              : "> " +
-                moment(snapshotInfo.next?.timestamp).format("YYYY-MM-DD")}
+            {"> " + moment(snapshotInfo.next?.timestamp).format("YYYY-MM-DD")}
           </button>
         </div>
       </>
