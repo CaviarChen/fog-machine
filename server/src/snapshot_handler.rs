@@ -173,7 +173,7 @@ async fn create(
                 timestamp: Set(data.timestamp),
                 sync_files: Set(entity::snapshot::SyncFiles(sync_files)),
                 source_kind: Set(snapshot::SourceKind::Upload),
-                note: Set(data.note.as_ref().map(|n| n.to_string())),
+                note: Set(data.note.to_owned()),
             }
             .insert(db)
             .await?;
@@ -192,14 +192,13 @@ struct EditData {
 }
 
 #[post("/<snapshot_id>", data = "<data>")]
-async fn edit(
+async fn update(
     conn: Connection<'_, Db>,
     user: User,
     snapshot_id: i64,
     data: Json<EditData>,
 ) -> APIResponse {
-    let db = conn.into_inner();
-    let txn = db.begin().await?;
+    let txn = conn.into_inner().begin().await?;
     match snapshot::Entity::find()
         .filter(snapshot::Column::UserId.eq(user.uid))
         .filter(snapshot::Column::Id.eq(snapshot_id))
@@ -208,9 +207,9 @@ async fn edit(
         .await?
     {
         Some(snapshot) => {
-            let mut snapshot_this: snapshot::ActiveModel = snapshot.into();
-            snapshot_this.note = Set(data.note.as_ref().map(|n| n.to_string()));
-            snapshot_this.update(&txn).await?;
+            let mut snapshot: snapshot::ActiveModel = snapshot.into();
+            snapshot.note = Set(data.note.to_owned());
+            snapshot.update(&txn).await?;
             txn.commit().await?;
             Ok((Status::Ok, json!({})))
         }
@@ -340,7 +339,7 @@ pub fn routes() -> Vec<rocket::Route> {
         list_snapshots,
         create,
         delete,
-        edit,
+        update,
         get_download_token,
         get_editor_view
     ]
