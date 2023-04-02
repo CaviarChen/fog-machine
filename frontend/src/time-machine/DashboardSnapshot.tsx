@@ -150,8 +150,10 @@ const SnapshotListPanel: React.FC<{
                                   updateNote: null,
                                   status: "normal",
                                 });
-                                //  Bad Request caused by too long
-                              } else if (res.status == 400) {
+                              } else if (
+                                res.status == 400 &&
+                                res.error == "note_too_long"
+                              ) {
                                 setEditNoteState({
                                   ...editNoteState,
                                   status: "noteTooLong",
@@ -607,6 +609,10 @@ function DashboardSnapshot() {
                         let errorMessage = t("error-unknown");
                         if (result.error == "timestamp_is_in_future") {
                           errorMessage = t("error-upload-timestamp");
+                        } else if (result.error == "note_too_long") {
+                          errorMessage = t(
+                            "snapshot-list-note-edit-err-tolong"
+                          );
                         } else if (result.error == "invalid_upload_token") {
                           errorMessage = t("error-upload-token");
                           // TODO: We should reset the `Uploader` here, but currently this cannot be done because

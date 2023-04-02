@@ -95,6 +95,10 @@ async fn create(
     user: User,
     data: Json<CreateData>,
 ) -> APIResponse {
+    let note_len: usize = data.note.as_ref().map_or(0, |s: &String| s.len());
+    if note_len > 256 {
+        return Ok((Status::BadRequest, json!({"error":"note_too_long"})));
+    }
     let cutoff = Utc::now() + chrono::Duration::seconds(10);
     if data.timestamp > cutoff {
         return Ok((
@@ -199,8 +203,9 @@ async fn update(
     data: Json<EditData>,
 ) -> APIResponse {
     let txn = conn.into_inner().begin().await?;
-    if data.note.to_owned().unwrap().len() > 256 {
-        return Ok((Status::BadRequest, json!({})));
+    let note_len: usize = data.note.as_ref().map_or(0, |s: &String| s.len());
+    if note_len > 256 {
+        return Ok((Status::BadRequest, json!({"error":"note_too_long"})));
     }
     match snapshot::Entity::find()
         .filter(snapshot::Column::UserId.eq(user.uid))
