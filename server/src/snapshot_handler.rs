@@ -199,7 +199,7 @@ async fn update(
     data: Json<EditData>,
 ) -> APIResponse {
     let txn = conn.into_inner().begin().await?;
-    if data.note.to_owned().unwrap().len() > 6 {
+    if data.note.to_owned().unwrap().len() > 256 {
         return Ok((Status::BadRequest, json!({})));
     }
     match snapshot::Entity::find()

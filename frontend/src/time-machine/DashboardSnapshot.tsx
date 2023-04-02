@@ -43,6 +43,7 @@ type SnapshotListState = {
 type EditNoteState = {
   activeId: number | null;
   updateNote: string | null;
+  status: "normal" | "unknownErr" | "noteTooLong";
 };
 
 const SnapshotListPanel: React.FC<{
@@ -64,6 +65,7 @@ const SnapshotListPanel: React.FC<{
   const [editNoteState, setEditNoteState] = useState<EditNoteState>({
     activeId: null,
     updateNote: null,
+    status: "normal",
   });
   if (!snapshotList) {
     return <Placeholder.Paragraph />;
@@ -106,40 +108,67 @@ const SnapshotListPanel: React.FC<{
                 return editNoteState.activeId == snapshot.id ? (
                   <div className="note-input">
                     <Stack justifyContent="space-between">
-                      <InputGroup inside>
-                        <input
-                          className="rs-input"
-                          defaultValue={
-                            snapshot.note ? snapshot.note : undefined
-                          }
-                          onChange={(note) => {
-                            setEditNoteState({
-                              ...editNoteState,
-                              updateNote: note.target.value,
-                            });
-                          }}
-                        />
-                        <InputGroup.Button
-                          onClick={async () => {
-                            const res = await Api.editSnapshot(
-                              editNoteState.activeId!,
-                              editNoteState.updateNote
-                            );
-                            // TODO: Error handling
-                            if (res.ok) {
-                              loadData();
-                            } else {
-                              console.log(res);
+                      <Whisper
+                        placement="top"
+                        open={editNoteState.status != "normal"}
+                        speaker={
+                          editNoteState.status == "noteTooLong" ? (
+                            <Tooltip>
+                              {t("snapshot-list-note-edit-err-tolong")}
+                            </Tooltip>
+                          ) : (
+                            <Tooltip>
+                              {t("snapshot-list-note-edit-err")}
+                            </Tooltip>
+                          )
+                        }
+                      >
+                        <InputGroup inside>
+                          <input
+                            className="rs-input"
+                            defaultValue={
+                              snapshot.note ? snapshot.note : undefined
                             }
-                            setEditNoteState({
-                              activeId: null,
-                              updateNote: null,
-                            });
-                          }}
-                        >
-                          <CheckIcon />
-                        </InputGroup.Button>
-                      </InputGroup>
+                            onChange={(note) => {
+                              setEditNoteState({
+                                ...editNoteState,
+                                updateNote: note.target.value,
+                              });
+                            }}
+                          />
+                          <InputGroup.Button
+                            onClick={async () => {
+                              const res = await Api.editSnapshot(
+                                editNoteState.activeId!,
+                                editNoteState.updateNote
+                              );
+                              // TODO: Error handling
+                              if (res.ok) {
+                                loadData();
+                                setEditNoteState({
+                                  activeId: null,
+                                  updateNote: null,
+                                  status: "normal",
+                                });
+                                //  Bad Request caused by too long
+                              } else if (res.status == 400) {
+                                setEditNoteState({
+                                  ...editNoteState,
+                                  status: "noteTooLong",
+                                });
+                              } else {
+                                console.log(res);
+                                setEditNoteState({
+                                  ...editNoteState,
+                                  status: "unknownErr",
+                                });
+                              }
+                            }}
+                          >
+                            <CheckIcon />
+                          </InputGroup.Button>
+                        </InputGroup>
+                      </Whisper>
                       <Button
                         size="sm"
                         appearance="subtle"
@@ -147,6 +176,7 @@ const SnapshotListPanel: React.FC<{
                           setEditNoteState({
                             activeId: null,
                             updateNote: null,
+                            status: "normal",
                           });
                         }}
                       >
@@ -155,11 +185,11 @@ const SnapshotListPanel: React.FC<{
                     </Stack>
                   </div>
                 ) : (
+                  // TODO After deleting the note, it will be automatically opened here，i don't know how to fix it...
                   <Whisper
                     placement="topStart"
                     trigger={snapshot.note ? "hover" : "none"}
                     speaker={<Tooltip>{snapshot.note}</Tooltip>}
-                    defaultOpen={false}
                   >
                     <Button
                       className="note-input"
@@ -169,6 +199,7 @@ const SnapshotListPanel: React.FC<{
                         setEditNoteState({
                           activeId: snapshot.id,
                           updateNote: snapshot.note,
+                          status: "normal",
                         });
                       }}
                     >

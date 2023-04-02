@@ -82,6 +82,9 @@ i18n
           "snapshot-list-download": "Download",
           "snapshot-list-view": "View",
           "snapshot-list-note-edit": "Edit Note",
+          "snapshot-list-note-edit-err-tolong":
+            "Note is too long, please shorten it",
+          "snapshot-list-note-edit-err": "Unknown Error",
           "snapshot-list-upload": "Upload",
           "snapshot-list-delete": "Delete",
           "snapshot-list-delete-title": "Delete snapshot",
@@ -149,6 +152,8 @@ i18n
           "snapshot-list-download": "下载",
           "snapshot-list-view": "查看",
           "snapshot-list-note-edit": "编辑备注",
+          "snapshot-list-note-edit-err-tolong": "备注过长，请修改",
+          "snapshot-list-note-edit-err": "未知错误",
           "snapshot-list-upload": "上传",
           "snapshot-list-delete": "删除",
           "snapshot-list-delete-title": "删除快照",
