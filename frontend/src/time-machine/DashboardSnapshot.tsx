@@ -159,6 +159,7 @@ const SnapshotListPanel: React.FC<{
                     placement="topStart"
                     trigger={snapshot.note ? "hover" : "none"}
                     speaker={<Tooltip>{snapshot.note}</Tooltip>}
+                    defaultOpen={false}
                   >
                     <Button
                       className="note-input"
