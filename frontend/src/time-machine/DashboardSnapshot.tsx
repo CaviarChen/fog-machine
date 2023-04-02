@@ -19,17 +19,31 @@ import {
   Uploader,
   Form,
   IconButton,
+  Input,
+  InputGroup,
 } from "rsuite";
-import MoreIcon from "@rsuite/icons/legacy/More";
-import Api, { SnapshotList, Snapshot } from "./Api";
+import VisibleIcon from "@rsuite/icons/Visible";
+import FileDownloadIcon from "@rsuite/icons/FileDownload";
+import TrashIcon from "@rsuite/icons/Trash";
 import PlusIcon from "@rsuite/icons/Plus";
+import MoreIcon from "@rsuite/icons/legacy/More";
+import CheckIcon from "@rsuite/icons/Check";
+import CloseIcon from "@rsuite/icons/Close";
+import Api, { SnapshotList, Snapshot } from "./Api";
 import { MessageType } from "rsuite/esm/Notification/Notification";
 import { useTranslation } from "react-i18next";
+import "./DashboardSnapshot.css";
 
 const { Column, HeaderCell, Cell } = Table;
 
 type SnapshotListState = {
   currentPage: number;
+};
+
+type EditNoteState = {
+  activeId: number | null;
+  updateNote: string | null;
+  status: "normal" | "unknownErr" | "noteTooLong";
 };
 
 const SnapshotListPanel: React.FC<{
@@ -38,14 +52,21 @@ const SnapshotListPanel: React.FC<{
   snapshotListState: SnapshotListState;
   setSnapshotListState: (state: SnapshotListState) => void;
   openDeleteConfirmation: (snapshotId: number) => void;
+  loadData: () => void;
 }> = ({
   isLoading,
   snapshotList,
   snapshotListState,
   setSnapshotListState,
   openDeleteConfirmation,
+  loadData,
 }) => {
   const { t } = useTranslation();
+  const [editNoteState, setEditNoteState] = useState<EditNoteState>({
+    activeId: null,
+    updateNote: null,
+    status: "normal",
+  });
   if (!snapshotList) {
     return <Placeholder.Paragraph />;
   } else {
@@ -57,7 +78,7 @@ const SnapshotListPanel: React.FC<{
           autoHeight={true}
           id="table"
         >
-          <Column flexGrow={10}>
+          <Column flexGrow={7}>
             <HeaderCell>{t("snapshot-list-date")}</HeaderCell>
             <Cell>
               {(rawData) => {
@@ -79,7 +100,119 @@ const SnapshotListPanel: React.FC<{
             </Cell>
           </Column>
 
-          <Column flexGrow={10}>
+          <Column flexGrow={13}>
+            <HeaderCell>{t("snapshot-list-note")}</HeaderCell>
+            <Cell>
+              {(rawData) => {
+                const snapshot = rawData as Snapshot;
+                return editNoteState.activeId == snapshot.id ? (
+                  <div className="note-input">
+                    <Stack justifyContent="space-between">
+                      <Whisper
+                        placement="top"
+                        open={editNoteState.status != "normal"}
+                        speaker={
+                          editNoteState.status == "noteTooLong" ? (
+                            <Tooltip>
+                              {t("snapshot-list-note-edit-err-tolong")}
+                            </Tooltip>
+                          ) : (
+                            <Tooltip>
+                              {t("snapshot-list-note-edit-err")}
+                            </Tooltip>
+                          )
+                        }
+                      >
+                        <InputGroup inside>
+                          <input
+                            className="rs-input"
+                            defaultValue={
+                              snapshot.note ? snapshot.note : undefined
+                            }
+                            onChange={(note) => {
+                              setEditNoteState({
+                                ...editNoteState,
+                                updateNote: note.target.value,
+                              });
+                            }}
+                          />
+                          <InputGroup.Button
+                            onClick={async () => {
+                              const res = await Api.editSnapshot(
+                                editNoteState.activeId!,
+                                editNoteState.updateNote
+                              );
+                              // TODO: Error handling
+                              if (res.ok) {
+                                loadData();
+                                setEditNoteState({
+                                  activeId: null,
+                                  updateNote: null,
+                                  status: "normal",
+                                });
+                              } else if (
+                                res.status == 400 &&
+                                res.error == "note_too_long"
+                              ) {
+                                setEditNoteState({
+                                  ...editNoteState,
+                                  status: "noteTooLong",
+                                });
+                              } else {
+                                console.log(res);
+                                setEditNoteState({
+                                  ...editNoteState,
+                                  status: "unknownErr",
+                                });
+                              }
+                            }}
+                          >
+                            <CheckIcon />
+                          </InputGroup.Button>
+                        </InputGroup>
+                      </Whisper>
+                      <Button
+                        size="sm"
+                        appearance="subtle"
+                        onClick={() => {
+                          setEditNoteState({
+                            activeId: null,
+                            updateNote: null,
+                            status: "normal",
+                          });
+                        }}
+                      >
+                        <CloseIcon />
+                      </Button>
+                    </Stack>
+                  </div>
+                ) : (
+                  <Whisper
+                    placement="topStart"
+                    trigger={snapshot.note ? "hover" : "none"}
+                    speaker={<Tooltip>{snapshot.note}</Tooltip>}
+                  >
+                    <Button
+                      className="note-input"
+                      block
+                      appearance="subtle"
+                      onClick={() => {
+                        setEditNoteState({
+                          activeId: snapshot.id,
+                          updateNote: snapshot.note,
+                          status: "normal",
+                        });
+                      }}
+                    >
+                      <div className="note-button">{snapshot.note}</div>
+                    </Button>
+                  </Whisper>
+                );
+              }}
+            </Cell>
+          </Column>
+
+          <Column flexGrow={7}>
             <HeaderCell>{t("snapshot-list-source")}</HeaderCell>
             <Cell>
               {(rawData) => {
@@ -95,7 +228,7 @@ const SnapshotListPanel: React.FC<{
             </Cell>
           </Column>
 
-          <Column flexGrow={10}>
+          <Column flexGrow={8} fixed="right">
             <HeaderCell>
               <MoreIcon />
             </HeaderCell>
@@ -105,41 +238,67 @@ const SnapshotListPanel: React.FC<{
                 return (
                   <div style={{ marginTop: "-3px" }}>
                     <ButtonToolbar>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          location.href =
-                            "/editor?viewing-snapshot=" + String(snapshot.id);
-                        }}
+                      <Whisper
+                        placement="bottom"
+                        controlId="control-id-hover"
+                        trigger="hover"
+                        speaker={<Tooltip>{t("snapshot-list-view")}</Tooltip>}
                       >
-                        {t("snapshot-list-view")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={async () => {
-                          const token = await Api.getSnapshotDownloadToken(
-                            snapshot.id
-                          );
-                          if (token.ok) {
-                            window.open(
-                              Api.backendUrl +
-                                "misc/download?token=" +
-                                token.ok,
-                              "_blank"
+                        <Button
+                          size="sm"
+                          appearance="subtle"
+                          onClick={() => {
+                            location.href =
+                              "/editor?viewing-snapshot=" + String(snapshot.id);
+                          }}
+                        >
+                          <VisibleIcon />
+                        </Button>
+                      </Whisper>
+                      <Whisper
+                        placement="bottom"
+                        controlId="control-id-hover"
+                        trigger="hover"
+                        speaker={
+                          <Tooltip>{t("snapshot-list-download")}</Tooltip>
+                        }
+                      >
+                        <Button
+                          size="sm"
+                          appearance="subtle"
+                          onClick={async () => {
+                            const token = await Api.getSnapshotDownloadToken(
+                              snapshot.id
                             );
-                          } else {
-                            //TODO: error handling
-                          }
-                        }}
+                            if (token.ok) {
+                              window.open(
+                                Api.backendUrl +
+                                  "misc/download?token=" +
+                                  token.ok,
+                                "_blank"
+                              );
+                            } else {
+                              //TODO: error handling
+                            }
+                          }}
+                        >
+                          <FileDownloadIcon />
+                        </Button>
+                      </Whisper>
+                      <Whisper
+                        placement="bottom"
+                        controlId="control-id-hover"
+                        trigger="hover"
+                        speaker={<Tooltip>{t("snapshot-list-delete")}</Tooltip>}
                       >
-                        {t("snapshot-list-download")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => openDeleteConfirmation(snapshot.id)}
-                      >
-                        {t("snapshot-list-delete")}
-                      </Button>
+                        <Button
+                          size="sm"
+                          appearance="subtle"
+                          onClick={() => openDeleteConfirmation(snapshot.id)}
+                        >
+                          <TrashIcon />
+                        </Button>
+                      </Whisper>
                     </ButtonToolbar>
                   </div>
                 );
@@ -277,12 +436,12 @@ function DashboardSnapshot() {
 
   type UploadDialogState = {
     uploadDate: Date | null;
+    uploadNote: string | null;
     uploadState: "empty" | "uploading" | { token: string };
   };
   const [uploadDialogState, setUploadDialogState] = useState<
     UploadDialogState | "closed"
   >("closed");
-
   return (
     <div style={{ marginTop: "2vh" }}>
       <Panel
@@ -294,6 +453,7 @@ function DashboardSnapshot() {
               onClick={() => {
                 setUploadDialogState({
                   uploadDate: null,
+                  uploadNote: null,
                   uploadState: "empty",
                 });
               }}
@@ -310,6 +470,7 @@ function DashboardSnapshot() {
             snapshotListState,
             setSnapshotListState,
             openDeleteConfirmation,
+            loadData,
           }}
         />
       </Panel>
@@ -326,20 +487,6 @@ function DashboardSnapshot() {
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <DatePicker
-              format="yyyy-MM-dd HH:mm"
-              size="lg"
-              placeholder={t("data-upload-select-date")}
-              onChange={(date) => {
-                if (uploadDialogState == "closed") return;
-                setUploadDialogState({
-                  ...uploadDialogState,
-                  uploadDate: date,
-                });
-              }}
-              style={{ width: 200, display: "block", marginBottom: 10 }}
-            />
-
             {/*
             TODO: `Uploader` will send the upload request directly. So the file will be uploaded when the user selected the file not when they click the submit button.
             I guess this is fine except that `upload_token` is only valid for 1 min, so if the user click submit after 1 min then this is not going to work.
@@ -410,8 +557,34 @@ function DashboardSnapshot() {
 
             <Modal.Footer style={{ marginTop: "16px" }}>
               <Form.Group>
-                <ButtonToolbar>
+                <Stack spacing={6} justifyContent={"flex-end"}>
+                  <DatePicker
+                    format="yyyy-MM-dd HH:mm"
+                    size="lg"
+                    placeholder={t("data-upload-select-date")}
+                    onChange={(date) => {
+                      if (uploadDialogState == "closed") return;
+                      setUploadDialogState({
+                        ...uploadDialogState,
+                        uploadDate: date,
+                      });
+                    }}
+                    style={{ width: 200, display: "block", marginBottom: 10 }}
+                  />
+                  <Input
+                    size="lg"
+                    style={{ width: 200, display: "block", marginBottom: 10 }}
+                    placeholder={t("data-upload-note")}
+                    onChange={(note) => {
+                      if (uploadDialogState == "closed") return;
+                      setUploadDialogState({
+                        ...uploadDialogState,
+                        uploadNote: note,
+                      });
+                    }}
+                  />
                   <Button
+                    style={{ display: "block", marginBottom: 10 }}
                     disabled={
                       uploadDialogState == "closed" ||
                       !uploadDialogState.uploadDate ||
@@ -431,8 +604,10 @@ function DashboardSnapshot() {
 
                       const result = await Api.uploadSnapshot(
                         uploadDialogState.uploadDate,
-                        uploadDialogState.uploadState.token
+                        uploadDialogState.uploadState.token,
+                        uploadDialogState.uploadNote
                       );
+
                       if (result.ok) {
                         notificationToaster.push(
                           notification("success", t("success-title"))
@@ -444,6 +619,10 @@ function DashboardSnapshot() {
                         let errorMessage = t("error-unknown");
                         if (result.error == "timestamp_is_in_future") {
                           errorMessage = t("error-upload-timestamp");
+                        } else if (result.error == "note_too_long") {
+                          errorMessage = t(
+                            "snapshot-list-note-edit-err-tolong"
+                          );
                         } else if (result.error == "invalid_upload_token") {
                           errorMessage = t("error-upload-token");
                           // TODO: We should reset the `Uploader` here, but currently this cannot be done because
@@ -459,7 +638,7 @@ function DashboardSnapshot() {
                   >
                     {t("data-form-submit")}
                   </Button>
-                </ButtonToolbar>
+                </Stack>
               </Form.Group>
             </Modal.Footer>
           </Form>

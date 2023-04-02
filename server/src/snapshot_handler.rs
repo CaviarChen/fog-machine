@@ -85,7 +85,9 @@ fn get_and_remove_uploaded_item(
 struct CreateData {
     timestamp: DateTime<Utc>,
     upload_token: String,
+    note: Option<String>,
 }
+
 #[post("/", data = "<data>")]
 async fn create(
     conn: Connection<'_, Db>,
@@ -93,6 +95,10 @@ async fn create(
     user: User,
     data: Json<CreateData>,
 ) -> APIResponse {
+    let note_len = data.note.as_ref().map_or(0, |s| s.len());
+    if note_len > 256 {
+        return Ok((Status::BadRequest, json!({"error":"note_too_long"})));
+    }
     let cutoff = Utc::now() + chrono::Duration::seconds(10);
     if data.timestamp > cutoff {
         return Ok((
@@ -171,7 +177,7 @@ async fn create(
                 timestamp: Set(data.timestamp),
                 sync_files: Set(entity::snapshot::SyncFiles(sync_files)),
                 source_kind: Set(snapshot::SourceKind::Upload),
-                note: Set(None),
+                note: Set(data.note.to_owned()),
             }
             .insert(db)
             .await?;
@@ -181,6 +187,41 @@ async fn create(
                 json!({"id": snapshot.id, "file_count": file_count, "logs": logs.join("\n")}),
             ))
         }
+    }
+}
+
+#[derive(Deserialize)]
+struct EditData {
+    note: Option<String>,
+}
+
+#[post("/<snapshot_id>", data = "<data>")]
+async fn update(
+    conn: Connection<'_, Db>,
+    user: User,
+    snapshot_id: i64,
+    data: Json<EditData>,
+) -> APIResponse {
+    let txn = conn.into_inner().begin().await?;
+    let note_len = data.note.as_ref().map_or(0, |s| s.len());
+    if note_len > 256 {
+        return Ok((Status::BadRequest, json!({"error":"note_too_long"})));
+    }
+    match snapshot::Entity::find()
+        .filter(snapshot::Column::UserId.eq(user.uid))
+        .filter(snapshot::Column::Id.eq(snapshot_id))
+        .lock_exclusive()
+        .one(&txn)
+        .await?
+    {
+        Some(snapshot) => {
+            let mut snapshot: snapshot::ActiveModel = snapshot.into();
+            snapshot.note = Set(data.note.to_owned());
+            snapshot.update(&txn).await?;
+            txn.commit().await?;
+            Ok((Status::Ok, json!({})))
+        }
+        None => Ok((Status::NotFound, json!({}))),
     }
 }
 
@@ -273,12 +314,14 @@ async fn get_editor_view(
             let prev = prev_snapshot.map(|s| {
                 json!({
                     "id": s.id,
+                    "note": s.note,
                     "timestamp":  s.timestamp,
                 })
             });
             let next = next_snapshot.map(|s| {
                 json!({
                     "id": s.id,
+                    "note": s.note,
                     "timestamp":  s.timestamp,
                 })
             });
@@ -287,6 +330,7 @@ async fn get_editor_view(
                 Status::Ok,
                 json!({
                     "id": this_snapshot.id,
+                    "note": this_snapshot.note,
                     "timestamp": this_snapshot.timestamp,
                     "prev": prev,
                     "next": next,
@@ -303,6 +347,7 @@ pub fn routes() -> Vec<rocket::Route> {
         list_snapshots,
         create,
         delete,
+        update,
         get_download_token,
         get_editor_view
     ]

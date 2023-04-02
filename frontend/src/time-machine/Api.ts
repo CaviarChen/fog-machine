@@ -228,12 +228,32 @@ export default class Api {
     return result;
   }
 
+  public static async editSnapshot(
+    id: number,
+    note?: string | null
+  ): Promise<Result<"ok">> {
+    const data: any = {};
+    data["note"] = note;
+    const result = await this.requestApi(
+      "snapshot/" + String(id),
+      "post",
+      true,
+      data
+    );
+    if (result.ok) {
+      result.ok = "ok";
+    }
+    return result;
+  }
+
   public static async uploadSnapshot(
     timestamp: Date,
-    uploadToken: string
+    uploadToken: string,
+    note?: string | null
   ): Promise<Result<SnapshotUploadResult>> {
     const data: any = {};
     data["timestamp"] = timestamp;
+    data["note"] = note;
     data["upload_token"] = uploadToken;
     const result = await this.requestApi("snapshot", "post", true, data);
     if (result.ok) {

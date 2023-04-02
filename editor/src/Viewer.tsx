@@ -72,7 +72,7 @@ function Viewer(props: Props): JSX.Element {
           msgboxShow={props.msgboxShow}
           mode="viewer"
         />
-
+        {/* TODO show snapshot's note here */}
         <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
           <button
             className={
