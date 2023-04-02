@@ -95,7 +95,7 @@ async fn create(
     user: User,
     data: Json<CreateData>,
 ) -> APIResponse {
-    let note_len: usize = data.note.as_ref().map_or(0, |s: &String| s.len());
+    let note_len = data.note.as_ref().map_or(0, |s| s.len());
     if note_len > 256 {
         return Ok((Status::BadRequest, json!({"error":"note_too_long"})));
     }
@@ -203,7 +203,7 @@ async fn update(
     data: Json<EditData>,
 ) -> APIResponse {
     let txn = conn.into_inner().begin().await?;
-    let note_len: usize = data.note.as_ref().map_or(0, |s: &String| s.len());
+    let note_len = data.note.as_ref().map_or(0, |s| s.len());
     if note_len > 256 {
         return Ok((Status::BadRequest, json!({"error":"note_too_long"})));
     }

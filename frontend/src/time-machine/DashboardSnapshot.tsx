@@ -187,7 +187,6 @@ const SnapshotListPanel: React.FC<{
                     </Stack>
                   </div>
                 ) : (
-                  // TODO After deleting the note, it will be automatically opened here，i don't know how to fix it...
                   <Whisper
                     placement="topStart"
                     trigger={snapshot.note ? "hover" : "none"}
