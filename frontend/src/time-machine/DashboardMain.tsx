@@ -49,6 +49,8 @@ const MainStatusPanelContent: React.FC<{
   setOpenEditModel: (isOpen: boolean) => void;
   setOpenLogModel: (isOpen: boolean) => void;
   setEditModelState: (state: EditModelState) => void;
+  setIsLogListLoading: (isLoading: boolean) => void;
+  setLogList: (state: TaskLogList) => void;
   loadData: () => Promise<void>;
 }> = ({
   isLoading,
@@ -57,6 +59,8 @@ const MainStatusPanelContent: React.FC<{
   setOpenEditModel,
   setOpenLogModel,
   setEditModelState,
+  setIsLogListLoading,
+  setLogList,
   loadData,
 }) => {
   const { t } = useTranslation();
@@ -167,7 +171,15 @@ const MainStatusPanelContent: React.FC<{
                 <IconButton
                   icon={<FileTextIcon />}
                   placement="left"
-                  onClick={() => {
+                  onClick={async () => {
+                    setIsLogListLoading(true);
+                    const result = await Api.listTaskLog();
+                    if (result.ok) {
+                      setLogList(result.ok);
+                    } else {
+                      console.log(result);
+                    }
+                    setIsLogListLoading(false);
                     setOpenLogModel(true);
                   }}
                 >
@@ -370,6 +382,8 @@ function DashboardMain() {
               setOpenEditModel,
               setOpenLogModel,
               setEditModelState,
+              setIsLogListLoading,
+              setLogList,
               loadData,
             }}
           />
@@ -472,34 +486,28 @@ function DashboardMain() {
 
       <Modal
         open={openLogModel}
-        onOpen={async () => {
-          setIsLogListLoading(true);
-          const result = await Api.listTaskLog();
-          if (result.ok) {
-            setLogList(result.ok);
-          } else {
-            console.log(result);
-          }
-          setIsLogListLoading(false);
-        }}
         onClose={() => {
           setOpenLogModel(false);
         }}
         backdrop={"static"}
+        size="lg"
+        overflow={true}
       >
         <Modal.Header>
           <Modal.Title>{t("sync-button-view-Log")}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          {/* TODO On Firefox, the row height will become very high, 
+          maybe it's caused by wordWrap, but wordWrap works very nice here */}
           <Table
             wordWrap="break-word"
-            height={520}
+            autoHeight={true}
             hover={false}
             data={logList ? logList.snapshotLogs : undefined}
             id="logTable"
             loading={isLogListLoading}
           >
-            <Column flexGrow={8} align="center" fixed>
+            <Column flexGrow={5} align="center" fixed>
               <HeaderCell>{t("log-list-timestamp")}</HeaderCell>
               <Cell>
                 {(rawData) => {
@@ -511,7 +519,7 @@ function DashboardMain() {
               </Cell>
             </Column>
 
-            <Column flexGrow={6}>
+            <Column flexGrow={4} align="center">
               <HeaderCell>{t("log-list-snapshot-id")}</HeaderCell>
               <Cell>
                 {(rawData) => {
@@ -521,7 +529,7 @@ function DashboardMain() {
               </Cell>
             </Column>
 
-            <Column flexGrow={6}>
+            <Column flexGrow={4} align="center">
               <HeaderCell>{t("log-list-succeed")}</HeaderCell>
               <Cell>
                 {(rawData) => {
@@ -539,14 +547,14 @@ function DashboardMain() {
               </Cell>
             </Column>
 
-            <Column flexGrow={12}>
+            <Column flexGrow={18}>
               <HeaderCell>{t("log-list-details")}</HeaderCell>
               <Cell>
                 {(rawData) => {
                   const logs = rawData as TaskLog;
                   return (
                     <Whisper
-                      placement="right"
+                      placement="bottom"
                       trigger="hover"
                       speaker={<Tooltip>{logs.details}</Tooltip>}
                     >
