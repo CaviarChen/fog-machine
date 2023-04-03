@@ -15,8 +15,9 @@ import {
   Message,
   useToaster,
   Notification,
+  Table,
 } from "rsuite";
-import Api, { SnapshotTask } from "./Api";
+import Api, { SnapshotTask, TaskLog, TaskLogList } from "./Api";
 import PauseIcon from "@rsuite/icons/legacy/Pause";
 import FileTextIcon from "@rsuite/icons/legacy/FileText";
 import PlayIcon from "@rsuite/icons/legacy/Play";
@@ -29,6 +30,8 @@ import HelpOutlineIcon from "@rsuite/icons/HelpOutline";
 import DashboardSnapshot from "./DashboardSnapshot";
 import { useTranslation } from "react-i18next";
 
+const { Column, HeaderCell, Cell } = Table;
+
 type EditModelState = {
   mode: "edit" | "create";
   shareLink?: string;
@@ -40,6 +43,7 @@ const MainStatusPanelContent: React.FC<{
   setIsLoading: (isLoading: boolean) => void;
   snapshotTask: SnapshotTask | null;
   setOpenEditModel: (isOpen: boolean) => void;
+  setOpenLogModel: (isOpen: boolean) => void;
   setEditModelState: (state: EditModelState) => void;
   loadData: () => Promise<void>;
 }> = ({
@@ -47,6 +51,7 @@ const MainStatusPanelContent: React.FC<{
   setIsLoading,
   snapshotTask,
   setOpenEditModel,
+  setOpenLogModel,
   setEditModelState,
   loadData,
 }) => {
@@ -155,7 +160,13 @@ const MainStatusPanelContent: React.FC<{
                     {t("sync-button-start")}
                   </IconButton>
                 )}
-                <IconButton disabled icon={<FileTextIcon />} placement="left">
+                <IconButton
+                  icon={<FileTextIcon />}
+                  placement="left"
+                  onClick={() => {
+                    setOpenLogModel(true);
+                  }}
+                >
                   {t("sync-button-view-Log")}
                 </IconButton>
                 <IconButton
@@ -212,7 +223,11 @@ function DashboardMain() {
     mode: "create",
   });
 
+  const [logList, setLogList] = useState<TaskLogList | null>(null);
+
   const [openEditModel, setOpenEditModel] = useState(false);
+
+  const [openLogModel, setOpenLogModel] = useState(false);
 
   const allowedInterval = [
     6 * 60,
@@ -347,6 +362,7 @@ function DashboardMain() {
               setIsLoading,
               snapshotTask,
               setOpenEditModel,
+              setOpenLogModel,
               setEditModelState,
               loadData,
             }}
@@ -445,6 +461,79 @@ function DashboardMain() {
               </Form.Group>
             </Modal.Footer>
           </Form>
+        </Modal.Body>
+      </Modal>
+
+      <Modal
+        open={openLogModel}
+        onOpen={async () => {
+          const result = await Api.listTaskLog();
+          if (result.ok) {
+            setLogList(result.ok);
+          } else {
+            console.log(result);
+          }
+        }}
+        onClose={() => {
+          setOpenLogModel(false);
+        }}
+        backdrop={"static"}
+      >
+        <Modal.Header>
+          <Modal.Title>{t("sync-button-view-Log")}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Table
+            wordWrap="break-word"
+            autoHeight={true}
+            data={logList ? logList.snapshotLogs : undefined}
+            id="table"
+            onRowClick={(rowData) => {
+              console.log(rowData);
+            }}
+          >
+            <Column flexGrow={8} align="center" fixed>
+              <HeaderCell>time</HeaderCell>
+              <Cell>
+                {(rawData) => {
+                  const logs = rawData as TaskLog;
+                  return (
+                    <div>{moment(logs.timestamp).format("YYYY-MM-DD")}</div>
+                  );
+                }}
+              </Cell>
+            </Column>
+
+            <Column flexGrow={6}>
+              <HeaderCell>snapshot id</HeaderCell>
+              <Cell>
+                {(rawData) => {
+                  const logs = rawData as TaskLog;
+                  return <div>{logs.snapshotId}</div>;
+                }}
+              </Cell>
+            </Column>
+
+            <Column flexGrow={6}>
+              <HeaderCell>succeed</HeaderCell>
+              <Cell>
+                {(rawData) => {
+                  const logs = rawData as TaskLog;
+                  return <div>{logs.succeed ? "yes" : "no"}</div>;
+                }}
+              </Cell>
+            </Column>
+
+            <Column flexGrow={12}>
+              <HeaderCell>details</HeaderCell>
+              <Cell>
+                {(rawData) => {
+                  const logs = rawData as TaskLog;
+                  return <div>{logs.details}</div>;
+                }}
+              </Cell>
+            </Column>
+          </Table>
         </Modal.Body>
       </Modal>
     </>

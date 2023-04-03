@@ -58,6 +58,19 @@ export type SnapshotList = {
   snapshots: Snapshot[];
 };
 
+export type TaskLog = {
+  id: number;
+  details: string | null;
+  snapshotId: number | null;
+  succeed: boolean;
+  timestamp: Date;
+  userId: number;
+};
+
+export type TaskLogList = {
+  snapshotLogs: TaskLog[];
+};
+
 export type SnapshotUploadResult = {
   id: number;
   fileCount: number;
@@ -212,6 +225,14 @@ export default class Api {
     const result = await this.requestApi("snapshot_task", "patch", true, data);
     if (result.ok) {
       result.ok = "ok";
+    }
+    return result;
+  }
+
+  public static async listTaskLog(): Promise<Result<TaskLogList>> {
+    const result = await this.requestApi("snapshot_log", "get", true);
+    if (result.ok) {
+      result.ok = toCamel(result.ok);
     }
     return result;
   }
