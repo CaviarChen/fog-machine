@@ -16,6 +16,8 @@ import {
   useToaster,
   Notification,
   Table,
+  Whisper,
+  Tooltip,
 } from "rsuite";
 import Api, { SnapshotTask, TaskLog, TaskLogList } from "./Api";
 import PauseIcon from "@rsuite/icons/legacy/Pause";
@@ -27,6 +29,8 @@ import CloseOutlineIcon from "@rsuite/icons/CloseOutline";
 import EditIcon from "@rsuite/icons/Edit";
 import AddOutlineIcon from "@rsuite/icons/AddOutline";
 import HelpOutlineIcon from "@rsuite/icons/HelpOutline";
+import CheckRoundIcon from "@rsuite/icons/CheckRound";
+import WarningRoundIcon from "@rsuite/icons/WarningRound";
 import DashboardSnapshot from "./DashboardSnapshot";
 import { useTranslation } from "react-i18next";
 
@@ -228,6 +232,8 @@ function DashboardMain() {
   const [openEditModel, setOpenEditModel] = useState(false);
 
   const [openLogModel, setOpenLogModel] = useState(false);
+
+  const [isLogListLoading, setIsLogListLoading] = useState(false);
 
   const allowedInterval = [
     6 * 60,
@@ -467,12 +473,14 @@ function DashboardMain() {
       <Modal
         open={openLogModel}
         onOpen={async () => {
+          setIsLogListLoading(true);
           const result = await Api.listTaskLog();
           if (result.ok) {
             setLogList(result.ok);
           } else {
             console.log(result);
           }
+          setIsLogListLoading(false);
         }}
         onClose={() => {
           setOpenLogModel(false);
@@ -485,15 +493,14 @@ function DashboardMain() {
         <Modal.Body>
           <Table
             wordWrap="break-word"
-            autoHeight={true}
+            height={520}
+            hover={false}
             data={logList ? logList.snapshotLogs : undefined}
-            id="table"
-            onRowClick={(rowData) => {
-              console.log(rowData);
-            }}
+            id="logTable"
+            loading={isLogListLoading}
           >
             <Column flexGrow={8} align="center" fixed>
-              <HeaderCell>time</HeaderCell>
+              <HeaderCell>{t("log-list-timestamp")}</HeaderCell>
               <Cell>
                 {(rawData) => {
                   const logs = rawData as TaskLog;
@@ -505,31 +512,47 @@ function DashboardMain() {
             </Column>
 
             <Column flexGrow={6}>
-              <HeaderCell>snapshot id</HeaderCell>
+              <HeaderCell>{t("log-list-snapshot-id")}</HeaderCell>
               <Cell>
                 {(rawData) => {
                   const logs = rawData as TaskLog;
-                  return <div>{logs.snapshotId}</div>;
+                  return <div>{logs.snapshotId ? logs.snapshotId : "-"}</div>;
                 }}
               </Cell>
             </Column>
 
             <Column flexGrow={6}>
-              <HeaderCell>succeed</HeaderCell>
+              <HeaderCell>{t("log-list-succeed")}</HeaderCell>
               <Cell>
                 {(rawData) => {
                   const logs = rawData as TaskLog;
-                  return <div>{logs.succeed ? "yes" : "no"}</div>;
+                  return (
+                    <div>
+                      {logs.succeed ? (
+                        <CheckRoundIcon style={{ color: "#378f17" }} />
+                      ) : (
+                        <WarningRoundIcon style={{ color: "#eb3626	" }} />
+                      )}
+                    </div>
+                  );
                 }}
               </Cell>
             </Column>
 
             <Column flexGrow={12}>
-              <HeaderCell>details</HeaderCell>
+              <HeaderCell>{t("log-list-details")}</HeaderCell>
               <Cell>
                 {(rawData) => {
                   const logs = rawData as TaskLog;
-                  return <div>{logs.details}</div>;
+                  return (
+                    <Whisper
+                      placement="right"
+                      trigger="hover"
+                      speaker={<Tooltip>{logs.details}</Tooltip>}
+                    >
+                      <div>{logs.details}</div>
+                    </Whisper>
+                  );
                 }}
               </Cell>
             </Column>
