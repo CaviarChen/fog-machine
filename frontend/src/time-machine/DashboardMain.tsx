@@ -273,12 +273,7 @@ function DashboardMain() {
   const errorToaster = useToaster();
   const errorNotification = (msg: string) => {
     return (
-      <Notification
-        type={"error"}
-        header={t("error-title")}
-        closable
-        duration={0}
-      >
+      <Notification type={"error"} header={t("error-title")} closable>
         {msg}
       </Notification>
     );
@@ -539,7 +534,7 @@ function DashboardMain() {
                       {logs.succeed ? (
                         <CheckRoundIcon style={{ color: "#378f17" }} />
                       ) : (
-                        <WarningRoundIcon style={{ color: "#eb3626	" }} />
+                        <WarningRoundIcon style={{ color: "#eb3626" }} />
                       )}
                     </div>
                   );
