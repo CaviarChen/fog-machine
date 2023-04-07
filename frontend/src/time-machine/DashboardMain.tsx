@@ -331,18 +331,19 @@ function DashboardMain() {
         if (res.error == "invalid_share") {
           errorToaster.push(errorNotification(t("error-data-share-link")), {
             placement: "topCenter",
+            duration: 0,
           });
         } else if (res.error == "invalid_folder_structure") {
           errorToaster.push(
             errorNotification(t("error-data-folder-structure")),
-            { placement: "topCenter" }
+            { placement: "topCenter", duration: 0 }
           );
         } else {
           errorToaster.push(
             errorNotification(
               t("error-unknown") + ": " + String(res.unknownError)
             ),
-            { placement: "topCenter" }
+            { placement: "topCenter", duration: 0 }
           );
         }
       }
@@ -359,7 +360,7 @@ function DashboardMain() {
     } else {
       errorToaster.push(
         errorNotification(t("error-unknown") + ": " + String(res.unknownError)),
-        { placement: "topCenter" }
+        { placement: "topCenter", duration: 0 }
       );
     }
     setEditButtonLoading(false);

@@ -388,7 +388,6 @@ function DashboardSnapshot() {
         type="warning"
         header={t("snapshot-list-delete-title")}
         closable
-        duration={0}
       >
         {t("snapshot-list-delete-prompt")}
         <hr />
@@ -428,6 +427,7 @@ function DashboardSnapshot() {
     );
     notificationToaster.push(message, {
       placement: "topCenter",
+      duration: 0,
     });
   };
 
