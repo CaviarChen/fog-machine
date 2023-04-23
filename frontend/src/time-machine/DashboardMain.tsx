@@ -50,7 +50,7 @@ const MainStatusPanelContent: React.FC<{
   setOpenLogModel: (isOpen: boolean) => void;
   setEditModelState: (state: EditModelState) => void;
   setIsLogListLoading: (isLoading: boolean) => void;
-  setLogList: (state: TaskLogList) => void;
+  setLogList: (state: TaskLogList | null) => void;
   loadData: () => Promise<void>;
 }> = ({
   isLoading,
@@ -172,6 +172,8 @@ const MainStatusPanelContent: React.FC<{
                   icon={<FileTextIcon />}
                   placement="left"
                   onClick={async () => {
+                    setLogList(null);
+                    setOpenLogModel(true);
                     setIsLogListLoading(true);
                     const result = await Api.listTaskLog();
                     if (result.ok) {
@@ -180,7 +182,6 @@ const MainStatusPanelContent: React.FC<{
                       console.log(result);
                     }
                     setIsLogListLoading(false);
-                    setOpenLogModel(true);
                   }}
                 >
                   {t("sync-button-view-Log")}
