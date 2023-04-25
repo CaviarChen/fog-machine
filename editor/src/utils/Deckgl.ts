@@ -55,6 +55,7 @@ export class Tile {
 export class Deckgl {
   private deck: Deck;
   private tileLayer: DeckglTileLayer;
+  private tileLayerProps: Any;
 
   constructor(
     map: mapboxgl.Map,
@@ -62,14 +63,15 @@ export class Deckgl {
     onLoadCanvas: (tile: Tile) => ITileCanvasProvider,
     onUnloadCanvas: (tile: Tile) => void
   ) {
-    const tileLayer = new DeckglTileLayer({
+    this.tileLayerProps = {
       id: "deckgl-tile-layer",
+      opacity: 1,
       maxRequests: 10,
       pickable: false,
       minZoom: 0,
       maxZoom: 19,
       tileSize: 512,
-      refinementStrategy: "best-available",
+      refinementStrategy: "no-overlap",
       zoomOffset: devicePixelRatio === 1 ? -1 : 0,
       renderSubLayers: (props) => {
         const tile: Tile = props.tile;
@@ -88,20 +90,25 @@ export class Deckgl {
         return [dynamicBitmapLayer];
       },
       onTileUnload: onUnloadCanvas,
-    });
+    };
+
     const deck = new Deck({
       canvas: deckglContainer,
       width: "100%",
       height: "100%",
       views: new MapView({ repeat: true }),
-      layers: [tileLayer],
+      layers: [],
     });
     Deckgl.setDeckglView(map, deck);
     map.on("move", () => {
       Deckgl.setDeckglView(map, deck);
     });
     this.deck = deck;
-    this.tileLayer = tileLayer;
+  }
+
+  private renderLayer() {
+    this.tileLayer = new DeckglTileLayer(this.tileLayerProps);
+    this.deck.setProps({layers: [this.tileLayer]});
   }
 
   private static setDeckglView(map: mapboxgl.Map, deck: Deck) {
@@ -115,6 +122,11 @@ export class Deckgl {
         pitch: map.getPitch(),
       },
     });
+  }
+
+  setOpacity(opacity: number): void {
+    this.tileLayerProps.opacity = opacity;
+    this.renderLayer();
   }
 
   updateOnce(): void {
