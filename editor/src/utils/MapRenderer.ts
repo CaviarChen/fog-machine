@@ -1,13 +1,10 @@
-// need typed definitions from @mapbox/mapbox-gl-draw
-/* eslint-disable */
-// @ts-nocheck
 // TODO: consider reactify this?
 import mapboxgl from "mapbox-gl";
-import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import * as fogMap from "./FogMap";
 import * as deckgl from "./Deckgl";
 import { CANVAS_SIZE_OFFSET, FogCanvas } from "./FogCanvas";
 import { HistoryManager } from "./HistoryManager";
+import { MapDraw } from "./MapDraw";
 
 const FOW_TILE_ZOOM = 9;
 const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + fogMap.TILE_WIDTH_OFFSET;
@@ -47,7 +44,7 @@ export class MapRenderer {
   private loadedFogCanvases: { [key: string]: FogCanvas };
   private controlMode: ControlMode;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
-  private mapglDraw: MapboxDraw;
+  private mapDraw: MapDraw | null;
   private onChangeCallback: { [key: string]: () => void };
   private mapStyle: MapStyle;
   private resolvedLanguage: string;
@@ -60,37 +57,13 @@ export class MapRenderer {
     this.loadedFogCanvases = {};
     this.controlMode = ControlMode.View;
     this.eraserArea = null;
-    this.mapglDraw = new MapboxDraw({
-      displayControlsDefault: false,
-      defaultMode: "draw_line_string",
-      styles: [
-        // ACTIVE (being drawn)
-        // line stroke
-        {
-          id: "gl-draw-line",
-          type: "line",
-          filter: [
-            "all",
-            ["==", "$type", "LineString"],
-            ["!=", "mode", "static"],
-          ],
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": "#969696",
-            "line-dasharray": [0.2, 2],
-            "line-width": 2,
-          },
-        },
-      ],
-    });
     this.historyManager = new HistoryManager(this.fogMap);
     this.onChangeCallback = {};
     this.mapStyle = "standard";
     this.resolvedLanguage = "en";
     this.fogConcentration = "medium";
+    this.deckglContainer = null;
+    this.mapDraw = null;
   }
 
   static create(): MapRenderer {
@@ -205,10 +178,6 @@ export class MapRenderer {
     this.map.on("mousedown", this.handleMouseClick.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
-    this.map.on("draw.create", this.handleDrawComplete.bind(this));
-    this.map.on("draw.modechange", (_ev) => {
-      this.mapglDraw.changeMode("draw_line_string", {});
-    });
     map.on("styledata", () => {
       this.setMapboxLanguage();
     });
@@ -216,6 +185,15 @@ export class MapRenderer {
     this.onChange();
     this.resolvedLanguage = resolvedLanguage;
     this.updateFogConcentrationInternal();
+    this.mapDraw = new MapDraw(
+      map,
+      () => {
+        return this.fogMap;
+      },
+      (newMap, areaChanged) => {
+        this.updateFogMap(newMap, areaChanged);
+      }
+    );
   }
 
   setResolvedLanguage(resolvedLanguage: string) {
@@ -382,37 +360,6 @@ export class MapRenderer {
     }
   }
 
-  handleDrawComplete(e: GeoJSON): void {
-    // parse each line segments, apply to fogmap
-    console.log(e.features);
-    for (const geo of e.features) {
-      if (geo.geometry.type == "LineString") {
-        const coordinates = geo.geometry.coordinates;
-
-        let [startLng, startLat] = coordinates[0];
-        let newMap = this.fogMap;
-        const bounds = new mapboxgl.LngLatBounds(
-          coordinates[0],
-          coordinates[0]
-        );
-        for (let j = 1; j < coordinates.length; ++j) {
-          const [endLng, endLat] = coordinates[j];
-          newMap = newMap.addLine(startLng, startLat, endLng, endLat);
-          bounds.extend(coordinates[j]);
-          [startLng, startLat] = [endLng, endLat];
-        }
-        const bbox = new deckgl.Bbox(
-          bounds.getWest(),
-          bounds.getSouth(),
-          bounds.getEast(),
-          bounds.getNorth()
-        );
-        this.updateFogMap(newMap, bbox);
-      }
-    }
-    this.mapglDraw.trash(); // clean up the user drawing
-  }
-
   setControlMode(mode: ControlMode): void {
     const mapboxCanvas = this.map?.getCanvasContainer();
     if (!mapboxCanvas) {
@@ -436,9 +383,7 @@ export class MapRenderer {
       case ControlMode.DrawLine:
         mapboxCanvas.style.cursor = "";
         this.map?.dragPan.enable();
-        if (this.map?.hasControl(this.mapglDraw)) {
-          this.map?.removeControl(this.mapglDraw);
-        }
+        this.mapDraw?.activate();
         break;
     }
 
@@ -453,7 +398,7 @@ export class MapRenderer {
       case ControlMode.DrawLine:
         mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
-        this.map?.addControl(this.mapglDraw, "bottom-left");
+        this.mapDraw?.activate();
         break;
     }
     this.controlMode = mode;
