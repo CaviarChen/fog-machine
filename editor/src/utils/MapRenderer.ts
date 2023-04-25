@@ -159,11 +159,11 @@ export class MapRenderer {
   private updateFogConcentrationInternal(): void {
     let opacity;
     if (this.fogConcentration == "high") {
-      opacity = 0.7;
-    } else if (this.fogConcentration == "medium") {
       opacity = 0.6;
-    } else {
+    } else if (this.fogConcentration == "medium") {
       opacity = 0.4;
+    } else {
+      opacity = 0.2;
     }
 
     if (this.deckgl) {
