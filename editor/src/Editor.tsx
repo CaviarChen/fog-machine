@@ -1,19 +1,19 @@
-import { ControlMode, MapRenderer } from "./utils/MapRenderer";
+import { ControlMode, MapController } from "./utils/MapController";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
 
 type Props = {
   setLoaded(isLoaded: boolean): void;
-  mapRenderer: MapRenderer;
+  mapController: MapController;
   msgboxShow(title: string, msg: string): void;
 };
 
 function Editor(props: Props): JSX.Element {
-  const mapRenderer = props.mapRenderer;
+  const mapController = props.mapController;
   const [controlMode, setControlMode] = useState(ControlMode.View);
   useEffect(() => {
-    mapRenderer.setControlMode(controlMode);
+    mapController.setControlMode(controlMode);
   }, [controlMode]);
 
   const [historyStatus, setHistoryStatus] = useState({
@@ -22,24 +22,24 @@ function Editor(props: Props): JSX.Element {
   });
 
   useEffect(() => {
-    mapRenderer.registerOnChangeCallback("editor", () => {
+    mapController.registerOnChangeCallback("editor", () => {
       setHistoryStatus({
-        canRedo: mapRenderer.historyManager.canRedo(),
-        canUndo: mapRenderer.historyManager.canUndo(),
+        canRedo: mapController.historyManager.canRedo(),
+        canUndo: mapController.historyManager.canUndo(),
       });
     });
     props.setLoaded(true);
 
     return function cleanup() {
-      mapRenderer.unregisterOnChangeCallback("editor");
+      mapController.unregisterOnChangeCallback("editor");
     };
   }, []);
 
   Mousetrap.bind(["mod+z"], (_) => {
-    mapRenderer.undo();
+    mapController.undo();
   });
   Mousetrap.bind(["mod+shift+z"], (_) => {
-    mapRenderer.redo();
+    mapController.redo();
   });
 
   const toolButtons = [
@@ -49,7 +49,7 @@ function Editor(props: Props): JSX.Element {
       clickable: historyStatus.canUndo,
       enabled: false,
       onClick: () => {
-        mapRenderer.undo();
+        mapController.undo();
       },
     },
     {
@@ -58,7 +58,7 @@ function Editor(props: Props): JSX.Element {
       clickable: historyStatus.canRedo,
       enabled: false,
       onClick: () => {
-        mapRenderer.redo();
+        mapController.redo();
       },
     },
     null,
@@ -93,7 +93,7 @@ function Editor(props: Props): JSX.Element {
   return (
     <>
       <MainMenu
-        mapRenderer={mapRenderer}
+        mapController={mapController}
         msgboxShow={props.msgboxShow}
         mode="editor"
       />

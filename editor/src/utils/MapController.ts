@@ -34,8 +34,8 @@ export enum ControlMode {
   DrawLine,
 }
 
-export class MapRenderer {
-  private static instance: MapRenderer | null = null;
+export class MapController {
+  private static instance: MapController | null = null;
   private map: mapboxgl.Map | null;
   private deckglContainer: HTMLCanvasElement | null;
   private deckgl: deckgl.Deckgl | null;
@@ -66,15 +66,15 @@ export class MapRenderer {
     this.mapDraw = null;
   }
 
-  static create(): MapRenderer {
-    if (MapRenderer.instance) {
+  static create(): MapController {
+    if (MapController.instance) {
       console.log(
-        "WARNING: One shouldn't create a second copy of `MapRenderer`"
+        "WARNING: One shouldn't create a second copy of `mapController`"
       );
     } else {
-      MapRenderer.instance = new MapRenderer();
+      MapController.instance = new MapController();
     }
-    return MapRenderer.instance;
+    return MapController.instance;
   }
 
   private setMapboxLanguage(): void {
@@ -419,7 +419,7 @@ export class MapRenderer {
     Object.values(fowTile.blocks).forEach((block) => {
       const blockDx = dx + ((block.x >> underscanOffset) << overscanOffset);
       const blockDy = dy + ((block.y >> underscanOffset) << overscanOffset);
-      MapRenderer.renderBlockOnCanvas(
+      MapController.renderBlockOnCanvas(
         fogCanvas,
         block,
         CANVAS_FOW_BLOCK_SIZE_OFFSET,
@@ -486,7 +486,7 @@ export class MapRenderer {
             // TODO: what if this < 0?
             const CANVAS_FOW_TILE_SIZE_OFFSET =
               CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_TILE_OFFSET;
-            MapRenderer.renderTileOnCanvas(
+            MapController.renderTileOnCanvas(
               fogCanvas,
               fowTile,
               CANVAS_FOW_TILE_SIZE_OFFSET,
@@ -591,7 +591,7 @@ export class MapRenderer {
                 (block.x - fowBlockXMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
               const dy =
                 (block.y - fowBlockYMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
-              MapRenderer.renderBlockOnCanvas(
+              MapController.renderBlockOnCanvas(
                 fogCanvas,
                 block,
                 CANVAS_FOW_BLOCK_SIZE_OFFSET,
