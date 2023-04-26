@@ -80,7 +80,7 @@ export class MapDraw {
           this.updateFogMap(newMap, bbox);
         }
       }
-      this.mapglDraw.trash(); // clean up the user drawing
+      this.mapboxDraw.trash(); // clean up the user drawing
     });
     this.map.on("draw.modechange", (_ev) => {
       this.mapboxDraw.changeMode("draw_line_string", {});

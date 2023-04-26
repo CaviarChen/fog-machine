@@ -48,7 +48,9 @@ function App(): JSX.Element {
     }
   };
 
-  const [mapController, setmapController] = useState<MapController | null>(null);
+  const [mapController, setmapController] = useState<MapController | null>(
+    null
+  );
   const [loaded, setLoaded] = useState(false);
   const [msgboxState, setMsgboxState] = useState<{
     isOpen: boolean;
