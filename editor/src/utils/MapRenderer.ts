@@ -383,7 +383,7 @@ export class MapRenderer {
       case ControlMode.DrawLine:
         mapboxCanvas.style.cursor = "";
         this.map?.dragPan.enable();
-        this.mapDraw?.activate();
+        this.mapDraw?.deactivate();
         break;
     }
 
