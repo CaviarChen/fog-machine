@@ -1782,11 +1782,6 @@
     lodash.isequal "^4.5.0"
     xtend "^4.0.2"
 
-"@mapbox/mapbox-gl-language@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@mapbox/mapbox-gl-language/-/mapbox-gl-language-1.0.0.tgz#41d111c7da731679098db602bb55f056f4530242"
-  integrity sha512-G1m/BK7M9+u8tM23qg1gA9hyhjFplAfttLb1li6+hlBfhjRApzSqbYlX4pvtN4SftO7ALHNX7uPhpzpkl7c+5Q==
-
 "@mapbox/mapbox-gl-supported@^2.0.1":
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/@mapbox/mapbox-gl-supported/-/mapbox-gl-supported-2.0.1.tgz#c15367178d8bfe4765e6b47b542fe821ce259c7b"

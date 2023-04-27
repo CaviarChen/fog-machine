@@ -1,4 +1,4 @@
-import { MapRenderer } from "./utils/MapRenderer";
+import { MapController } from "./utils/MapController";
 import { useEffect, useState } from "react";
 import { createMapFromZip } from "./Import";
 import TimeMachineApi, { SnapshotInfo } from "./utils/TimeMachineApi";
@@ -6,7 +6,7 @@ import moment from "moment";
 import MainMenu from "./MainMenu";
 
 type Props = {
-  mapRenderer: MapRenderer;
+  mapController: MapController;
   initialSnapshotId: number;
   setLoaded(isLoaded: boolean): void;
   msgboxShow(title: string, msg: string): void;
@@ -18,7 +18,7 @@ type Props = {
 const gloablSnapshotCache: { [key: number]: ArrayBuffer } = {};
 
 function Viewer(props: Props): JSX.Element {
-  const mapRenderer = props.mapRenderer;
+  const mapController = props.mapController;
   const [snapshotId, setSnapshotId] = useState(props.initialSnapshotId);
   const [snapshotInfo, setSnapshotInfo] = useState<SnapshotInfo | null>(null);
 
@@ -51,7 +51,7 @@ function Viewer(props: Props): JSX.Element {
       gloablSnapshotCache[snapshotInfo.id] = snapshot;
     }
     const map = await createMapFromZip(snapshot);
-    mapRenderer.replaceFogMap(map);
+    mapController.replaceFogMap(map);
     setSnapshotInfo(snapshotInfo);
     props.setLoaded(true);
   };
@@ -68,7 +68,7 @@ function Viewer(props: Props): JSX.Element {
     return (
       <>
         <MainMenu
-          mapRenderer={mapRenderer}
+          mapController={mapController}
           msgboxShow={props.msgboxShow}
           mode="viewer"
         />

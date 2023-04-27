@@ -3,12 +3,12 @@ import { Popover, Tab, Transition } from "@headlessui/react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/solid";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
-import { MapRenderer } from "./utils/MapRenderer";
+import { MapController } from "./utils/MapController";
 import Import from "./Import";
 
-function MapTap(props: { mapRenderer: MapRenderer }): JSX.Element {
+function MapTap(props: { mapController: MapController }): JSX.Element {
   const { t } = useTranslation();
-  const mapRenderer = props.mapRenderer;
+  const mapController = props.mapController;
   const mapStyles = ["standard", "satellite", "hybrid", "none"];
   const fogConcentrations = ["low", "medium", "high"];
 
@@ -24,11 +24,11 @@ function MapTap(props: { mapRenderer: MapRenderer }): JSX.Element {
           <Tab.Group
             onChange={(index) => {
               const style = mapStyles[index];
-              mapRenderer.setMapStyle(
+              mapController.setMapStyle(
                 style as "standard" | "satellite" | "hybrid" | "none"
               );
             }}
-            defaultIndex={mapStyles.indexOf(mapRenderer.getMapStyle())}
+            defaultIndex={mapStyles.indexOf(mapController.getMapStyle())}
           >
             <Tab.List className="flex p-1 space-x-1 bg-gray-300 rounded-xl">
               {[
@@ -63,12 +63,12 @@ function MapTap(props: { mapRenderer: MapRenderer }): JSX.Element {
           <Tab.Group
             onChange={(index) => {
               const fogConcentration = fogConcentrations[index];
-              mapRenderer.setFogConcentration(
+              mapController.setFogConcentration(
                 fogConcentration as "low" | "medium" | "high"
               );
             }}
             defaultIndex={fogConcentrations.indexOf(
-              mapRenderer.getFogConcentration()
+              mapController.getFogConcentration()
             )}
           >
             <Tab.List className="flex p-1 space-x-1 bg-gray-300 rounded-xl">
@@ -98,14 +98,14 @@ function MapTap(props: { mapRenderer: MapRenderer }): JSX.Element {
 }
 
 type Props = {
-  mapRenderer: MapRenderer;
+  mapController: MapController;
   msgboxShow(title: string, msg: string): void;
   mode: "editor" | "viewer";
 };
 
 export default function MainMenu(props: Props): JSX.Element {
   const { t, i18n } = useTranslation();
-  const mapRenderer = props.mapRenderer;
+  const mapController = props.mapController;
 
   const [importDialog, setImportDialog] = useState(false);
 
@@ -127,7 +127,7 @@ export default function MainMenu(props: Props): JSX.Element {
             description: t("export-description"),
             action: async () => {
               // TODO: seems pretty fast, but we should consider handle this async properly
-              const blob = await mapRenderer.fogMap.exportArchive();
+              const blob = await mapController.fogMap.exportArchive();
               if (blob) {
                 const name = "Sync.zip";
                 const blobUrl = URL.createObjectURL(blob);
@@ -187,7 +187,7 @@ export default function MainMenu(props: Props): JSX.Element {
   return (
     <>
       <Import
-        mapRenderer={mapRenderer}
+        mapController={mapController}
         isOpen={importDialog}
         setIsOpen={setImportDialog}
         msgboxShow={props.msgboxShow}
@@ -250,7 +250,7 @@ export default function MainMenu(props: Props): JSX.Element {
                         ))}
                       </div>
 
-                      <MapTap mapRenderer={mapRenderer} />
+                      <MapTap mapController={mapController} />
 
                       <div className="p-4 bg-gray-50">
                         <span className="flex items-center">

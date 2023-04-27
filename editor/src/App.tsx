@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
 import GithubCorner from "./GithubCorner";
-import { MapRenderer } from "./utils/MapRenderer";
+import { MapController } from "./utils/MapController";
 import { Dialog, Transition } from "@headlessui/react";
 import { useTranslation } from "react-i18next";
 import Map from "./Map";
@@ -8,12 +8,12 @@ import Editor from "./Editor";
 import Viewer from "./Viewer";
 
 type ModeProps = {
-  mapRenderer: MapRenderer | null;
+  mapController: MapController | null;
   setLoaded(isLoaded: boolean): void;
   msgboxShow(title: string, msg: string): void;
 };
 function Mode(props: ModeProps) {
-  if (!props.mapRenderer) return <></>;
+  if (!props.mapController) return <></>;
   const snapshotIdStr = new URL(window.location.href).searchParams.get(
     "viewing-snapshot"
   );
@@ -21,7 +21,7 @@ function Mode(props: ModeProps) {
     const snapshotId = Number(snapshotIdStr);
     return (
       <Viewer
-        mapRenderer={props.mapRenderer}
+        mapController={props.mapController}
         setLoaded={props.setLoaded}
         initialSnapshotId={snapshotId}
         msgboxShow={props.msgboxShow}
@@ -30,7 +30,7 @@ function Mode(props: ModeProps) {
   } else {
     return (
       <Editor
-        mapRenderer={props.mapRenderer}
+        mapController={props.mapController}
         setLoaded={props.setLoaded}
         msgboxShow={props.msgboxShow}
       />
@@ -48,7 +48,9 @@ function App(): JSX.Element {
     }
   };
 
-  const [mapRenderer, setMapRenderer] = useState<MapRenderer | null>(null);
+  const [mapController, setmapController] = useState<MapController | null>(
+    null
+  );
   const [loaded, setLoaded] = useState(false);
   const [msgboxState, setMsgboxState] = useState<{
     isOpen: boolean;
@@ -167,14 +169,14 @@ function App(): JSX.Element {
       <div className={loaded ? "" : "invisible"}>
         <Map
           note="THIS SHOULDN'T BE UNMOUNTED"
-          initialized={(mapRenderer) => {
-            setMapRenderer(mapRenderer);
+          initialized={(mapController) => {
+            setmapController(mapController);
           }}
         />
       </div>
       {msgbox}
       <Mode
-        mapRenderer={mapRenderer}
+        mapController={mapController}
         setLoaded={setLoaded}
         msgboxShow={msgboxShow}
       />

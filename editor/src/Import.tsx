@@ -1,14 +1,14 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { readFileAsync } from "./Utils";
-import { MapRenderer } from "./utils/MapRenderer";
+import { MapController } from "./utils/MapController";
 import { useDropzone } from "react-dropzone";
 import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
 import { FogMap } from "./utils/FogMap";
 
 type Props = {
-  mapRenderer: MapRenderer;
+  mapController: MapController;
   isOpen: boolean;
   setIsOpen(isOpen: boolean): void;
   msgboxShow(title: string, msg: string): void;
@@ -45,10 +45,10 @@ export default function MyModal(props: Props): JSX.Element {
   const { isOpen, setIsOpen, msgboxShow } = props;
 
   async function importFiles(files: File[]) {
-    const mapRenderer = props.mapRenderer;
+    const mapController = props.mapController;
     closeModal();
-    if (mapRenderer.fogMap !== FogMap.empty) {
-      // we need this because we do not support overriding in `mapRenderer.addFoGFile`
+    if (mapController.fogMap !== FogMap.empty) {
+      // we need this because we do not support overriding in `mapController.addFoGFile`
       msgboxShow("error", "error-already-imported");
       return;
     }
@@ -67,14 +67,14 @@ export default function MyModal(props: Props): JSX.Element {
         })
       );
       const map = FogMap.createFromFiles(tileFiles);
-      mapRenderer.replaceFogMap(map);
+      mapController.replaceFogMap(map);
       done = true;
     } else {
       if (files.length === 1 && getFileExtension(files[0].name) === "zip") {
         const data = await readFileAsync(files[0]);
         if (data instanceof ArrayBuffer) {
           const map = await createMapFromZip(data);
-          mapRenderer.replaceFogMap(map);
+          mapController.replaceFogMap(map);
         }
         done = true;
       }
