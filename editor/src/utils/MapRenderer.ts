@@ -181,7 +181,7 @@ class Internal {
 
         const block =
           fogMap.tiles[FogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]?.blocks[
-          FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
+            FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
           ];
 
         if (block) {
@@ -317,8 +317,8 @@ export class MapRenderer {
         id: MAPBOX_MAIN_CANVAS_LAYER,
         source: "main-canvas-source",
         type: "raster",
-        "paint": {
-          "raster-fade-duration": 0
+        paint: {
+          "raster-fade-duration": 0,
         },
       });
       this.currentZoom = -1;
@@ -403,9 +403,9 @@ export class MapRenderer {
       }
     }
 
-    const mainCanvasSource = this.mapboxMap.getSource(
-      "main-canvas-source"
-    ) as mapboxgl.CanvasSource | undefined;
+    const mainCanvasSource = this.mapboxMap.getSource("main-canvas-source") as
+      | mapboxgl.CanvasSource
+      | undefined;
     mainCanvasSource?.play();
     mainCanvasSource?.pause();
 
