@@ -1,10 +1,10 @@
 // TODO: consider reactify this?
 import mapboxgl from "mapbox-gl";
 import * as fogMap from "./FogMap";
-import * as deckgl from "./Deckgl";
 import { HistoryManager } from "./HistoryManager";
 import { MapDraw } from "./MapDraw";
-import { MapRenderer } from "./MapRenderer";
+import { MapRenderer, MAPBOX_MAIN_CANVAS_LAYER } from "./MapRenderer";
+import { Bbox } from "./CommonTypes";
 
 type MapStyle = "standard" | "satellite" | "hybrid" | "none";
 type FogConcentration = "low" | "medium" | "high";
@@ -18,9 +18,7 @@ export enum ControlMode {
 export class MapController {
   private static instance: MapController | null = null;
   private map: mapboxgl.Map | null;
-  private deckglContainer: HTMLCanvasElement | null;
-  private mapRenderer: MapRenderer;
-  private deckgl: deckgl.Deckgl | null;
+  private mapRenderer: MapRenderer | null;
   public fogMap: fogMap.FogMap;
   public historyManager: HistoryManager;
   private controlMode: ControlMode;
@@ -33,7 +31,6 @@ export class MapController {
 
   private constructor() {
     this.map = null;
-    this.deckgl = null;
     this.fogMap = fogMap.FogMap.empty;
     this.controlMode = ControlMode.View;
     this.eraserArea = null;
@@ -42,9 +39,8 @@ export class MapController {
     this.mapStyle = "standard";
     this.resolvedLanguage = "en";
     this.fogConcentration = "medium";
-    this.deckglContainer = null;
     this.mapDraw = null;
-    this.mapRenderer = new MapRenderer();
+    this.mapRenderer = null;
   }
 
   static create(): MapController {
@@ -87,7 +83,9 @@ export class MapController {
 
   private setMapVisibility(visibility: "visible" | "none"): void {
     this.map?.getStyle().layers.forEach((thisLayer) => {
-      this.map?.setLayoutProperty(thisLayer.id, "visibility", visibility);
+      if (thisLayer.id !== MAPBOX_MAIN_CANVAS_LAYER) {
+        this.map?.setLayoutProperty(thisLayer.id, "visibility", visibility);
+      }
     });
   }
 
@@ -110,25 +108,10 @@ export class MapController {
     return this.mapStyle;
   }
 
-  private updateFogConcentrationInternal(): void {
-    let opacity;
-    if (this.fogConcentration == "high") {
-      opacity = 0.6;
-    } else if (this.fogConcentration == "medium") {
-      opacity = 0.4;
-    } else {
-      opacity = 0.2;
-    }
-
-    if (this.deckgl) {
-      this.deckgl.setOpacity(opacity);
-    }
-  }
-
   setFogConcentration(fogConcentration: FogConcentration): void {
     if (fogConcentration != this.fogConcentration) {
       this.fogConcentration = fogConcentration;
-      this.updateFogConcentrationInternal();
+      this.redrawArea("all");
     }
   }
 
@@ -143,23 +126,8 @@ export class MapController {
     });
   }
 
-  registerMap(
-    map: mapboxgl.Map,
-    deckglContainer: HTMLCanvasElement,
-    resolvedLanguage: string
-  ): void {
+  registerMap(map: mapboxgl.Map, resolvedLanguage: string): void {
     this.map = map;
-    this.deckglContainer = deckglContainer;
-    this.deckgl = new deckgl.Deckgl(
-      map,
-      deckglContainer,
-      (tile) => {
-        return this.mapRenderer.onLoadFogCanvas(this.fogMap, tile);
-      },
-      (tile) => {
-        this.mapRenderer.onUnloadFogCanvas(tile);
-      }
-    );
     this.map.on("mousedown", this.handleMouseClick.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
@@ -169,7 +137,23 @@ export class MapController {
     this.setControlMode(this.controlMode);
     this.onChange();
     this.resolvedLanguage = resolvedLanguage;
-    this.updateFogConcentrationInternal();
+    this.mapRenderer = new MapRenderer(
+      map,
+      0,
+      () => {
+        return this.fogMap;
+      },
+      () => {
+        if (this.fogConcentration == "high") {
+          return 0.8;
+        } else if (this.fogConcentration == "medium") {
+          return 0.6;
+        } else {
+          return 0.4;
+        }
+      }
+    );
+
     this.mapDraw = new MapDraw(
       map,
       () => {
@@ -201,15 +185,11 @@ export class MapController {
     delete this.onChangeCallback[key];
   }
 
-  redrawArea(area: deckgl.Bbox | "all"): void {
-    this.mapRenderer.redrawArea(this.fogMap, area);
-    this.deckgl?.updateOnce();
+  redrawArea(area: Bbox | "all"): void {
+    this.mapRenderer?.redrawArea(area);
   }
 
-  private applyFogMapUpdate(
-    newMap: fogMap.FogMap,
-    areaChanged: deckgl.Bbox | "all"
-  ) {
+  private applyFogMapUpdate(newMap: fogMap.FogMap, areaChanged: Bbox | "all") {
     this.fogMap = newMap;
     this.redrawArea(areaChanged);
 
@@ -218,10 +198,7 @@ export class MapController {
     }
   }
 
-  private updateFogMap(
-    newMap: fogMap.FogMap,
-    areaChanged: deckgl.Bbox | "all"
-  ): void {
+  private updateFogMap(newMap: fogMap.FogMap, areaChanged: Bbox | "all"): void {
     if (this.fogMap !== newMap) {
       this.historyManager.append(newMap, areaChanged);
       this.applyFogMapUpdate(newMap, areaChanged);
@@ -331,7 +308,7 @@ export class MapController {
       this.map?.removeLayer("eraser-outline");
       this.map?.removeSource("eraser");
 
-      const bbox = new deckgl.Bbox(west, south, east, north);
+      const bbox = new Bbox(west, south, east, north);
       console.log(`clearing the bbox ${west} ${north} ${east} ${south}`);
 
       const newMap = this.fogMap.clearBbox(bbox);

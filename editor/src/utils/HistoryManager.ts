@@ -1,12 +1,12 @@
+import { Bbox } from "./CommonTypes";
 import * as fogMap from "./FogMap";
-import * as deckgl from "./Deckgl";
 
 const MAX_HISTORY_SIZE = 20;
 
 class HistoryItem {
   public readonly fogMap: fogMap.FogMap;
-  public readonly areaChanged: deckgl.Bbox | "all";
-  public constructor(fogMap: fogMap.FogMap, areaChanged: deckgl.Bbox | "all") {
+  public readonly areaChanged: Bbox | "all";
+  public constructor(fogMap: fogMap.FogMap, areaChanged: Bbox | "all") {
     this.fogMap = fogMap;
     this.areaChanged = areaChanged;
   }
@@ -29,7 +29,7 @@ export class HistoryManager {
     return this.pos > 0;
   }
 
-  public append(newMap: fogMap.FogMap, areaChanged: deckgl.Bbox | "all"): void {
+  public append(newMap: fogMap.FogMap, areaChanged: Bbox | "all"): void {
     while (this.history.length > this.pos + 1) {
       this.history.pop();
     }
@@ -42,7 +42,7 @@ export class HistoryManager {
   }
 
   public undo(
-    apply: (map: fogMap.FogMap, areaChanged: deckgl.Bbox | "all") => void
+    apply: (map: fogMap.FogMap, areaChanged: Bbox | "all") => void
   ): void {
     if (this.canUndo()) {
       this.pos -= 1;
@@ -55,7 +55,7 @@ export class HistoryManager {
   }
 
   public redo(
-    apply: (map: fogMap.FogMap, areaChanged: deckgl.Bbox | "all") => void
+    apply: (map: fogMap.FogMap, areaChanged: Bbox | "all") => void
   ): void {
     if (this.canRedo()) {
       this.pos += 1;
