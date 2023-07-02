@@ -19,7 +19,7 @@ export class MapController {
   private static instance: MapController | null = null;
   private map: mapboxgl.Map | null;
   private deckglContainer: HTMLCanvasElement | null;
-  private mapRenderer: MapRenderer;
+  private mapRenderer: MapRenderer | null;
   private deckgl: deckgl.Deckgl | null;
   public fogMap: fogMap.FogMap;
   public historyManager: HistoryManager;
@@ -44,7 +44,7 @@ export class MapController {
     this.fogConcentration = "medium";
     this.deckglContainer = null;
     this.mapDraw = null;
-    this.mapRenderer = new MapRenderer();
+    this.mapRenderer = null;
   }
 
   static create(): MapController {
@@ -150,16 +150,16 @@ export class MapController {
   ): void {
     this.map = map;
     this.deckglContainer = deckglContainer;
-    this.deckgl = new deckgl.Deckgl(
-      map,
-      deckglContainer,
-      (tile) => {
-        return this.mapRenderer.onLoadFogCanvas(this.fogMap, tile);
-      },
-      (tile) => {
-        this.mapRenderer.onUnloadFogCanvas(tile);
-      }
-    );
+    // this.deckgl = new deckgl.Deckgl(
+    //   map,
+    //   deckglContainer,
+    //   (tile) => {
+    //     return this.mapRenderer?.onLoadFogCanvas(this.fogMap, tile);
+    //   },
+    //   (tile) => {
+    //     this.mapRenderer.onUnloadFogCanvas(tile);
+    //   }
+    // );
     this.map.on("mousedown", this.handleMouseClick.bind(this));
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
@@ -179,6 +179,9 @@ export class MapController {
         this.updateFogMap(newMap, areaChanged);
       }
     );
+    this.mapRenderer = new MapRenderer(map, 0, () => {
+      return this.fogMap;
+    });
   }
 
   setResolvedLanguage(resolvedLanguage: string) {
@@ -202,7 +205,7 @@ export class MapController {
   }
 
   redrawArea(area: deckgl.Bbox | "all"): void {
-    this.mapRenderer.redrawArea(this.fogMap, area);
+    this.mapRenderer?.redrawArea(this.fogMap, area);
     this.deckgl?.updateOnce();
   }
 

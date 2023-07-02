@@ -21,9 +21,12 @@ type Props = {
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Lon..2Flat._to_tile_numbers_2
 function lngLatToTileXY([lng, lat]: number[], zoom: number): [number, number] {
   const n = Math.pow(2, zoom);
-  const latRad = lat / 180 * Math.PI;
-  let x = ((lng + 180.0) / 360.0 * n)
-  let y = ((1.0 - Math.log(Math.tan(latRad) + (1 / Math.cos(latRad))) / Math.PI) / 2.0 * n)
+  const latRad = (lat / 180) * Math.PI;
+  let x = ((lng + 180.0) / 360.0) * n;
+  let y =
+    ((1.0 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) /
+      2.0) *
+    n;
 
   // const sinLat = Math.sin(lat * Math.PI / 180);
   // let x = ((lng + 180) / 360) * n;
@@ -37,8 +40,9 @@ function lngLatToTileXY([lng, lat]: number[], zoom: number): [number, number] {
 
 function tileXYToLngLat([x, y]: number[], zoom: number): [number, number] {
   const n = Math.pow(2, zoom);
-  const lng = x / n * 360 - 180;
-  const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI;
+  const lng = (x / n) * 360 - 180;
+  const lat =
+    (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
   return [lng, lat];
 }
 
@@ -57,7 +61,7 @@ function Map(props: Props): JSX.Element {
     const mapboxMap = new mapboxgl.Map({
       container: mapContainer.current,
       style: mapController.mapboxStyleURL(),
-      projection: { name: 'globe' },
+      // projection: { name: 'globe' },
     });
     mapboxMap.addControl(new mapboxgl.NavigationControl(), "bottom-right");
 
@@ -72,34 +76,33 @@ function Map(props: Props): JSX.Element {
       });
       mapboxMap.resize();
 
-
-
       // --------------------
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = 512;
       canvas.height = 512;
       // const ctx = canvas.getContext("2d")!;
       // ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
       // ctx.fillRect(0, 0, 512, 512);
-      mapboxMap.addSource('main-canvas-source', {
-        type: 'canvas',
-        canvas: canvas,
-        animate: true,
-        coordinates: [
-          [-80.425, 46.437],
-          [-71.516, 46.437],
-          [-71.516, 37.936],
-          [-80.425, 37.936]
-        ]
-      });
-      mapboxMap.showTileBoundaries = true;
-      mapboxMap.addLayer({
-        'id': 'main-canvas-layer',
-        'source': 'main-canvas-source',
-        'type': 'raster'
-      });
-      const mainCanvasSource = mapboxMap.getSource('main-canvas-source') as mapboxgl.CanvasSource;
-
+      // mapboxMap.addSource('main-canvas-source', {
+      //   type: 'canvas',
+      //   canvas: canvas,
+      //   animate: true,
+      //   coordinates: [
+      //     [-80.425, 46.437],
+      //     [-71.516, 46.437],
+      //     [-71.516, 37.936],
+      //     [-80.425, 37.936]
+      //   ]
+      // });
+      // mapboxMap.showTileBoundaries = true;
+      // mapboxMap.addLayer({
+      //   'id': 'main-canvas-layer',
+      //   'source': 'main-canvas-source',
+      //   'type': 'raster'
+      // });
+      const mainCanvasSource = mapboxMap.getSource(
+        "main-canvas-source"
+      ) as mapboxgl.CanvasSource;
 
       // mapboxMap.on('move', () => {
       //     const bounds = mapboxMap.getBounds();
@@ -111,46 +114,47 @@ function Map(props: Props): JSX.Element {
       //     ]);
       // });
 
-      mapboxMap.on('moveend', () => {
-        const zoom = Math.floor(mapboxMap.getZoom()) + 1;
-        console.log(zoom);
-        const bounds = mapboxMap.getBounds();
-        let topLeft = lngLatToTileXY(bounds.getNorthWest().toArray(), zoom);
-        let bottomRight = lngLatToTileXY(bounds.getSouthEast().toArray(), zoom);
-        console.log("a", topLeft, bottomRight);
-        topLeft = [Math.floor(topLeft[0]), Math.floor(topLeft[1])];
-        bottomRight = [Math.floor(bottomRight[0]), Math.floor(bottomRight[1])];
-        const actualBounds = new mapboxgl.LngLatBounds(tileXYToLngLat(topLeft, zoom), tileXYToLngLat([bottomRight[0] + 1, bottomRight[1] + 1], zoom));
-        console.log("b", topLeft, bottomRight);
+      // mapboxMap.on("moveend", () => {
+      //   const zoom = Math.floor(mapboxMap.getZoom()) + 1;
+      //   console.log(zoom);
+      //   const bounds = mapboxMap.getBounds();
+      //   let topLeft = lngLatToTileXY(bounds.getNorthWest().toArray(), zoom);
+      //   let bottomRight = lngLatToTileXY(bounds.getSouthEast().toArray(), zoom);
+      //   console.log("a", topLeft, bottomRight);
+      //   topLeft = [Math.floor(topLeft[0]), Math.floor(topLeft[1])];
+      //   bottomRight = [Math.floor(bottomRight[0]), Math.floor(bottomRight[1])];
+      //   const actualBounds = new mapboxgl.LngLatBounds(
+      //     tileXYToLngLat(topLeft, zoom),
+      //     tileXYToLngLat([bottomRight[0] + 1, bottomRight[1] + 1], zoom)
+      //   );
+      //   console.log("b", topLeft, bottomRight);
 
+      //   canvas.width = 512 * (bottomRight[0] - topLeft[0] + 1);
+      //   canvas.height = 512 * (bottomRight[1] - topLeft[1] + 1);
+      //   const ctx = canvas.getContext("2d")!;
 
-        canvas.width = 512 * (bottomRight[0] - topLeft[0] + 1);
-        canvas.height = 512 * (bottomRight[1] - topLeft[1] + 1);
-        const ctx = canvas.getContext("2d")!;
+      //   // ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+      //   // ctx.fillRect(0, 0, canvas.width, canvas.height);
+      //   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-        // ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      //   console.log("-----");
+      //   for (let x = topLeft[0]; x <= bottomRight[0]; x++) {
+      //     for (let y = topLeft[1]; y <= bottomRight[1]; y++) {
+      //       console.log(".", x, y);
+      //       // const tileCanvas = MapRenderer.drawFogCanvas(mapController.fogMap, new TileIndex(x, y, zoom));
+      //       // ctx.drawImage(tileCanvas, (x - topLeft[0]) * 512, (y - topLeft[1]) * 512);
+      //     }
+      //   }
+      //   console.log("-----");
 
-        console.log("-----");
-        for (let x = topLeft[0]; x <= bottomRight[0]; x++) {
-          for (let y = topLeft[1]; y <= bottomRight[1]; y++) {
-            console.log(".", x, y);
-            const tileCanvas = MapRenderer.drawFogCanvas(mapController.fogMap, new TileIndex(x, y, zoom));
-            ctx.drawImage(tileCanvas, (x - topLeft[0]) * 512, (y - topLeft[1]) * 512);
-          }
-        }
-        console.log("-----");
-
-        mainCanvasSource.setCoordinates([
-          actualBounds.getSouthWest().toArray(),
-          actualBounds.getSouthEast().toArray(),
-          actualBounds.getNorthEast().toArray(),
-          actualBounds.getNorthWest().toArray(),
-        ]);
-      });
-      // --------------------
-
+      //   // mainCanvasSource.setCoordinates([
+      //   //   actualBounds.getSouthWest().toArray(),
+      //   //   actualBounds.getSouthEast().toArray(),
+      //   //   actualBounds.getNorthEast().toArray(),
+      //   //   actualBounds.getNorthWest().toArray(),
+      //   // ]);
+      // });
+      // // --------------------
 
       // give deckgl a little bit of time
       setTimeout(() => {

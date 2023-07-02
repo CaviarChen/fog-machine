@@ -1,7 +1,9 @@
 import * as deckgl from "./Deckgl";
 import * as FogMap from "./FogMap";
 import { CANVAS_SIZE_OFFSET, FogCanvas } from "./FogCanvas";
+import mapboxgl from "mapbox-gl";
 
+const DEBUG = true;
 const FOW_TILE_ZOOM = 9;
 const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + FogMap.TILE_WIDTH_OFFSET;
 
@@ -20,6 +22,38 @@ function isBboxOverlap(a: deckgl.Bbox, b: deckgl.Bbox) {
   );
 }
 
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
+function lngLatToTileXY([lng, lat]: number[], zoom: number): [number, number] {
+  const n = Math.pow(2, zoom);
+  const latRad = (lat / 180) * Math.PI;
+  let x = ((lng + 180.0) / 360.0) * n;
+  let y =
+    ((1.0 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) /
+      2.0) *
+    n;
+
+  x = Math.min(Math.max(x, 0), n - 1);
+  y = Math.min(Math.max(y, 0), n - 1);
+  return [Math.floor(x), Math.floor(y)];
+}
+
+function tileXYToLngLat([x, y]: number[], zoom: number): [number, number] {
+  const n = Math.pow(2, zoom);
+  const lng = (x / n) * 360 - 180;
+  const lat =
+    (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
+  return [lng, lat];
+}
+
+function arrayEquals(a: number[], b: number[]) {
+  return (
+    Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((val, index) => val === b[index])
+  );
+}
+
 export class TileIndex {
   x: number;
   y: number;
@@ -32,34 +66,8 @@ export class TileIndex {
   }
 }
 
-
-export class MapRenderer {
-  private loadedFogCanvases: { [key: string]: FogCanvas };
-
-  constructor() {
-    this.loadedFogCanvases = {};
-  }
-
-  onLoadFogCanvas(fogMap: FogMap.FogMap, tile: deckgl.Tile) {
-    const fogCanvas = new FogCanvas(tile);
-    // this.drawFogCanvas(fogMap, fogCanvas);
-    // this.loadedFogCanvases[tileToKey(tile)] = fogCanvas;
-    return fogCanvas;
-  }
-
-  onUnloadFogCanvas(tile: deckgl.Tile) {
-    // delete this.loadedFogCanvases[tileToKey(tile)];
-  }
-
-  redrawArea(fogMap: FogMap.FogMap, area: deckgl.Bbox | "all"): void {
-    // Object.values(this.loadedFogCanvases).forEach((fogCanvas) => {
-    //   if (area === "all" || isBboxOverlap(fogCanvas.tile.bbox, area)) {
-    //     this.drawFogCanvas(fogMap, fogCanvas);
-    //   }
-    // });
-  }
-
-  static renderTileOnCanvas(
+class Internal {
+  private static renderTileOnCanvas(
     fowTile: FogMap.Tile,
     ctx: CanvasRenderingContext2D,
     tileSizeOffset: number,
@@ -74,7 +82,7 @@ export class MapRenderer {
     Object.values(fowTile.blocks).forEach((block) => {
       const blockDx = dx + ((block.x >> underscanOffset) << overscanOffset);
       const blockDy = dy + ((block.y >> underscanOffset) << overscanOffset);
-      MapRenderer.renderBlockOnCanvas(
+      Internal.renderBlockOnCanvas(
         block,
         ctx,
         CANVAS_FOW_BLOCK_SIZE_OFFSET,
@@ -115,14 +123,12 @@ export class MapRenderer {
   }
 
   static drawFogCanvas(fogMap: FogMap.FogMap, tileIndex: TileIndex) {
-
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d")!;
     canvas.width = 512;
     canvas.height = 512;
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0, 0, 512, 512);
-
 
     if (Object.values(fogMap.tiles).length === 0) {
       return canvas;
@@ -144,7 +150,7 @@ export class MapRenderer {
             // TODO: what if this < 0?
             const CANVAS_FOW_TILE_SIZE_OFFSET =
               CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_TILE_OFFSET;
-            MapRenderer.renderTileOnCanvas(
+            Internal.renderTileOnCanvas(
               fowTile,
               ctx,
               CANVAS_FOW_TILE_SIZE_OFFSET,
@@ -247,7 +253,7 @@ export class MapRenderer {
                 (block.x - fowBlockXMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
               const dy =
                 (block.y - fowBlockYMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
-              MapRenderer.renderBlockOnCanvas(
+              Internal.renderBlockOnCanvas(
                 block,
                 ctx,
                 CANVAS_FOW_BLOCK_SIZE_OFFSET,
@@ -259,7 +265,135 @@ export class MapRenderer {
         }
       }
     }
-
     return canvas;
+  }
+}
+
+export class MapRenderer {
+  private mapboxMap: mapboxgl.Map;
+  private getCurrentFogMap: () => FogMap.FogMap;
+  private mainCanvas: HTMLCanvasElement;
+  private mainCtx: CanvasRenderingContext2D;
+  private mainCanvasSource: mapboxgl.CanvasSource;
+  private zoomOffset: number;
+  private currentTileRange: [number, number, number, number];
+  private currentZoom: number;
+
+  constructor(
+    mapboxMap: mapboxgl.Map,
+    zoomOffset: number,
+    getCurrentFogMap: () => FogMap.FogMap
+  ) {
+    this.mapboxMap = mapboxMap;
+    this.getCurrentFogMap = getCurrentFogMap;
+    this.zoomOffset = zoomOffset;
+    this.mainCanvas = document.createElement("canvas");
+    this.mainCtx = this.mainCanvas.getContext("2d")!;
+    this.currentTileRange = [-1, -1, -1, -1];
+    this.currentZoom = -1;
+    mapboxMap.addSource("main-canvas-source", {
+      type: "canvas",
+      canvas: this.mainCanvas,
+      animate: true,
+      coordinates: [
+        [0, 0],
+        [0, 0],
+        [0, 0],
+        [0, 0],
+      ],
+    });
+    mapboxMap.addLayer({
+      id: "main-canvas-layer",
+      source: "main-canvas-source",
+      type: "raster",
+    });
+    this.mainCanvasSource = mapboxMap.getSource(
+      "main-canvas-source"
+    ) as mapboxgl.CanvasSource;
+    
+    mapboxMap.on('move', () => {
+      this.maybeRenderOnce();
+    });
+    mapboxMap.on('moveend', () => {
+      this.maybeRenderOnce();
+    });
+    this.maybeRenderOnce();
+  }
+
+  maybeRenderOnce() {
+    if (DEBUG) console.time("[maybeRenderOnce]");
+
+    const zoom = Math.floor(this.mapboxMap.getZoom() + this.zoomOffset);
+    const bounds = this.mapboxMap.getBounds();
+
+    const [left, top] = lngLatToTileXY(bounds.getNorthWest().toArray(), zoom);
+    const [right, bottom] = lngLatToTileXY(
+      bounds.getSouthEast().toArray(),
+      zoom
+    );
+    const tileRange: [number, number, number, number] = [
+      left,
+      top,
+      right,
+      bottom,
+    ];
+    if (
+      !arrayEquals(this.currentTileRange, tileRange) ||
+      this.currentZoom != zoom
+    ) {
+      this.currentTileRange = tileRange;
+      this.currentZoom = zoom;
+
+      this.mainCanvas.width = 512 * (right - left + 1);
+      this.mainCanvas.height = 512 * (bottom - top + 1);
+      this.renderOnce();
+      const tileBounds = new mapboxgl.LngLatBounds(
+        tileXYToLngLat([left, top], zoom),
+        tileXYToLngLat([right + 1, bottom + 1], zoom)
+      );
+      this.mainCanvasSource.setCoordinates([
+        tileBounds.getSouthWest().toArray(),
+        tileBounds.getSouthEast().toArray(),
+        tileBounds.getNorthEast().toArray(),
+        tileBounds.getNorthWest().toArray(),
+      ]);
+    }
+
+    if (DEBUG) console.timeEnd("[maybeRenderOnce]");
+  }
+
+  renderOnce() {
+    if (DEBUG) console.time("[renderOnce]");
+
+    const zoom = this.currentZoom;
+    const [left, top, right, bottom] = this.currentTileRange;
+    this.mainCtx.clearRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
+    for (let x = left; x <= right; x++) {
+      for (let y = top; y <= bottom; y++) {
+        const tileCanvas = Internal.drawFogCanvas(this.getCurrentFogMap(), new TileIndex(x, y, zoom));
+        this.mainCtx.drawImage(tileCanvas, (x - left) * 512, (y - top) * 512);
+      }
+    }
+
+    if (DEBUG) console.timeEnd("[renderOnce]");
+  }
+
+  onLoadFogCanvas(fogMap: FogMap.FogMap, tile: deckgl.Tile) {
+    const fogCanvas = new FogCanvas(tile);
+    // this.drawFogCanvas(fogMap, fogCanvas);
+    // this.loadedFogCanvases[tileToKey(tile)] = fogCanvas;
+    return fogCanvas;
+  }
+
+  onUnloadFogCanvas(tile: deckgl.Tile) {
+    // delete this.loadedFogCanvases[tileToKey(tile)];
+  }
+
+  redrawArea(fogMap: FogMap.FogMap, area: deckgl.Bbox | "all"): void {
+    // Object.values(this.loadedFogCanvases).forEach((fogCanvas) => {
+    //   if (area === "all" || isBboxOverlap(fogCanvas.tile.bbox, area)) {
+    //     this.drawFogCanvas(fogMap, fogCanvas);
+    //   }
+    // });
   }
 }
