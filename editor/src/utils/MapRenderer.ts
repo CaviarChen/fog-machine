@@ -1,6 +1,7 @@
 import { Bbox } from "./CommonTypes";
 import * as FogMap from "./FogMap";
 import mapboxgl from "mapbox-gl";
+import { LRUCache } from 'lru-cache'
 
 const DEBUG = false;
 const FOW_TILE_ZOOM = 9;
@@ -50,8 +51,8 @@ class LazyTileCanvas {
     this.opacity = opactiy;
   }
 
-  force() : [HTMLCanvasElement, CanvasRenderingContext2D ] {
-    if (!this.context)  {
+  force(): [HTMLCanvasElement, CanvasRenderingContext2D] {
+    if (!this.context) {
       if (!this.canvas) {
         this.canvas = document.createElement("canvas");
         this.context = this.canvas.getContext("2d")!;
@@ -80,6 +81,8 @@ class LazyTileCanvas {
   }
 }
 
+type TileIndexKey = string;
+
 export class TileIndex {
   x: number;
   y: number;
@@ -89,6 +92,10 @@ export class TileIndex {
     this.x = x;
     this.y = y;
     this.z = z;
+  }
+
+  toKey(): TileIndexKey {
+    return `${this.x}-${this.y}-${this.z}`;
   }
 }
 
@@ -217,7 +224,7 @@ class Internal {
 
         const block =
           fogMap.tiles[FogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]?.blocks[
-            FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
+          FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
           ];
 
         if (block) {
@@ -304,6 +311,7 @@ export class MapRenderer {
   private zoomOffset: number;
   private currentTileRange: [number, number, number, number];
   private currentZoom: number;
+  private tileCanvasCache: LRUCache<TileIndexKey, HTMLCanvasElement | "empty", unknown>
 
   constructor(
     mapboxMap: mapboxgl.Map,
@@ -319,8 +327,20 @@ export class MapRenderer {
     this.mainCtx = this.mainCanvas.getContext("2d")!;
     this.currentTileRange = [0, 0, 0, 0];
     this.currentZoom = -1;
-    this.maybeAddLayer();
+    this.tileCanvasCache = new LRUCache({
+      max: 200,
+      maxSize: 500,
+      sizeCalculation: (value, _key) => {
+        if (value == "empty") {
+          return 1;
+        } else {
+          return 10;
+        }
+      }
+    });
 
+
+    this.maybeAddLayer();
     mapboxMap.showTileBoundaries = DEBUG;
 
     mapboxMap.on("move", () => {
@@ -431,19 +451,28 @@ export class MapRenderer {
         if (xNorm < 0) xNorm += n;
         if (xNorm >= n) xNorm -= n;
 
-        // TODO: improve the performance by having a cache or drawing on the final canvas directly
-        const tileCanvas = Internal.drawFogCanvas(
-          this.getCurrentFogMap(),
-          new TileIndex(xNorm, yNorm, zoom),
-          opacity
-        );
-        const canvas = tileCanvas.getCanvas();
+        const tileIndex = new TileIndex(xNorm, yNorm, zoom);
+        const key: TileIndexKey = tileIndex.toKey();
+        const cacheCanvas = this.tileCanvasCache.get(key);
+        let canvas = null;
+        if (cacheCanvas) {
+          if (cacheCanvas != "empty") {
+            canvas = cacheCanvas;
+          }
+        } else {
+          canvas = Internal.drawFogCanvas(
+            this.getCurrentFogMap(),
+            tileIndex,
+            opacity
+          ).getCanvas();
+          this.tileCanvasCache.set(key, (canvas ? canvas : "empty"));
+        }
         const dx = (x - left) * 512;
         const dy = (y - top) * 512;
         if (canvas) {
-          this.mainCtx.drawImage(canvas, dx , dy );
+          this.mainCtx.drawImage(canvas, dx, dy);
         } else {
-           this.mainCtx.fillRect(dx, dy, 512, 512);
+          this.mainCtx.fillRect(dx, dy, 512, 512);
         }
       }
     }
@@ -460,6 +489,7 @@ export class MapRenderer {
   redrawArea(area: Bbox | "all"): void {
     // TODO: partial redraw?
     const _ = area;
+    this.tileCanvasCache.clear();
     this.renderOnce();
   }
 }

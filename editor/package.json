@@ -22,6 +22,7 @@
     "i18next-browser-languagedetector": "^7.0.1",
     "jszip": "^3.10.1",
     "loadsh": "^0.0.4",
+    "lru-cache": "^10.0.0",
     "mapbox-gl": "^2.15.0",
     "moment": "^2.29.4",
     "mousetrap": "^1.6.5",
