@@ -1,7 +1,7 @@
 import { Bbox } from "./CommonTypes";
 import * as FogMap from "./FogMap";
 import mapboxgl from "mapbox-gl";
-import { LRUCache } from 'lru-cache'
+import { LRUCache } from "lru-cache";
 
 const DEBUG = false;
 const FOW_TILE_ZOOM = 9;
@@ -58,7 +58,8 @@ class LazyTileCanvas {
         this.context = this.canvas.getContext("2d")!;
         this.canvas.width = 512;
         this.canvas.height = 512;
-        this.context.fillStyle = "rgba(0, 0, 0," + this.opacity.toString() + ")";
+        this.context.fillStyle =
+          "rgba(0, 0, 0," + this.opacity.toString() + ")";
         this.context.fillRect(0, 0, 512, 512);
       } else {
         this.context = this.canvas.getContext("2d")!;
@@ -143,12 +144,14 @@ class Internal {
             // for each pixel of block, we may draw multiple pixel of image
             const overscanOffset = Math.max(CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
             const underscanOffset = Math.max(-CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
-            tileCanvas.ctx().clearRect(
-              dx + ((x >> underscanOffset) << overscanOffset),
-              dy + ((y >> underscanOffset) << overscanOffset),
-              1 << overscanOffset,
-              1 << overscanOffset
-            );
+            tileCanvas
+              .ctx()
+              .clearRect(
+                dx + ((x >> underscanOffset) << overscanOffset),
+                dy + ((y >> underscanOffset) << overscanOffset),
+                1 << overscanOffset,
+                1 << overscanOffset
+              );
           }
         }
       }
@@ -224,7 +227,7 @@ class Internal {
 
         const block =
           fogMap.tiles[FogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]?.blocks[
-          FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
+            FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
           ];
 
         if (block) {
@@ -247,12 +250,14 @@ class Internal {
                 const y =
                   (fowPixelY - fowBlockPixelYMin) <<
                   CANVAS_FOW_PIXEL_SIZE_OFFSET;
-                tileCanvas.ctx().clearRect(
-                  x,
-                  y,
-                  1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
-                  1 << CANVAS_FOW_PIXEL_SIZE_OFFSET
-                );
+                tileCanvas
+                  .ctx()
+                  .clearRect(
+                    x,
+                    y,
+                    1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
+                    1 << CANVAS_FOW_PIXEL_SIZE_OFFSET
+                  );
               }
             }
           }
@@ -297,7 +302,7 @@ class Internal {
         }
       }
     }
-    tileCanvas.finish()
+    tileCanvas.finish();
     return tileCanvas;
   }
 }
@@ -311,7 +316,11 @@ export class MapRenderer {
   private zoomOffset: number;
   private currentTileRange: [number, number, number, number];
   private currentZoom: number;
-  private tileCanvasCache: LRUCache<TileIndexKey, HTMLCanvasElement | "empty", unknown>
+  private tileCanvasCache: LRUCache<
+    TileIndexKey,
+    HTMLCanvasElement | "empty",
+    unknown
+  >;
 
   constructor(
     mapboxMap: mapboxgl.Map,
@@ -336,9 +345,8 @@ export class MapRenderer {
         } else {
           return 10;
         }
-      }
+      },
     });
-
 
     this.maybeAddLayer();
     mapboxMap.showTileBoundaries = DEBUG;
@@ -465,7 +473,7 @@ export class MapRenderer {
             tileIndex,
             opacity
           ).getCanvas();
-          this.tileCanvasCache.set(key, (canvas ? canvas : "empty"));
+          this.tileCanvasCache.set(key, canvas ? canvas : "empty");
         }
         const dx = (x - left) * 512;
         const dy = (y - top) * 512;
