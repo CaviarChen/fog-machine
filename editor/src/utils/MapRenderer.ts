@@ -1,26 +1,12 @@
-import * as deckgl from "./Deckgl";
+import { Bbox } from "./CommonTypes";
 import * as FogMap from "./FogMap";
-import { CANVAS_SIZE_OFFSET, FogCanvas } from "./FogCanvas";
 import mapboxgl from "mapbox-gl";
 
 const DEBUG = true;
 const FOW_TILE_ZOOM = 9;
 const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + FogMap.TILE_WIDTH_OFFSET;
-
-type TileKey = string;
-// function tileToKey(tile: deckgl.Tile): TileKey {
-//   return `${tileIndex.x}-${tileIndex.y}-${tileIndex.z}`;
-// }
-
-// NOTE: this does not handle wraparound
-function isBboxOverlap(a: deckgl.Bbox, b: deckgl.Bbox) {
-  return (
-    a.north >= b.south &&
-    b.north >= a.south &&
-    a.east >= b.west &&
-    b.east >= a.west
-  );
-}
+export const CANVAS_SIZE_OFFSET = 9;
+export const CANVAS_SIZE = 1 << CANVAS_SIZE_OFFSET;
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 function lngLatToTileXY([lng, lat]: number[], zoom: number): [number, number] {
@@ -190,7 +176,7 @@ class Internal {
 
         const block =
           fogMap.tiles[FogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]?.blocks[
-          FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
+            FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
           ];
 
         if (block) {
@@ -310,11 +296,11 @@ export class MapRenderer {
     ) as mapboxgl.CanvasSource;
 
     mapboxMap.showTileBoundaries = DEBUG;
-    
-    mapboxMap.on('move', () => {
+
+    mapboxMap.on("move", () => {
       this.maybeRenderOnce();
     });
-    mapboxMap.on('moveend', () => {
+    mapboxMap.on("moveend", () => {
       this.maybeRenderOnce();
     });
     this.maybeRenderOnce();
@@ -323,7 +309,8 @@ export class MapRenderer {
   maybeRenderOnce() {
     if (DEBUG) console.time("[maybeRenderOnce]");
 
-    const zoom = Math.max(Math.floor(this.mapboxMap.getZoom() + this.zoomOffset), 1);
+    let zoom = this.mapboxMap.getZoom() + this.zoomOffset;
+    zoom = Math.min(Math.max(Math.floor(zoom), 2), 19);
     const bounds = this.mapboxMap.getBounds();
 
     const [left, top] = lngLatToTileXY(bounds.getNorthWest().toArray(), zoom);
@@ -381,7 +368,11 @@ export class MapRenderer {
         if (xNorm < 0) xNorm += n;
         if (xNorm >= n) xNorm -= n;
 
-        const tileCanvas = Internal.drawFogCanvas(this.getCurrentFogMap(), new TileIndex(xNorm, yNorm, zoom));
+        // TODO: improve the performance by having a cache or drawing on the final canvas directly
+        const tileCanvas = Internal.drawFogCanvas(
+          this.getCurrentFogMap(),
+          new TileIndex(xNorm, yNorm, zoom)
+        );
         this.mainCtx.drawImage(tileCanvas, (x - left) * 512, (y - top) * 512);
       }
     }
@@ -389,22 +380,9 @@ export class MapRenderer {
     if (DEBUG) console.timeEnd("[renderOnce]");
   }
 
-  onLoadFogCanvas(fogMap: FogMap.FogMap, tile: deckgl.Tile) {
-    const fogCanvas = new FogCanvas(tile);
-    // this.drawFogCanvas(fogMap, fogCanvas);
-    // this.loadedFogCanvases[tileToKey(tile)] = fogCanvas;
-    return fogCanvas;
-  }
-
-  onUnloadFogCanvas(tile: deckgl.Tile) {
-    // delete this.loadedFogCanvases[tileToKey(tile)];
-  }
-
-  redrawArea(fogMap: FogMap.FogMap, area: deckgl.Bbox | "all"): void {
-    // Object.values(this.loadedFogCanvases).forEach((fogCanvas) => {
-    //   if (area === "all" || isBboxOverlap(fogCanvas.tile.bbox, area)) {
-    //     this.drawFogCanvas(fogMap, fogCanvas);
-    //   }
-    // });
+  redrawArea(area: Bbox | "all"): void {
+    // TODO: partial redraw?
+    const _ = area;
+    this.renderOnce();
   }
 }

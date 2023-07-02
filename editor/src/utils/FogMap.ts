@@ -1,7 +1,7 @@
 import pako from "pako";
 import JSZip from "jszip";
-import * as deckgl from "./Deckgl";
 import { Md5 } from "ts-md5";
+import { Bbox } from "./CommonTypes";
 
 const FILENAME_MASK1 = "olhwjsktri";
 const FILENAME_MASK2 = "eizxdwknmo";
@@ -219,7 +219,7 @@ export class FogMap {
   }
 
   // we only provide interface for clearing a bbox, because we think it make no sense to add paths for whole bbox
-  clearBbox(bbox: deckgl.Bbox): FogMap {
+  clearBbox(bbox: Bbox): FogMap {
     const nw = Tile.LngLatToXY(bbox.west, bbox.north);
     const se = Tile.LngLatToXY(bbox.east, bbox.south);
 
@@ -397,10 +397,10 @@ export class Tile {
     return [nw, ne, se, sw];
   }
 
-  bbox(): deckgl.Bbox {
+  bbox(): Bbox {
     const [west, south] = Tile.XYToLngLat(this.x, this.y + 1);
     const [east, north] = Tile.XYToLngLat(this.x + 1, this.y);
-    const bbox = new deckgl.Bbox(west, south, east, north);
+    const bbox = new Bbox(west, south, east, north);
     return bbox;
   }
 

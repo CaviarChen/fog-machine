@@ -1,10 +1,10 @@
 // TODO: consider reactify this?
 import mapboxgl from "mapbox-gl";
 import * as fogMap from "./FogMap";
-import * as deckgl from "./Deckgl";
 import { HistoryManager } from "./HistoryManager";
 import { MapDraw } from "./MapDraw";
 import { MapRenderer } from "./MapRenderer";
+import { Bbox } from "./CommonTypes";
 
 type MapStyle = "standard" | "satellite" | "hybrid" | "none";
 type FogConcentration = "low" | "medium" | "high";
@@ -20,7 +20,6 @@ export class MapController {
   private map: mapboxgl.Map | null;
   private deckglContainer: HTMLCanvasElement | null;
   private mapRenderer: MapRenderer | null;
-  private deckgl: deckgl.Deckgl | null;
   public fogMap: fogMap.FogMap;
   public historyManager: HistoryManager;
   private controlMode: ControlMode;
@@ -33,7 +32,6 @@ export class MapController {
 
   private constructor() {
     this.map = null;
-    this.deckgl = null;
     this.fogMap = fogMap.FogMap.empty;
     this.controlMode = ControlMode.View;
     this.eraserArea = null;
@@ -120,9 +118,7 @@ export class MapController {
       opacity = 0.2;
     }
 
-    if (this.deckgl) {
-      this.deckgl.setOpacity(opacity);
-    }
+    // TODO: HERE
   }
 
   setFogConcentration(fogConcentration: FogConcentration): void {
@@ -204,15 +200,11 @@ export class MapController {
     delete this.onChangeCallback[key];
   }
 
-  redrawArea(area: deckgl.Bbox | "all"): void {
-    this.mapRenderer?.redrawArea(this.fogMap, area);
-    this.deckgl?.updateOnce();
+  redrawArea(area: Bbox | "all"): void {
+    this.mapRenderer?.redrawArea(area);
   }
 
-  private applyFogMapUpdate(
-    newMap: fogMap.FogMap,
-    areaChanged: deckgl.Bbox | "all"
-  ) {
+  private applyFogMapUpdate(newMap: fogMap.FogMap, areaChanged: Bbox | "all") {
     this.fogMap = newMap;
     this.redrawArea(areaChanged);
 
@@ -221,10 +213,7 @@ export class MapController {
     }
   }
 
-  private updateFogMap(
-    newMap: fogMap.FogMap,
-    areaChanged: deckgl.Bbox | "all"
-  ): void {
+  private updateFogMap(newMap: fogMap.FogMap, areaChanged: Bbox | "all"): void {
     if (this.fogMap !== newMap) {
       this.historyManager.append(newMap, areaChanged);
       this.applyFogMapUpdate(newMap, areaChanged);
@@ -334,7 +323,7 @@ export class MapController {
       this.map?.removeLayer("eraser-outline");
       this.map?.removeSource("eraser");
 
-      const bbox = new deckgl.Bbox(west, south, east, north);
+      const bbox = new Bbox(west, south, east, north);
       console.log(`clearing the bbox ${west} ${north} ${east} ${south}`);
 
       const newMap = this.fogMap.clearBbox(bbox);

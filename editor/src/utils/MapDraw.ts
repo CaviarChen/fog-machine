@@ -6,7 +6,6 @@
 
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
-import * as deckgl from "./Deckgl";
 
 export class MapDraw {
   private map: mapboxgl.Map;
