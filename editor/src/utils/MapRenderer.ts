@@ -39,6 +39,47 @@ function arrayEquals(a: number[], b: number[]) {
   );
 }
 
+// A lot of tiles we are drawing are empty. This can help us 1) don't create a
+//  canvas when the tile is emtpy. 2) share the same empty tile.
+class LazyTileCanvas {
+  private canvas: HTMLCanvasElement | null = null;
+  private context: CanvasRenderingContext2D | null = null;
+  private opacity: number;
+
+  constructor(opactiy: number) {
+    this.opacity = opactiy;
+  }
+
+  force() : [HTMLCanvasElement, CanvasRenderingContext2D ] {
+    if (!this.context)  {
+      if (!this.canvas) {
+        this.canvas = document.createElement("canvas");
+        this.context = this.canvas.getContext("2d")!;
+        this.canvas.width = 512;
+        this.canvas.height = 512;
+        this.context.fillStyle = "rgba(0, 0, 0," + this.opacity.toString() + ")";
+        this.context.fillRect(0, 0, 512, 512);
+      } else {
+        this.context = this.canvas.getContext("2d")!;
+      }
+    }
+    return [this.canvas!, this.context];
+  }
+
+  ctx(): CanvasRenderingContext2D {
+    const [_canvas, context] = this.force();
+    return context;
+  }
+
+  finish() {
+    this.context = null;
+  }
+
+  getCanvas() {
+    return this.canvas;
+  }
+}
+
 export class TileIndex {
   x: number;
   y: number;
@@ -54,7 +95,7 @@ export class TileIndex {
 class Internal {
   private static renderTileOnCanvas(
     fowTile: FogMap.Tile,
-    ctx: CanvasRenderingContext2D,
+    tileCanvas: LazyTileCanvas,
     tileSizeOffset: number,
     dx: number,
     dy: number
@@ -69,7 +110,7 @@ class Internal {
       const blockDy = dy + ((block.y >> underscanOffset) << overscanOffset);
       Internal.renderBlockOnCanvas(
         block,
-        ctx,
+        tileCanvas,
         CANVAS_FOW_BLOCK_SIZE_OFFSET,
         blockDx,
         blockDy
@@ -79,13 +120,13 @@ class Internal {
 
   static renderBlockOnCanvas(
     fowBlock: FogMap.Block,
-    ctx: CanvasRenderingContext2D,
+    tileCanvas: LazyTileCanvas,
     blockSizeOffset: number,
     dx: number,
     dy: number
   ): void {
     if (blockSizeOffset <= 0) {
-      ctx.clearRect(dx, dy, 1, 1);
+      tileCanvas.ctx().clearRect(dx, dy, 1, 1);
     } else {
       const CANVAS_FOW_PIXEL_SIZE_OFFSET =
         blockSizeOffset - FogMap.BITMAP_WIDTH_OFFSET;
@@ -95,7 +136,7 @@ class Internal {
             // for each pixel of block, we may draw multiple pixel of image
             const overscanOffset = Math.max(CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
             const underscanOffset = Math.max(-CANVAS_FOW_PIXEL_SIZE_OFFSET, 0);
-            ctx.clearRect(
+            tileCanvas.ctx().clearRect(
               dx + ((x >> underscanOffset) << overscanOffset),
               dy + ((y >> underscanOffset) << overscanOffset),
               1 << overscanOffset,
@@ -112,15 +153,10 @@ class Internal {
     tileIndex: TileIndex,
     opacity: number
   ) {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d")!;
-    canvas.width = 512;
-    canvas.height = 512;
-    ctx.fillStyle = "rgba(0, 0, 0," + opacity.toString() + ")";
-    ctx.fillRect(0, 0, 512, 512);
+    const tileCanvas = new LazyTileCanvas(opacity);
 
     if (Object.values(fogMap.tiles).length === 0) {
-      return canvas;
+      return tileCanvas;
     }
 
     if (tileIndex.z <= FOW_TILE_ZOOM) {
@@ -141,7 +177,7 @@ class Internal {
               CANVAS_SIZE_OFFSET - CANVAS_NUM_FOW_TILE_OFFSET;
             Internal.renderTileOnCanvas(
               fowTile,
-              ctx,
+              tileCanvas,
               CANVAS_FOW_TILE_SIZE_OFFSET,
               (fowTileX - fowTileXMin) << CANVAS_FOW_TILE_SIZE_OFFSET,
               (fowTileY - fowTileYMin) << CANVAS_FOW_TILE_SIZE_OFFSET
@@ -204,7 +240,7 @@ class Internal {
                 const y =
                   (fowPixelY - fowBlockPixelYMin) <<
                   CANVAS_FOW_PIXEL_SIZE_OFFSET;
-                ctx.clearRect(
+                tileCanvas.ctx().clearRect(
                   x,
                   y,
                   1 << CANVAS_FOW_PIXEL_SIZE_OFFSET,
@@ -244,7 +280,7 @@ class Internal {
                 (block.y - fowBlockYMin) << CANVAS_FOW_BLOCK_SIZE_OFFSET;
               Internal.renderBlockOnCanvas(
                 block,
-                ctx,
+                tileCanvas,
                 CANVAS_FOW_BLOCK_SIZE_OFFSET,
                 dx,
                 dy
@@ -254,7 +290,8 @@ class Internal {
         }
       }
     }
-    return canvas;
+    tileCanvas.finish()
+    return tileCanvas;
   }
 }
 
@@ -380,8 +417,9 @@ export class MapRenderer {
     const [left, top, right, bottom] = this.currentTileRange;
     if (DEBUG) console.log(this.currentZoom, "-", this.currentTileRange);
     this.mainCtx.clearRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
-
     const opacity = this.getCurrentOpacity();
+    this.mainCtx.fillStyle = "rgba(0, 0, 0," + opacity.toString() + ")";
+
     for (let x = left; x <= right; x++) {
       for (let y = top; y <= bottom; y++) {
         const n = Math.pow(2, zoom);
@@ -399,7 +437,14 @@ export class MapRenderer {
           new TileIndex(xNorm, yNorm, zoom),
           opacity
         );
-        this.mainCtx.drawImage(tileCanvas, (x - left) * 512, (y - top) * 512);
+        const canvas = tileCanvas.getCanvas();
+        const dx = (x - left) * 512;
+        const dy = (y - top) * 512;
+        if (canvas) {
+          this.mainCtx.drawImage(canvas, dx , dy );
+        } else {
+           this.mainCtx.fillRect(dx, dy, 512, 512);
+        }
       }
     }
 
