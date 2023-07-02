@@ -107,8 +107,8 @@ export class Deckgl {
   }
 
   private renderLayer() {
-    this.tileLayer = new DeckglTileLayer(this.tileLayerProps);
-    this.deck.setProps({ layers: [this.tileLayer] });
+    // this.tileLayer = new DeckglTileLayer(this.tileLayerProps);
+    // this.deck.setProps({ layers: [this.tileLayer] });
   }
 
   private static setDeckglView(map: mapboxgl.Map, deck: Deck) {
