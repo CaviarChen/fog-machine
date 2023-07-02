@@ -26,14 +26,12 @@ function isBboxOverlap(a: deckgl.Bbox, b: deckgl.Bbox) {
 function lngLatToTileXY([lng, lat]: number[], zoom: number): [number, number] {
   const n = Math.pow(2, zoom);
   const latRad = (lat / 180) * Math.PI;
-  let x = ((lng + 180.0) / 360.0) * n;
-  let y =
+  const x = ((lng + 180.0) / 360.0) * n;
+  const y =
     ((1.0 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) /
       2.0) *
     n;
 
-  x = Math.min(Math.max(x, 0), n - 1);
-  y = Math.min(Math.max(y, 0), n - 1);
   return [Math.floor(x), Math.floor(y)];
 }
 
@@ -289,7 +287,7 @@ export class MapRenderer {
     this.zoomOffset = zoomOffset;
     this.mainCanvas = document.createElement("canvas");
     this.mainCtx = this.mainCanvas.getContext("2d")!;
-    this.currentTileRange = [-1, -1, -1, -1];
+    this.currentTileRange = [0, 0, 0, 0];
     this.currentZoom = -1;
     mapboxMap.addSource("main-canvas-source", {
       type: "canvas",
@@ -310,6 +308,8 @@ export class MapRenderer {
     this.mainCanvasSource = mapboxMap.getSource(
       "main-canvas-source"
     ) as mapboxgl.CanvasSource;
+
+    mapboxMap.showTileBoundaries = DEBUG;
     
     mapboxMap.on('move', () => {
       this.maybeRenderOnce();
@@ -323,7 +323,7 @@ export class MapRenderer {
   maybeRenderOnce() {
     if (DEBUG) console.time("[maybeRenderOnce]");
 
-    const zoom = Math.floor(this.mapboxMap.getZoom() + this.zoomOffset);
+    const zoom = Math.max(Math.floor(this.mapboxMap.getZoom() + this.zoomOffset), 1);
     const bounds = this.mapboxMap.getBounds();
 
     const [left, top] = lngLatToTileXY(bounds.getNorthWest().toArray(), zoom);
@@ -367,10 +367,21 @@ export class MapRenderer {
 
     const zoom = this.currentZoom;
     const [left, top, right, bottom] = this.currentTileRange;
+    if (DEBUG) console.log(this.currentZoom, "-", this.currentTileRange);
     this.mainCtx.clearRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
+
     for (let x = left; x <= right; x++) {
       for (let y = top; y <= bottom; y++) {
-        const tileCanvas = Internal.drawFogCanvas(this.getCurrentFogMap(), new TileIndex(x, y, zoom));
+        const n = Math.pow(2, zoom);
+        // y cannot be out of bound
+        if (y < 0 || y >= n) continue;
+        const yNorm = y;
+        // x might be wraparound
+        let xNorm = x;
+        if (xNorm < 0) xNorm += n;
+        if (xNorm >= n) xNorm -= n;
+
+        const tileCanvas = Internal.drawFogCanvas(this.getCurrentFogMap(), new TileIndex(xNorm, yNorm, zoom));
         this.mainCtx.drawImage(tileCanvas, (x - left) * 512, (y - top) * 512);
       }
     }
