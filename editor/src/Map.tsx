@@ -20,13 +20,11 @@ type Props = {
 function Map(props: Props): JSX.Element {
   const { i18n } = useTranslation();
   const mapContainer = useRef<HTMLDivElement | null>(null);
-  const deckglContainer = useRef<HTMLCanvasElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
 
   useEffect(() => {
     if (map.current) return;
     if (!mapContainer.current) return;
-    if (!deckglContainer.current) return;
     console.log("initializing");
     const mapController = MapController.create();
     const mapboxMap = new mapboxgl.Map({
@@ -37,11 +35,7 @@ function Map(props: Props): JSX.Element {
     mapboxMap.addControl(new mapboxgl.NavigationControl(), "bottom-right");
 
     mapboxMap.on("load", () => {
-      mapController.registerMap(
-        mapboxMap,
-        deckglContainer.current!,
-        i18n.resolvedLanguage
-      );
+      mapController.registerMap(mapboxMap, i18n.resolvedLanguage);
       i18n.on("languageChanged", (_) => {
         mapController.setResolvedLanguage(i18n.resolvedLanguage);
       });
@@ -64,12 +58,7 @@ function Map(props: Props): JSX.Element {
   return (
     <div className="absolute inset-0">
       <div ref={mapContainer} className="absolute w-full h-full inset-0" />
-      <div className="absolute w-full h-full inset-0 z-10 pointer-events-none">
-        <canvas
-          // `mapController` will set the opacity of this canvas to control the fog concentration.
-          ref={deckglContainer}
-        />
-      </div>
+      <div className="absolute w-full h-full inset-0 z-10 pointer-events-none"></div>
     </div>
   );
 }

@@ -6,20 +6,18 @@
 
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import { Bbox } from "./CommonTypes";
 
 export class MapDraw {
   private map: mapboxgl.Map;
   private mapboxDraw: MapboxDraw;
   private getCurrentFogMap: () => fogMap.FogMap;
-  private updateFogMap: (
-    newMap: fogMap.FogMap,
-    areaChanged: deckgl.Bbox
-  ) => void;
+  private updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void;
 
   constructor(
     map: mapboxgl.Map,
     getCurrentFogMap: () => fogMap.FogMap,
-    updateFogMap: (newMap: fogMap.FogMap, areaChanged: deckgl.Bbox) => void
+    updateFogMap: (newMap: fogMap.FogMap, areaChanged: Bbox) => void
   ) {
     this.map = map;
     this.getCurrentFogMap = getCurrentFogMap;
@@ -70,7 +68,7 @@ export class MapDraw {
             bounds.extend(coordinates[j]);
             [startLng, startLat] = [endLng, endLat];
           }
-          const bbox = new deckgl.Bbox(
+          const bbox = new Bbox(
             bounds.getWest(),
             bounds.getSouth(),
             bounds.getEast(),

@@ -2,11 +2,12 @@ import { Bbox } from "./CommonTypes";
 import * as FogMap from "./FogMap";
 import mapboxgl from "mapbox-gl";
 
-const DEBUG = true;
+const DEBUG = false;
 const FOW_TILE_ZOOM = 9;
 const FOW_BLOCK_ZOOM = FOW_TILE_ZOOM + FogMap.TILE_WIDTH_OFFSET;
 export const CANVAS_SIZE_OFFSET = 9;
 export const CANVAS_SIZE = 1 << CANVAS_SIZE_OFFSET;
+export const MAPBOX_MAIN_CANVAS_LAYER = "main-canvas-layer";
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 function lngLatToTileXY([lng, lat]: number[], zoom: number): [number, number] {
@@ -106,12 +107,16 @@ class Internal {
     }
   }
 
-  static drawFogCanvas(fogMap: FogMap.FogMap, tileIndex: TileIndex) {
+  static drawFogCanvas(
+    fogMap: FogMap.FogMap,
+    tileIndex: TileIndex,
+    opacity: number
+  ) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d")!;
     canvas.width = 512;
     canvas.height = 512;
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillStyle = "rgba(0, 0, 0," + opacity.toString() + ")";
     ctx.fillRect(0, 0, 512, 512);
 
     if (Object.values(fogMap.tiles).length === 0) {
@@ -176,7 +181,7 @@ class Internal {
 
         const block =
           fogMap.tiles[FogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]?.blocks[
-            FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
+          FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
           ];
 
         if (block) {
@@ -256,9 +261,9 @@ class Internal {
 export class MapRenderer {
   private mapboxMap: mapboxgl.Map;
   private getCurrentFogMap: () => FogMap.FogMap;
+  private getCurrentOpacity: () => number;
   private mainCanvas: HTMLCanvasElement;
   private mainCtx: CanvasRenderingContext2D;
-  private mainCanvasSource: mapboxgl.CanvasSource;
   private zoomOffset: number;
   private currentTileRange: [number, number, number, number];
   private currentZoom: number;
@@ -266,34 +271,18 @@ export class MapRenderer {
   constructor(
     mapboxMap: mapboxgl.Map,
     zoomOffset: number,
-    getCurrentFogMap: () => FogMap.FogMap
+    getCurrentFogMap: () => FogMap.FogMap,
+    getCurrentOpacity: () => number
   ) {
     this.mapboxMap = mapboxMap;
     this.getCurrentFogMap = getCurrentFogMap;
+    this.getCurrentOpacity = getCurrentOpacity;
     this.zoomOffset = zoomOffset;
     this.mainCanvas = document.createElement("canvas");
     this.mainCtx = this.mainCanvas.getContext("2d")!;
     this.currentTileRange = [0, 0, 0, 0];
     this.currentZoom = -1;
-    mapboxMap.addSource("main-canvas-source", {
-      type: "canvas",
-      canvas: this.mainCanvas,
-      animate: true,
-      coordinates: [
-        [0, 0],
-        [0, 0],
-        [0, 0],
-        [0, 0],
-      ],
-    });
-    mapboxMap.addLayer({
-      id: "main-canvas-layer",
-      source: "main-canvas-source",
-      type: "raster",
-    });
-    this.mainCanvasSource = mapboxMap.getSource(
-      "main-canvas-source"
-    ) as mapboxgl.CanvasSource;
+    this.maybeAddLayer();
 
     mapboxMap.showTileBoundaries = DEBUG;
 
@@ -303,7 +292,38 @@ export class MapRenderer {
     mapboxMap.on("moveend", () => {
       this.maybeRenderOnce();
     });
-    this.maybeRenderOnce();
+    mapboxMap.on("styledata", () => {
+      // mapbox will remove all layers after `setStyle`.
+      this.maybeAddLayer();
+    });
+  }
+
+  private maybeAddLayer() {
+    if (this.mapboxMap.getLayer(MAPBOX_MAIN_CANVAS_LAYER) == undefined) {
+      this.mapboxMap.addSource("main-canvas-source", {
+        type: "canvas",
+        canvas: this.mainCanvas,
+        // NOTE: We turn off `animate` and trigger redraw manually for performance reason anyway,
+        //  but be aware there is a related bug: https://github.com/mapbox/mapbox-gl-draw/issues/639
+        animate: false,
+        coordinates: [
+          [0, 0],
+          [0, 0],
+          [0, 0],
+          [0, 0],
+        ],
+      });
+      this.mapboxMap.addLayer({
+        id: MAPBOX_MAIN_CANVAS_LAYER,
+        source: "main-canvas-source",
+        type: "raster",
+        "paint": {
+          "raster-fade-duration": 0
+        },
+      });
+      this.currentZoom = -1;
+      this.maybeRenderOnce();
+    }
   }
 
   maybeRenderOnce() {
@@ -338,7 +358,11 @@ export class MapRenderer {
         tileXYToLngLat([left, top], zoom),
         tileXYToLngLat([right + 1, bottom + 1], zoom)
       );
-      this.mainCanvasSource.setCoordinates([
+
+      const mainCanvasSource = this.mapboxMap.getSource(
+        "main-canvas-source"
+      ) as mapboxgl.CanvasSource | undefined;
+      mainCanvasSource?.setCoordinates([
         tileBounds.getSouthWest().toArray(),
         tileBounds.getSouthEast().toArray(),
         tileBounds.getNorthEast().toArray(),
@@ -357,6 +381,7 @@ export class MapRenderer {
     if (DEBUG) console.log(this.currentZoom, "-", this.currentTileRange);
     this.mainCtx.clearRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
 
+    const opacity = this.getCurrentOpacity();
     for (let x = left; x <= right; x++) {
       for (let y = top; y <= bottom; y++) {
         const n = Math.pow(2, zoom);
@@ -371,11 +396,18 @@ export class MapRenderer {
         // TODO: improve the performance by having a cache or drawing on the final canvas directly
         const tileCanvas = Internal.drawFogCanvas(
           this.getCurrentFogMap(),
-          new TileIndex(xNorm, yNorm, zoom)
+          new TileIndex(xNorm, yNorm, zoom),
+          opacity
         );
         this.mainCtx.drawImage(tileCanvas, (x - left) * 512, (y - top) * 512);
       }
     }
+
+    const mainCanvasSource = this.mapboxMap.getSource(
+      "main-canvas-source"
+    ) as mapboxgl.CanvasSource | undefined;
+    mainCanvasSource?.play();
+    mainCanvasSource?.pause();
 
     if (DEBUG) console.timeEnd("[renderOnce]");
   }

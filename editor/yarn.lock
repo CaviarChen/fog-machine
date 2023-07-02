@@ -1401,7 +1401,7 @@
     "@mapbox/geojson-normalize" "0.0.1"
     geojson-flatten "^1.0.4"
 
-"@mapbox/geojson-extent@^1.0.0":
+"@mapbox/geojson-extent@^1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@mapbox/geojson-extent/-/geojson-extent-1.0.1.tgz#bd99a6b66ba98e63a29511c9cd1bbd1df4c1e203"
   integrity sha512-hh8LEO3djT4fqfr8sSC6wKt+p0TMiu+KOLMBUiFOyj+zGq7+IXwQGl0ppCVDkyzCewyd9LoGe9zAvDxXrLfhLw==
@@ -1429,13 +1429,13 @@
   resolved "https://registry.yarnpkg.com/@mapbox/jsonlint-lines-primitives/-/jsonlint-lines-primitives-2.0.2.tgz#ce56e539f83552b58d10d672ea4d6fc9adc7b234"
   integrity sha1-zlblOfg1UrWNENZy6k1vya3HsjQ=
 
-"@mapbox/mapbox-gl-draw@^1.3.0":
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/@mapbox/mapbox-gl-draw/-/mapbox-gl-draw-1.3.0.tgz#7a30fb99488cb47a32c25e99c3c62413b04bbaed"
-  integrity sha512-B+KWK+dAgzLHMNyKVuuMRfjeSlQ77MhNLdfpQQpbp3pkhnrdmydDe3ixto1Ua78hktNut0WTrAaD8gYu4PVcjA==
+"@mapbox/mapbox-gl-draw@^1.4.2":
+  version "1.4.2"
+  resolved "https://registry.yarnpkg.com/@mapbox/mapbox-gl-draw/-/mapbox-gl-draw-1.4.2.tgz#3ec71d496f056313707c67e62728945563336a85"
+  integrity sha512-Zvl5YN+tIuYZlzPmuzOgkoJsZX6sHMQsnFI+O3ox8EwYkpLO2w0U2FvVhQuVnq1Yys12x6UnF+0IPoEdBy2UfA==
   dependencies:
     "@mapbox/geojson-area" "^0.2.2"
-    "@mapbox/geojson-extent" "^1.0.0"
+    "@mapbox/geojson-extent" "^1.0.1"
     "@mapbox/geojson-normalize" "^0.0.1"
     "@mapbox/point-geometry" "^0.1.0"
     hat "0.0.3"
