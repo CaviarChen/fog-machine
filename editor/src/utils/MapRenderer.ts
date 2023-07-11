@@ -15,10 +15,13 @@ function lngLatToTileXY([lng, lat]: number[], zoom: number): [number, number] {
   const n = Math.pow(2, zoom);
   const latRad = (lat / 180) * Math.PI;
   const x = ((lng + 180.0) / 360.0) * n;
-  const y =
+  let y =
     ((1.0 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) /
       2.0) *
     n;
+  // In mapbox globe view, we may get some crazy y coordiates.
+  // I guess related to the Mercator projection inflation.
+  y = Math.min(Math.max(y, 0), n - 1);
 
   return [Math.floor(x), Math.floor(y)];
 }
