@@ -41,10 +41,10 @@ i18n
           "map-projection": "Projection",
           // TODO: Why beta? This is a known bug[1] causing we render things accross meridian wrongly
           // in globe projection. We could workaround it by not rendering things across meridian
-          // (e.g. having two canvas source, one for each side).
+          // (e.g. having two canvas sources, one for each side).
           // But for now, I'm too lazy to do it, I'd rather wait for upstream's
           // fix or do it later and in a different PR.
-          //[1] https://github.com/mapbox/mapbox-gl-js/issues/12758 
+          // [1] https://github.com/mapbox/mapbox-gl-js/issues/12758
           "map-projection-globe": "Globe[BETA]",
           "map-projection-mercator": "Mercator",
           "fog-concentration": "Fog concentration",
