@@ -10,6 +10,7 @@ function MapTap(props: { mapController: MapController }): JSX.Element {
   const { t } = useTranslation();
   const mapController = props.mapController;
   const mapStyles = ["standard", "satellite", "hybrid", "none"];
+  const mapProjections = ["globe", "mercator"];
   const fogConcentrations = ["low", "medium", "high"];
 
   return (
@@ -89,6 +90,44 @@ function MapTap(props: { mapController: MapController }): JSX.Element {
                   {category}
                 </Tab>
               ))}
+            </Tab.List>
+          </Tab.Group>
+        </div>
+      </div>
+      <div className="p-4 bg-gray-50">
+        <span className="flex items-center">
+          <span className="text-sm font-medium text-gray-900">
+            {t("map-projection")}
+          </span>
+        </span>
+        <div className="w-full pt-4 grid lg:grid-cols-2">
+          <Tab.Group
+            onChange={(index) => {
+              const mapProjection = mapProjections[index];
+              mapController.setMapProjection(
+                mapProjection as "globe" | "mercator"
+              );
+            }}
+            defaultIndex={mapProjections.indexOf(
+              mapController.getMapProjection()
+            )}
+          >
+            <Tab.List className="flex p-1 space-x-1 bg-gray-300 rounded-xl">
+              {[t("map-projection-globe"), t("map-projection-mercator")].map(
+                (category) => (
+                  <Tab
+                    key={category}
+                    className={({ selected }) => {
+                      return (
+                        "w-full py-1 text-sm leading-5 font-medium text-grey-500 rounded-lg focus:outline-none" +
+                        (selected ? " bg-white" : " hover:bg-gray-200")
+                      );
+                    }}
+                  >
+                    {category}
+                  </Tab>
+                )
+              )}
             </Tab.List>
           </Tab.Group>
         </div>
