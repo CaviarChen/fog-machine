@@ -30,7 +30,7 @@ function Map(props: Props): JSX.Element {
     const mapboxMap = new mapboxgl.Map({
       container: mapContainer.current,
       style: mapController.mapboxStyleURL(),
-      // projection: { name: 'globe' },
+      projection: { name: mapController.getMapProjection() },
     });
     mapboxMap.addControl(new mapboxgl.NavigationControl(), "bottom-right");
 

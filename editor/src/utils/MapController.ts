@@ -7,6 +7,7 @@ import { MapRenderer, MAPBOX_MAIN_CANVAS_LAYER } from "./MapRenderer";
 import { Bbox } from "./CommonTypes";
 
 type MapStyle = "standard" | "satellite" | "hybrid" | "none";
+type MapProjection = "globe" | "mercator";
 type FogConcentration = "low" | "medium" | "high";
 
 export enum ControlMode {
@@ -26,6 +27,7 @@ export class MapController {
   private mapDraw: MapDraw | null;
   private onChangeCallback: { [key: string]: () => void };
   private mapStyle: MapStyle;
+  private mapProjection: MapProjection;
   private resolvedLanguage: string;
   private fogConcentration: FogConcentration;
 
@@ -37,6 +39,7 @@ export class MapController {
     this.historyManager = new HistoryManager(this.fogMap);
     this.onChangeCallback = {};
     this.mapStyle = "standard";
+    this.mapProjection = "mercator";
     this.resolvedLanguage = "en";
     this.fogConcentration = "medium";
     this.mapDraw = null;
@@ -108,6 +111,18 @@ export class MapController {
     return this.mapStyle;
   }
 
+  setMapProjection(projection: MapProjection): void {
+    if (projection != this.mapProjection) {
+      this.mapProjection = projection;
+      this.map?.setProjection(projection);
+      this.mapRenderer?.maybeRenderOnce();
+    }
+  }
+
+  getMapProjection(): MapProjection {
+    return this.mapProjection;
+  }
+
   setFogConcentration(fogConcentration: FogConcentration): void {
     if (fogConcentration != this.fogConcentration) {
       this.fogConcentration = fogConcentration;
@@ -132,6 +147,8 @@ export class MapController {
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
     map.on("styledata", () => {
+      // Set the default atmosphere style for globe mode
+      map.setFog({});
       this.setMapboxLanguage();
     });
     this.setControlMode(this.controlMode);
