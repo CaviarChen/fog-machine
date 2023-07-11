@@ -115,6 +115,7 @@ export class MapController {
     if (projection != this.mapProjection) {
       this.mapProjection = projection;
       this.map?.setProjection(projection);
+      this.mapRenderer?.maybeRenderOnce();
     }
   }
 
@@ -146,6 +147,8 @@ export class MapController {
     this.map.on("mouseup", this.handleMouseRelease.bind(this));
     this.map.on("mousemove", this.handleMouseMove.bind(this));
     map.on("styledata", () => {
+      // Set the default atmosphere style for globe mode
+      map.setFog({});
       this.setMapboxLanguage();
     });
     this.setControlMode(this.controlMode);
