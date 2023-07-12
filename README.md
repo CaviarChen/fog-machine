@@ -20,6 +20,7 @@ More background story about Fog Machine project can be found on [my blog](https:
 ## Screenshot
 ![Home Page](.github/home-page.png)
 ![Editor Screenshot](.github/landscape.png)
+![Globe View](.github/globe-view.png)
 ![Time Machine](.github/timemachine.png)
 ![Time Machine Viewer](.github/timemachine-viewer.png)
 
