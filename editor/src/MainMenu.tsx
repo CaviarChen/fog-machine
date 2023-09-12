@@ -190,6 +190,35 @@ export default function MainMenu(props: Props): JSX.Element {
             },
             icon: IconExport,
           },
+          {
+            name: t("export-gpx"),
+            description: t("export-description-gpx"),
+            action: async () => {
+              // TODO: seems pretty fast, but we should consider handle this async properly
+              const blob = await mapController.fogMap.exportArchiveGpx();
+              if (blob) {
+                const name = "Gpx.zip";
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+
+                link.href = blobUrl;
+                link.download = name;
+
+                document.body.appendChild(link);
+                // This is necessary as link.click() does not work on the latest firefox
+                link.dispatchEvent(
+                  new MouseEvent("click", {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                  })
+                );
+                document.body.removeChild(link);
+                props.msgboxShow("info", "export-done-message-gpx");
+              }
+            },
+            icon: IconExport,
+          },
         ];
 
   const languageTab = (
