@@ -36,7 +36,7 @@ i18n
           info: "Info",
           "export-done-message":
             'Exported successfully.\n\nPlease use the "Sync" folder in the exported zip archive to replace the original folder. You also need to reset the [Fog of World] app to remove the existing data.',
-          "export-done-message-gpx": `Exported successfully.`,
+          "export-done-message-gpx": "Exported successfully.",
           "map-type": "Map type",
           "map-type-standard": "Standard",
           "map-type-satellite": "Satellite",
