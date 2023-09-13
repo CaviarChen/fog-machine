@@ -397,8 +397,10 @@ export class Tile {
   }
 
   dumpGpx(): Blob[] {
-    const n = BITMAP_WIDTH * TILE_WIDTH
-    const grid: boolean[][] = Array.from({length: n}, () => Array.from({ length: n }))
+    const n = BITMAP_WIDTH * TILE_WIDTH;
+    const grid: boolean[][] = Array.from({ length: n }, () =>
+      Array.from({ length: n })
+    );
 
     // BITMAP_WIDTH * TILE_WIDTH = 64 * 128 = 8192
     // 64 * 64 pixels for each block
@@ -408,29 +410,29 @@ export class Tile {
       for (let x = 0; x < BITMAP_WIDTH; x++) {
         for (let y = 0; y < BITMAP_WIDTH; y++) {
           if (block.isVisited(x, y)) {
-            grid[block.x * BITMAP_WIDTH + x][block.y * BITMAP_WIDTH + y] = true
+            grid[block.x * BITMAP_WIDTH + x][block.y * BITMAP_WIDTH + y] = true;
           }
         }
       }
-    })
+    });
 
-    const result: Blob[] = []
-    const sorted = sortFilledList(grid)
-    console.log(`# file count ${sorted.length}`)
+    const result: Blob[] = [];
+    const sorted = sortFilledList(grid);
+    console.log(`# file count ${sorted.length}`);
     sorted.forEach((line) => {
-      const [left, up] = Tile.XYToLngLat(this.x, this.y)
-      const right = Tile.XYToLngLat(this.x + 1, this.y)[0]
-      const bottom = Tile.XYToLngLat(this.x, this.y + 1)[1]
-      const dx = (right - left) / n
-      const dy = (bottom - up) / n
+      const [left, up] = Tile.XYToLngLat(this.x, this.y);
+      const right = Tile.XYToLngLat(this.x + 1, this.y)[0];
+      const bottom = Tile.XYToLngLat(this.x, this.y + 1)[1];
+      const dx = (right - left) / n;
+      const dy = (bottom - up) / n;
       const lngLatList = line.map(([i, j]) => {
-        const lng = left + dx * i
-        const lat = up + dy * j
-        return [lng, lat]
-      })
-      result.push(exportToGpx(lngLatList))
-    })
-    return result
+        const lng = left + dx * i;
+        const lat = up + dy * j;
+        return [lng, lat];
+      });
+      result.push(exportToGpx(lngLatList));
+    });
+    return result;
   }
 
   static XYToLngLat(x: number, y: number): number[] {

@@ -20,7 +20,8 @@ i18n
           export: "Export",
           "export-gpx": "Export Gpx",
           "export-description": "Export data in [Fog of World] format",
-          "export-description-gpx": "Export data in [GPX] format.(Wait, there might be some lag. Please be patient)",
+          "export-description-gpx":
+            "Export data in [GPX] format.(Wait, there might be some lag. Please be patient)",
           language: "Language",
           error: "Error",
           "error-already-imported":
@@ -64,7 +65,8 @@ i18n
           export: "导出",
           "export-gpx": "导出 GPX",
           "export-description": "以 [世界迷雾] 的格式导出数据。",
-          "export-description-gpx": "以 [GPX] 的格式导出数据。（慢，会卡顿，请耐心等待）",
+          "export-description-gpx":
+            "以 [GPX] 的格式导出数据。（慢，会卡顿，请耐心等待）",
           language: "语言",
           error: "错误",
           "error-already-imported":
@@ -78,7 +80,7 @@ i18n
           info: "提示",
           "export-done-message":
             '导出成功。\n\n请使用导出的 zip 压缩包中的 "Sync" 文件夹替换原有文件夹，并重置 [世界迷雾] app 以清除已有数据。',
-          "export-done-message-gpx": '导出成功。',
+          "export-done-message-gpx": "导出成功。",
           "map-type": "地图模式",
           "map-type-standard": "标准",
           "map-type-satellite": "卫星",
