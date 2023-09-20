@@ -6,42 +6,50 @@ const MAX_PIXCEL_BETWEEN_GPX_POINTS = 100;
 
 export function sortFilledList(grid: boolean[][]): number[][][] {
   const n = grid.length;
-  const result: number[][][] = [];
+  const track: number[][][] = [];
   while (true) {
-    const [firstI, firstJ] = findMinIndex(grid);
-    if (firstI == -1) {
+    // TODO: A hashqueue should be able to reduce the time complecity a lot.
+    const minIndex = findMinIndex(grid);
+    if (!minIndex) {
       break;
     }
+    const [firstI, firstJ] = minIndex;
     grid[firstI][firstJ] = false;
-    const order: number[][] = [[firstI, firstJ]];
-    while (order.length <= MAX_LENGTH_PER_GPX_FILE) {
-      const [lastI, lastJ] = order[order.length - 1];
+
+    const trackSegment: number[][] = [[firstI, firstJ]];
+    while (trackSegment.length <= MAX_LENGTH_PER_GPX_FILE) {
+      const [lastI, lastJ] = trackSegment[trackSegment.length - 1];
       let minI = -1;
       let minJ = -1;
       let minDistance = Infinity;
-      const m = MAX_PIXCEL_BETWEEN_GPX_POINTS;
-      for (let i = Math.max(0, lastI - m); i < Math.min(lastI + m, n); i++) {
-        for (let j = Math.max(0, lastJ - m); j < Math.min(lastJ + m, n); j++) {
-          if (!grid[i][j]) {
-            continue;
-          }
-          const distance = Math.abs(i - lastI) + Math.abs(j - lastJ);
-          if (distance < minDistance) {
-            minDistance = distance;
-            minI = i;
-            minJ = j;
+      for (
+        let i = Math.max(0, lastI - MAX_PIXCEL_BETWEEN_GPX_POINTS);
+        i < Math.min(lastI + MAX_PIXCEL_BETWEEN_GPX_POINTS, n);
+        i++
+      ) {
+        for (
+          let j = Math.max(0, lastJ - MAX_PIXCEL_BETWEEN_GPX_POINTS);
+          j < Math.min(lastJ + MAX_PIXCEL_BETWEEN_GPX_POINTS, n);
+          j++
+        ) {
+          if (grid[i][j]) {
+            const distance = Math.abs(i - lastI) + Math.abs(j - lastJ);
+            if (distance < minDistance) {
+              minDistance = distance;
+              minI = i;
+              minJ = j;
+            }
           }
         }
       }
-      if (minDistance == Infinity) {
-        break;
+      if (minDistance != Infinity) {
+        grid[minI][minJ] = false;
+        trackSegment.push([minI, minJ]);
       }
-      grid[minI][minJ] = false;
-      order.push([minI, minJ]);
     }
-    result.push(order);
+    track.push(trackSegment);
   }
-  return result;
+  return track;
 }
 
 export function exportToGpx(lngLatList: number[][]): Blob {
@@ -52,14 +60,13 @@ export function exportToGpx(lngLatList: number[][]): Blob {
     <trk>
         <trkseg>
         ${lngLatList
-          .map((lngLat) => {
-            time = addSeconds(time, 1);
-            return `<trkpt lon="${lngLat[0]}" lat="${
-              lngLat[1]
-            }"><time>${time.toISOString()}</time></trkpt>
+      .map((lngLat) => {
+        time = addSeconds(time, 1);
+        return `<trkpt lon="${lngLat[0]}" lat="${lngLat[1]
+          }"><time>${time.toISOString()}</time></trkpt>
             `;
-          })
-          .join("")}
+      })
+      .join("")}
         </trkseg>
     </trk>
     </gpx>
@@ -70,7 +77,7 @@ export function exportToGpx(lngLatList: number[][]): Blob {
   });
 }
 
-function findMinIndex(grid: boolean[][]): number[] {
+function findMinIndex(grid: boolean[][]): [number, number] | null {
   const n = grid.length;
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
@@ -79,7 +86,7 @@ function findMinIndex(grid: boolean[][]): number[] {
       }
     }
   }
-  return [-1, -1];
+  return null;
 }
 
 function addSeconds(date: Date, seconds: number): Date {
