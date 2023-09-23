@@ -5,6 +5,7 @@ import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { MapController } from "./utils/MapController";
 import Import from "./Import";
+import { generateGpxArchive } from "./utils/GpxExport";
 
 function MapTap(props: { mapController: MapController }): JSX.Element {
   const { t } = useTranslation();
@@ -195,7 +196,8 @@ export default function MainMenu(props: Props): JSX.Element {
             description: t("export-description-gpx"),
             action: async () => {
               // TODO: seems pretty fast, but we should consider handle this async properly
-              const blob = await mapController.fogMap.exportArchiveGpx();
+              const blob = await generateGpxArchive(mapController.fogMap);
+
               if (blob) {
                 const name = "Gpx.zip";
                 const blobUrl = URL.createObjectURL(blob);

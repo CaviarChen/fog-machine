@@ -1,5 +1,7 @@
-/*eslint no-constant-condition: ["error", { "checkLoops": false }]*/
+import JSZip from "jszip";
+import { FogMap, Tile, BITMAP_WIDTH, TILE_WIDTH } from "./FogMap";
 
+// TODO: tune the parameter
 const GPX_START_TIME = "2019-07-20T08:08:08.000Z";
 const MAX_LENGTH_PER_GPX_FILE = 2000;
 const MAX_PIXCEL_BETWEEN_GPX_POINTS = 100;
@@ -60,13 +62,14 @@ export function exportToGpx(lngLatList: number[][]): Blob {
     <trk>
         <trkseg>
         ${lngLatList
-      .map((lngLat) => {
-        time = addSeconds(time, 1);
-        return `<trkpt lon="${lngLat[0]}" lat="${lngLat[1]
-          }"><time>${time.toISOString()}</time></trkpt>
+          .map((lngLat) => {
+            time = addSeconds(time, 1);
+            return `<trkpt lon="${lngLat[0]}" lat="${
+              lngLat[1]
+            }"><time>${time.toISOString()}</time></trkpt>
             `;
-      })
-      .join("")}
+          })
+          .join("")}
         </trkseg>
     </trk>
     </gpx>
@@ -93,4 +96,55 @@ function addSeconds(date: Date, seconds: number): Date {
   const result = new Date(date);
   result.setSeconds(seconds + result.getSeconds());
   return result;
+}
+
+function generateGpxFromTile(tile: Tile): Blob[] {
+  const n = BITMAP_WIDTH * TILE_WIDTH;
+  const grid: boolean[][] = Array.from({ length: n }, () =>
+    Array.from({ length: n })
+  );
+
+  // BITMAP_WIDTH * TILE_WIDTH = 64 * 128 = 8192
+  // 64 * 64 pixels for each block
+  // 128 * 128 blocks for each tile
+  // 8192 * 8192 pixels for each tile
+  Object.values(tile.blocks).forEach((block) => {
+    for (let x = 0; x < BITMAP_WIDTH; x++) {
+      for (let y = 0; y < BITMAP_WIDTH; y++) {
+        if (block.isVisited(x, y)) {
+          grid[block.x * BITMAP_WIDTH + x][block.y * BITMAP_WIDTH + y] = true;
+        }
+      }
+    }
+  });
+
+  const result: Blob[] = [];
+  const sorted = sortFilledList(grid);
+  console.log(`# file count ${sorted.length}`);
+  sorted.forEach((line) => {
+    const [left, up] = Tile.XYToLngLat(tile.x, tile.y);
+    const right = Tile.XYToLngLat(tile.x + 1, tile.y)[0];
+    const bottom = Tile.XYToLngLat(tile.x, tile.y + 1)[1];
+    const dx = (right - left) / n;
+    const dy = (bottom - up) / n;
+    const lngLatList = line.map(([i, j]) => {
+      const lng = left + dx * i;
+      const lat = up + dy * j;
+      return [lng, lat];
+    });
+    result.push(exportToGpx(lngLatList));
+  });
+  return result;
+}
+
+export async function generateGpxArchive(fogMap: FogMap): Promise<Blob> {
+  const zip = new JSZip();
+  const syncZip = zip.folder("Gpx")!;
+  Object.values(fogMap.tiles).forEach((tile) => {
+    const blobs = generateGpxFromTile(tile);
+    for (let i = 0; i < blobs.length; i++) {
+      syncZip.file(`Gpx/${tile.filename}_${i}.gpx`, blobs[i]);
+    }
+  });
+  return syncZip.generateAsync({ type: "blob" });
 }
