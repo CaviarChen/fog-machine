@@ -2,7 +2,6 @@ import JSZip from "jszip";
 import { FogMap, Tile, BITMAP_WIDTH, TILE_WIDTH } from "./FogMap";
 
 // TODO: tune the parameter
-const GPX_START_TIME = "2019-07-20T08:08:08.000Z";
 const MAX_LENGTH_PER_GPX_FILE = 2000;
 const MAX_PIXCEL_BETWEEN_GPX_POINTS = 100;
 
@@ -58,18 +57,15 @@ export function bitmapToTracks(bitmapGrid: boolean[][]): number[][][] {
 }
 
 export function exportToGpx(lngLatList: number[][]): Blob {
-  let time = new Date(GPX_START_TIME);
   const newGPX = `<?xml version="1.0" encoding="UTF-8" ?>
     <gpx version="1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/0" xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd">
-    <time>${time.toISOString()}</time>
     <trk>
         <trkseg>
         ${lngLatList
           .map((lngLat) => {
-            time = addSeconds(time, 1);
             return `<trkpt lon="${lngLat[0]}" lat="${
               lngLat[1]
-            }"><time>${time.toISOString()}</time></trkpt>
+            }"></trkpt>
             `;
           })
           .join("")}
@@ -93,12 +89,6 @@ function findMinIndex(grid: boolean[][]): [number, number] | null {
     }
   }
   return null;
-}
-
-function addSeconds(date: Date, seconds: number): Date {
-  const result = new Date(date);
-  result.setSeconds(seconds + result.getSeconds());
-  return result;
 }
 
 function generateGpxFromTile(tile: Tile): Blob[] {
