@@ -6,17 +6,18 @@ const GPX_START_TIME = "2019-07-20T08:08:08.000Z";
 const MAX_LENGTH_PER_GPX_FILE = 2000;
 const MAX_PIXCEL_BETWEEN_GPX_POINTS = 100;
 
-export function sortFilledList(grid: boolean[][]): number[][][] {
-  const n = grid.length;
+export function bitmapToTracks(bitmapGrid: boolean[][]): number[][][] {
+  const n = bitmapGrid.length;
   const track: number[][][] = [];
   while (true) {
     // TODO: A hashqueue should be able to reduce the time complecity a lot.
-    const minIndex = findMinIndex(grid);
+    const minIndex = findMinIndex(bitmapGrid);
     if (!minIndex) {
       break;
     }
     const [firstI, firstJ] = minIndex;
-    grid[firstI][firstJ] = false;
+    bitmapGrid[firstI][firstJ] = false;
+    console.log(firstI, firstJ);
 
     const trackSegment: number[][] = [[firstI, firstJ]];
     while (trackSegment.length <= MAX_LENGTH_PER_GPX_FILE) {
@@ -34,7 +35,7 @@ export function sortFilledList(grid: boolean[][]): number[][][] {
           j < Math.min(lastJ + MAX_PIXCEL_BETWEEN_GPX_POINTS, n);
           j++
         ) {
-          if (grid[i][j]) {
+          if (bitmapGrid[i][j]) {
             const distance = Math.abs(i - lastI) + Math.abs(j - lastJ);
             if (distance < minDistance) {
               minDistance = distance;
@@ -45,8 +46,10 @@ export function sortFilledList(grid: boolean[][]): number[][][] {
         }
       }
       if (minDistance != Infinity) {
-        grid[minI][minJ] = false;
+        bitmapGrid[minI][minJ] = false;
         trackSegment.push([minI, minJ]);
+      } else {
+        break;
       }
     }
     track.push(trackSegment);
@@ -100,7 +103,8 @@ function addSeconds(date: Date, seconds: number): Date {
 
 function generateGpxFromTile(tile: Tile): Blob[] {
   const n = BITMAP_WIDTH * TILE_WIDTH;
-  const grid: boolean[][] = Array.from({ length: n }, () =>
+  // TODO: This temp `bitmapGrid` can be avoided.
+  const bitmapGrid: boolean[][] = Array.from({ length: n }, () =>
     Array.from({ length: n })
   );
 
@@ -112,22 +116,25 @@ function generateGpxFromTile(tile: Tile): Blob[] {
     for (let x = 0; x < BITMAP_WIDTH; x++) {
       for (let y = 0; y < BITMAP_WIDTH; y++) {
         if (block.isVisited(x, y)) {
-          grid[block.x * BITMAP_WIDTH + x][block.y * BITMAP_WIDTH + y] = true;
+          bitmapGrid[block.x * BITMAP_WIDTH + x][block.y * BITMAP_WIDTH + y] =
+            true;
         }
       }
     }
   });
 
   const result: Blob[] = [];
-  const sorted = sortFilledList(grid);
-  console.log(`# file count ${sorted.length}`);
-  sorted.forEach((line) => {
+  const tracks = bitmapToTracks(bitmapGrid);
+  console.log(`# file count ${tracks.length}`);
+  // TODO: having one file per `trackSegment` seems a bit too much. One file
+  // per track which contains multiple segments feels better.
+  tracks.forEach((trackSegment) => {
     const [left, up] = Tile.XYToLngLat(tile.x, tile.y);
     const right = Tile.XYToLngLat(tile.x + 1, tile.y)[0];
     const bottom = Tile.XYToLngLat(tile.x, tile.y + 1)[1];
     const dx = (right - left) / n;
     const dy = (bottom - up) / n;
-    const lngLatList = line.map(([i, j]) => {
+    const lngLatList = trackSegment.map(([i, j]) => {
       const lng = left + dx * i;
       const lat = up + dy * j;
       return [lng, lat];
@@ -141,6 +148,7 @@ export async function generateGpxArchive(fogMap: FogMap): Promise<Blob> {
   const zip = new JSZip();
   const syncZip = zip.folder("Gpx")!;
   Object.values(fogMap.tiles).forEach((tile) => {
+    console.log("XXX");
     const blobs = generateGpxFromTile(tile);
     for (let i = 0; i < blobs.length; i++) {
       syncZip.file(`Gpx/${tile.filename}_${i}.gpx`, blobs[i]);
