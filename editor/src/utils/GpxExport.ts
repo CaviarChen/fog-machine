@@ -16,7 +16,6 @@ export function bitmapToTracks(bitmapGrid: boolean[][]): number[][][] {
     }
     const [firstI, firstJ] = minIndex;
     bitmapGrid[firstI][firstJ] = false;
-    console.log(firstI, firstJ);
 
     const trackSegment: number[][] = [[firstI, firstJ]];
     while (trackSegment.length <= MAX_LENGTH_PER_GPX_FILE) {
@@ -51,6 +50,10 @@ export function bitmapToTracks(bitmapGrid: boolean[][]): number[][][] {
         break;
       }
     }
+    // TODO: Becuase we are converting from a bitmap data structure, this is
+    // going to generate a pretty big gpx file. A handy optimization we could do
+    // is: for the most recent coordinates, c1, c2, and c3(the current one), if
+    // c2 is on the c1 to c3 line, drop c2.
     track.push(trackSegment);
   }
   return track;
@@ -63,9 +66,7 @@ export function exportToGpx(lngLatList: number[][]): Blob {
         <trkseg>
         ${lngLatList
           .map((lngLat) => {
-            return `<trkpt lon="${lngLat[0]}" lat="${
-              lngLat[1]
-            }"></trkpt>
+            return `<trkpt lon="${lngLat[0]}" lat="${lngLat[1]}"></trkpt>
             `;
           })
           .join("")}
@@ -138,7 +139,6 @@ export async function generateGpxArchive(fogMap: FogMap): Promise<Blob> {
   const zip = new JSZip();
   const syncZip = zip.folder("Gpx")!;
   Object.values(fogMap.tiles).forEach((tile) => {
-    console.log("XXX");
     const blobs = generateGpxFromTile(tile);
     for (let i = 0; i < blobs.length; i++) {
       syncZip.file(`Gpx/${tile.filename}_${i}.gpx`, blobs[i]);

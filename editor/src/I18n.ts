@@ -21,7 +21,7 @@ i18n
           "export-gpx": "Export Gpx",
           "export-description": "Export data in [Fog of World] format",
           "export-description-gpx":
-            "Export data in [GPX] format.(Wait, there might be some lag. Please be patient)",
+            "Export data in [GPX] format. [Experimental]",
           language: "Language",
           error: "Error",
           "error-already-imported":
@@ -65,8 +65,7 @@ i18n
           export: "导出",
           "export-gpx": "导出 GPX",
           "export-description": "以 [世界迷雾] 的格式导出数据。",
-          "export-description-gpx":
-            "以 [GPX] 的格式导出数据。（慢，会卡顿，请耐心等待）",
+          "export-description-gpx": "以 [GPX] 的格式导出数据。[实验性功能]",
           language: "语言",
           error: "错误",
           "error-already-imported":
