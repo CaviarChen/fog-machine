@@ -2,8 +2,6 @@ import pako from "pako";
 import JSZip from "jszip";
 import { Md5 } from "ts-md5";
 import { Bbox } from "./CommonTypes";
-import { sortFilledList } from "./GpxExport";
-import { exportToGpx } from "./GpxExport";
 
 const FILENAME_MASK1 = "olhwjsktri";
 const FILENAME_MASK2 = "eizxdwknmo";
@@ -77,26 +75,6 @@ export class FogMap {
       // just in case
       if (Object.entries(tile.blocks).length !== 0) {
         syncZip.file("Sync/" + tile.filename, tile.dump());
-      }
-    });
-    return syncZip.generateAsync({ type: "blob" });
-  }
-
-  async exportArchiveGpx(): Promise<Blob | null> {
-    const zip = new JSZip();
-    const syncZip = zip.folder("Gpx");
-    if (!syncZip) {
-      // TODO: handle error
-      console.log("unable to create archive gpx");
-      return null;
-    }
-    Object.values(this.tiles).forEach((tile) => {
-      // just in case
-      if (Object.entries(tile.blocks).length !== 0) {
-        const blobs = tile.dumpGpx();
-        for (let i = 0; i < blobs.length; i++) {
-          syncZip.file(`Gpx/${tile.filename}_${i}.gpx`, blobs[i]);
-        }
       }
     });
     return syncZip.generateAsync({ type: "blob" });
@@ -394,45 +372,6 @@ export class Tile {
     data.set(blockData, TILE_HEADER_SIZE);
 
     return pako.deflate(data);
-  }
-
-  dumpGpx(): Blob[] {
-    const n = BITMAP_WIDTH * TILE_WIDTH;
-    const grid: boolean[][] = Array.from({ length: n }, () =>
-      Array.from({ length: n })
-    );
-
-    // BITMAP_WIDTH * TILE_WIDTH = 64 * 128 = 8192
-    // 64 * 64 pixels for each block
-    // 128 * 128 blocks for each tile
-    // 8192 * 8192 pixels for each tile
-    Object.values(this.blocks).forEach((block) => {
-      for (let x = 0; x < BITMAP_WIDTH; x++) {
-        for (let y = 0; y < BITMAP_WIDTH; y++) {
-          if (block.isVisited(x, y)) {
-            grid[block.x * BITMAP_WIDTH + x][block.y * BITMAP_WIDTH + y] = true;
-          }
-        }
-      }
-    });
-
-    const result: Blob[] = [];
-    const sorted = sortFilledList(grid);
-    console.log(`# file count ${sorted.length}`);
-    sorted.forEach((line) => {
-      const [left, up] = Tile.XYToLngLat(this.x, this.y);
-      const right = Tile.XYToLngLat(this.x + 1, this.y)[0];
-      const bottom = Tile.XYToLngLat(this.x, this.y + 1)[1];
-      const dx = (right - left) / n;
-      const dy = (bottom - up) / n;
-      const lngLatList = line.map(([i, j]) => {
-        const lng = left + dx * i;
-        const lat = up + dy * j;
-        return [lng, lat];
-      });
-      result.push(exportToGpx(lngLatList));
-    });
-    return result;
   }
 
   static XYToLngLat(x: number, y: number): number[] {

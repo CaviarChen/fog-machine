@@ -13,5 +13,6 @@ module.exports = {
       { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
     ],
     camelcase: ["error", { properties: "always" }],
+    "no-constant-condition": ["error", { checkLoops: false }],
   },
 };
