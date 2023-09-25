@@ -18,7 +18,10 @@ i18n
           import: "Import",
           "import-description": "Import data from [Fog of World]",
           export: "Export",
+          "export-gpx": "Export Gpx",
           "export-description": "Export data in [Fog of World] format",
+          "export-description-gpx":
+            "Export data in [GPX] format. [Experimental]",
           language: "Language",
           error: "Error",
           "error-already-imported":
@@ -33,6 +36,7 @@ i18n
           info: "Info",
           "export-done-message":
             'Exported successfully.\n\nPlease use the "Sync" folder in the exported zip archive to replace the original folder. You also need to reset the [Fog of World] app to remove the existing data.',
+          "export-done-message-gpx": "Exported successfully.",
           "map-type": "Map type",
           "map-type-standard": "Standard",
           "map-type-satellite": "Satellite",
@@ -59,7 +63,9 @@ i18n
           import: "导入",
           "import-description": "从 [世界迷雾] 中导入数据。",
           export: "导出",
+          "export-gpx": "导出 GPX",
           "export-description": "以 [世界迷雾] 的格式导出数据。",
+          "export-description-gpx": "以 [GPX] 的格式导出数据。[实验性功能]",
           language: "语言",
           error: "错误",
           "error-already-imported":
@@ -73,6 +79,7 @@ i18n
           info: "提示",
           "export-done-message":
             '导出成功。\n\n请使用导出的 zip 压缩包中的 "Sync" 文件夹替换原有文件夹，并重置 [世界迷雾] app 以清除已有数据。',
+          "export-done-message-gpx": "导出成功。",
           "map-type": "地图模式",
           "map-type-standard": "标准",
           "map-type-satellite": "卫星",
