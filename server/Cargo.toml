@@ -36,7 +36,7 @@ lazy_static = "1.4.0"
 zip = "0.6.6"
 endorphin = "0.1.9"
 log = "0.4"
-memolanes_core = { git = "https://github.com/MemoLanes/MemoLanes.git", rev = "5a2db94" }
+memolanes_core = { git = "https://github.com/MemoLanes/MemoLanes.git", rev = "cee5400" }
 
 [dependencies.sea-orm-rocket]
 git = "https://github.com/SeaQL/sea-orm"
