@@ -66,12 +66,20 @@ impl<'r> FromRequest<'r> for User {
         use jwt::VerifyWithKey;
         // https://jwt.io/introduction/
 
+        let server_state = req.rocket().state::<ServerState>().unwrap();
+        if server_state
+            .config
+            .single_user_no_auth_mode
+            .unwrap_or(false)
+        {
+            return Outcome::Success(User { uid: -1 });
+        }
+
         let user = match req.headers().get_one("Authorization") {
             None => None,
             Some(authorization) => match authorization.strip_prefix("Bearer ") {
                 None => None,
                 Some(jwt_token) => {
-                    let server_state = req.rocket().state::<ServerState>().unwrap();
                     let jwt_data: Result<JwtData, _> =
                         jwt_token.verify_with_key(&server_state.user_jwt_key);
                     match jwt_data {
@@ -261,8 +269,40 @@ async fn sso(
 }
 
 #[get("/")]
-async fn user(conn: Connection<'_, Db>, user: User) -> APIResponse {
+async fn user(
+    conn: Connection<'_, Db>,
+    server_state: &rocket::State<ServerState>,
+    user: User,
+) -> APIResponse {
     let db = conn.into_inner();
+
+    if server_state
+        .config
+        .single_user_no_auth_mode
+        .unwrap_or(false)
+        && user.uid == -1
+    {
+        // we are in single user no auth mode, may need to initialize the user
+        if entity::user::Entity::find()
+            .filter(entity::user::Column::Id.eq(user.uid))
+            .count(db)
+            .await?
+            == 0
+        {
+            let new_user = entity::user::ActiveModel {
+                id: Set(-1),
+                email: Set(None),
+                password: Set(None),
+                contact_email: Set("user@example.com".to_owned()),
+                github_uid: Set(None),
+                language: Set(entity::user::Language::EnUs),
+                created_at: Set(chrono::offset::Utc::now()),
+                updated_at: Set(chrono::offset::Utc::now()),
+            };
+            let _new_user = new_user.insert(db).await?;
+        }
+    }
+
     let user = entity::user::Entity::find()
         .filter(entity::user::Column::Id.eq(user.uid))
         .one(db)

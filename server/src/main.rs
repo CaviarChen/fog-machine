@@ -44,6 +44,9 @@ pub struct Config {
     #[envconfig(from = "GITHUB_CLIENT_SECRET")]
     pub github_client_secret: String,
 
+    #[envconfig(from = "SINGLE_USER_NO_AUTH_MODE")]
+    pub single_user_no_auth_mode: Option<bool>,
+
     #[envconfig(from = "JWT_SECRET")]
     pub jwt_secret: String,
 
@@ -136,6 +139,10 @@ fn rocket() -> _ {
             idle_timeout: Some(5 * 60),
         },
     ));
+
+    if config.single_user_no_auth_mode.unwrap_or(false) {
+        println!("Single user no auth mode is enabled!");
+    }
 
     let allowed_origins = if config.cors_allowed_origins == "*" {
         AllowedOrigins::All
