@@ -81,6 +81,7 @@ export default class Api {
   public static readonly backendUrl =
     process.env.REACT_APP_BACKEND_URL + "/api/v1/";
   private static readonly tokenKey = "user-token";
+  public static readonly singleUserMode=process.env.REACT_APP_SINGLE_USER_MODE;
 
   private static getToken(): string | null {
     let token = sessionStorage.getItem(this.tokenKey);
@@ -133,8 +134,8 @@ export default class Api {
   }
 
   public static async getUserInfo(): Promise<UserInfo | null> {
-    // short circuit
-    if (!this.getToken()) {
+    // short circuit    
+    if (!this.getToken() && !this.singleUserMode) {
       return null;
     }
 

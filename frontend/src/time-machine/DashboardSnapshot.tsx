@@ -284,7 +284,8 @@ const SnapshotListPanel: React.FC<{
                         >
                           <FileDownloadIcon />
                         </Button>
-                      </Whisper>
+                      </Whisper>                    
+
                       <Whisper
                         placement="bottom"
                         controlId="control-id-hover"
@@ -459,6 +460,19 @@ function DashboardSnapshot() {
               }}
             >
               {t("snapshot-list-upload")}
+            </IconButton>
+            <IconButton
+              icon={<FileDownloadIcon />}
+              onClick={() => {
+                console.log("导出Achive Zip.");
+                window.open(
+                  Api.backendUrl +
+                    "misc/export_all",
+                  "_blank"
+                );
+              }}
+            >
+              {t("snapshot-list-export")}
             </IconButton>
           </Stack>
         }

@@ -28,12 +28,13 @@ rand = "0.8.5"
 email_address = "0.2.1"
 # Change back to crates.io version when https://github.com/lawliet89/rocket_cors/pull/108 is published
 rocket_cors = { git = "https://github.com/lawliet89/rocket_cors.git", rev = "54fae070"  }
+memolanes_core = { git = "https://github.com/MemoLanes/MemoLanes.git", rev = "cee5400" }
 base64 = "0.13.0"
 byte-unit = "4.0.14"
 tempfile = "3.3.0"
 md5 = "0.7.0"
 lazy_static = "1.4.0"
-zip = "0.6.2"
+zip = "0.6.6"
 endorphin = "0.1.9"
 log = "0.4"
 

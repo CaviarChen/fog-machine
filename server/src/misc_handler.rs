@@ -1,11 +1,13 @@
-use crate::data_fetcher;
+use crate::data_fetcher::{self};
 use crate::pool::Db;
 use crate::user_handler::User;
 use crate::utils;
 use crate::{APIResponse, InternalError, ServerState};
 use anyhow::Result;
+use chrono::NaiveDate;
 use entity::sea_orm;
 use entity::snapshot;
+use memolanes_core::journey_header::{JourneyKind};
 use rocket::data::{Data, ToByteUnit};
 use rocket::http::ContentType;
 use rocket::http::Status;
@@ -14,7 +16,10 @@ use rocket::response::{self, Responder, Response};
 use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
 use serde_json::json;
+use std::fs;
+use std::io::{Cursor};
 use std::time::Duration;
+use tempfile::TempDir;
 
 #[derive(Clone)]
 pub enum DownloadItem {
@@ -67,6 +72,52 @@ fn get_download_item(
 ) -> Option<DownloadItem> {
     let download_times = server_state.download_items.lock().unwrap();
     download_times.get(token).cloned()
+}
+
+#[get("/export_all")]
+async fn export_all<'r>(
+    conn: Connection<'_, Db>,
+    server_state: &rocket::State<ServerState>,
+    user:User
+) -> Result<FileResponse, InternalError> {
+    let db = conn.into_inner();
+    let snapshots =  snapshot::Entity::find()
+        .filter(snapshot::Column::UserId.eq(user.uid))
+        .order_by_desc(snapshot::Column::Timestamp)
+        .all(db)
+        .await?;
+
+    let temp_dir = TempDir::new().unwrap();
+    let mut main_db = memolanes_core::main_db::MainDb::open(temp_dir.path().to_str().unwrap());
+    for snapshot in snapshots {        
+        let zip_file_path = temp_dir.path().join("temp_sync.zip");
+        let mut zip_file = fs::File::create(zip_file_path.clone())?;                                        
+        let mut zip = zip::ZipWriter::new(&mut zip_file);
+        let options = zip::write::FileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        zip.add_directory("Sync/", options)?;
+
+        let entity::snapshot::SyncFiles(sync_files) = snapshot.sync_files;
+        for (file_id, sha256) in &sync_files {
+            let sync_file = data_fetcher::SyncFile::create_from_id(*file_id, sha256)?;
+            zip.start_file(format!("Sync/{}", sync_file.filename()), options)?;
+            let mut file = server_state.file_storage.open_file(&user, sha256)?;
+            std::io::copy(&mut file, &mut zip)?;
+        }
+        zip.finish()?;
+        let journey_bitmap = memolanes_core::import_data::load_fow_sync_data(zip_file_path.to_str().unwrap())?;
+        let journey_data = memolanes_core::journey_data::JourneyData::Bitmap(journey_bitmap.0);
+        main_db.with_txn(|txn| txn.create_and_insert_journey(NaiveDate::default(), None, None, None, JourneyKind::DefaultKind, None, journey_data))?;        
+    }
+
+    let mut buf = Vec::new();
+    let mut writer = Cursor::new(&mut buf);                    
+    memolanes_core::archive::archive_all_as_zip(&mut main_db, &mut writer)?;
+
+    Ok(FileResponse::Ok {
+        filename: String::from("Archive.zip"),
+        content:buf,
+    })
 }
 
 #[get("/download?<token>")]
@@ -145,5 +196,5 @@ async fn upload<'r>(
 }
 
 pub fn routes() -> Vec<rocket::Route> {
-    routes![upload, download]
+    routes![upload, download,export_all]
 }
