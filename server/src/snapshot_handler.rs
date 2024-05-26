@@ -253,23 +253,32 @@ async fn get_download_token(
     user: User,
     snapshot_id: i64,
 ) -> APIResponse {
-    let db = conn.into_inner();
+    if snapshot_id > 0 {
+        let db = conn.into_inner();
 
-    if snapshot::Entity::find()
-        .filter(snapshot::Column::UserId.eq(user.uid))
-        .filter(snapshot::Column::Id.eq(snapshot_id))
-        .count(db)
-        .await?
-        == 1
-    {
+        if snapshot::Entity::find()
+            .filter(snapshot::Column::UserId.eq(user.uid))
+            .filter(snapshot::Column::Id.eq(snapshot_id))
+            .count(db)
+            .await?
+            == 1
+        {
+            Ok((
+                Status::Ok,
+                json!({
+                    "token": misc_handler::generate_snapshot_download_token(server_state, snapshot_id)
+                }),
+            ))
+        } else {
+            Ok((Status::NotFound, json!({})))
+        }
+    } else {
         Ok((
             Status::Ok,
             json!({
-                "token": misc_handler::generate_snapshot_download_token(server_state, snapshot_id)
+                "token": misc_handler::generate_snapshot_download_token(server_state, 0)
             }),
         ))
-    } else {
-        Ok((Status::NotFound, json!({})))
     }
 }
 

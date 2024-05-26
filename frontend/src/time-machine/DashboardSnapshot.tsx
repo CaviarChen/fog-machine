@@ -463,9 +463,22 @@ function DashboardSnapshot() {
             </IconButton>
             <IconButton
               icon={<FileDownloadIcon />}
-              onClick={() => {
-                console.log("导出Achive Zip.");
-                window.open(Api.backendUrl + "misc/export_all", "_blank");
+              // onClick={() => {
+              //   console.log("导出Achive Zip.");
+              //   window.open(Api.backendUrl + "misc/export_all", "_blank");
+              // }}
+              onClick={async () => {
+                const token = await Api.getSnapshotDownloadToken(0);
+                if (token.ok) {
+                  window.open(
+                    Api.backendUrl +
+                      "misc/download?token=" +
+                      token.ok,
+                    "_blank"
+                  );
+                } else {
+                  //TODO: error handling
+                }
               }}
             >
               {t("snapshot-list-export")}
