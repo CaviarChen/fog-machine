@@ -137,6 +137,7 @@ fn rocket() -> _ {
             max_connections: 32,
             connect_timeout: 3,
             idle_timeout: Some(5 * 60),
+            sqlx_logging: true,
         },
     ));
 

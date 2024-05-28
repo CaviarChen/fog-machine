@@ -105,7 +105,7 @@ impl<'r> FromRequest<'r> for User {
             },
         };
         match user {
-            None => Outcome::Failure((Status::Forbidden, ())),
+            None => Outcome::Error((Status::Forbidden, ())),
             Some(user) => Outcome::Success(user),
         }
     }
