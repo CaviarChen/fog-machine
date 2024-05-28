@@ -83,6 +83,9 @@ export default class Api {
   private static readonly tokenKey = "user-token";
 
   private static getToken(): string | null {
+    if (process.env.REACT_APP_SINGLE_USER_NO_AUTH_MODE == "true") {
+      return "SINGLE-USER-NO-AUTH-MODE-TOKEN";
+    }
     let token = sessionStorage.getItem(this.tokenKey);
     if (!token) {
       token = localStorage.getItem(this.tokenKey);
