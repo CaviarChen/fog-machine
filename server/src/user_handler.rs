@@ -66,34 +66,38 @@ impl<'r> FromRequest<'r> for User {
         use jwt::VerifyWithKey;
         // https://jwt.io/introduction/
 
-        let server_state = req.rocket().state::<ServerState>().unwrap();
-        if server_state
-            .config
-            .single_user_no_auth_mode
-            .unwrap_or(false)
-        {
-            return Outcome::Success(User { uid: -1 });
-        }
-
         let user = match req.headers().get_one("Authorization") {
             None => None,
             Some(authorization) => match authorization.strip_prefix("Bearer ") {
                 None => None,
                 Some(jwt_token) => {
-                    let jwt_data: Result<JwtData, _> =
-                        jwt_token.verify_with_key(&server_state.user_jwt_key);
-                    match jwt_data {
-                        Err(_) => None,
-                        Ok(jwt_data) => {
-                            if jwt_data.ver == 1 {
-                                let now = chrono::Utc::now().timestamp();
-                                if now < jwt_data.exp {
-                                    Some(User { uid: jwt_data.sub })
+                    let server_state = req.rocket().state::<ServerState>().unwrap();
+                    if server_state
+                        .config
+                        .single_user_no_auth_mode
+                        .unwrap_or(false)
+                    {
+                        if jwt_token == "SINGLE-USER-NO-AUTH-MODE-TOKEN" {
+                            Some(User { uid: -1 })
+                        } else {
+                            None
+                        }
+                    } else {
+                        let jwt_data: Result<JwtData, _> =
+                            jwt_token.verify_with_key(&server_state.user_jwt_key);
+                        match jwt_data {
+                            Err(_) => None,
+                            Ok(jwt_data) => {
+                                if jwt_data.ver == 1 {
+                                    let now = chrono::Utc::now().timestamp();
+                                    if now < jwt_data.exp {
+                                        Some(User { uid: jwt_data.sub })
+                                    } else {
+                                        None
+                                    }
                                 } else {
                                     None
                                 }
-                            } else {
-                                None
                             }
                         }
                     }
