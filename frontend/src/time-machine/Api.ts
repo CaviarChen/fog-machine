@@ -81,9 +81,11 @@ export default class Api {
   public static readonly backendUrl =
     process.env.REACT_APP_BACKEND_URL + "/api/v1/";
   private static readonly tokenKey = "user-token";
+  public static readonly singleUserMode =
+    process.env.REACT_APP_SINGLE_USER_MODE;
 
   private static getToken(): string | null {
-    if (process.env.REACT_APP_SINGLE_USER_NO_AUTH_MODE == "true") {
+    if (process.env.REACT_APP_SINGLE_USER_NO_AUTH_MODE == "true") {      
       return "SINGLE-USER-NO-AUTH-MODE-TOKEN";
     }
     let token = sessionStorage.getItem(this.tokenKey);
@@ -110,7 +112,7 @@ export default class Api {
     url: string,
     method: "get" | "post" | "patch" | "delete",
     needToken: boolean,
-    data?: { [key: string]: any }
+    data?: { [key: string]: any } 
   ): Promise<Result<any>> {
     try {
       console.log("requesting api:", method, " ", url);
@@ -119,7 +121,7 @@ export default class Api {
         method,
         url: this.backendUrl + url,
         data,
-        headers,
+        headers        
       });
       return { status: response.status, ok: response.data };
     } catch (error: any) {
@@ -137,7 +139,7 @@ export default class Api {
 
   public static async getUserInfo(): Promise<UserInfo | null> {
     // short circuit
-    if (!this.getToken()) {
+    if (!this.getToken() && !this.singleUserMode) {
       return null;
     }
 
@@ -333,6 +335,18 @@ export default class Api {
   ): Promise<Result<string>> {
     const result = await this.requestApi(
       "snapshot/" + String(snapshotId) + "/download_token",
+      "get",
+      true
+    );
+    if (result.ok) {
+      result.ok = result.ok.token;
+    }
+    return result;
+  }
+
+  public static async getMemoleanesArchiveDownloadToken(): Promise<Result<string>> {
+    const result = await this.requestApi(
+      "snapshot/memoleanes_archive/download_token",
       "get",
       true
     );
