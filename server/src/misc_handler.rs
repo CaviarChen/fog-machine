@@ -24,19 +24,15 @@ use tempfile::TempDir;
 #[derive(Clone)]
 pub enum DownloadItem {
     Snapshot { snapshot_id: i64 },
-    MemolanesArchive,
+    MemolanesArchive { uid: i64 },
 }
 
-pub fn generate_snapshot_download_token(server_state: &ServerState, snapshot_id: i64) -> String {
+pub fn generate_download_token(server_state: &ServerState, download_item: DownloadItem) -> String {
     let mut download_items = server_state.download_items.lock().unwrap();
     let download_token = utils::random_token(|token| !download_items.contains_key(token));
     download_items.insert(
         download_token.clone(),
-        if snapshot_id > 0 {
-            DownloadItem::Snapshot { snapshot_id }
-        } else {
-            DownloadItem::MemolanesArchive
-        },
+        download_item,
         Duration::from_secs(10 * 60),
     );
     download_token
@@ -84,7 +80,6 @@ async fn download<'r>(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
     token: &str,
-    user: User,
 ) -> Result<FileResponse, InternalError> {
     match get_download_item(server_state, token) {
         None => Ok(FileResponse::Forbidden),
@@ -124,14 +119,15 @@ async fn download<'r>(
                 }
             }
         }
-        Some(DownloadItem::MemolanesArchive) => {
+        Some(DownloadItem::MemolanesArchive { uid }) => {
             let db = conn.into_inner();
             let snapshots = snapshot::Entity::find()
-                .filter(snapshot::Column::UserId.eq(user.uid))
+                .filter(snapshot::Column::UserId.eq(uid))
                 .order_by_desc(snapshot::Column::Timestamp)
                 .all(db)
                 .await?;
 
+            let user = User { uid };
             let temp_dir = TempDir::new()?;
             let mut main_db =
                 memolanes_core::main_db::MainDb::open(temp_dir.path().to_str().unwrap());

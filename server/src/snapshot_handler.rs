@@ -246,39 +246,44 @@ async fn delete(conn: Connection<'_, Db>, user: User, snapshot_id: i64) -> APIRe
     }
 }
 
+#[get("/memoleanes_archive/download_token")]
+async fn get_memoleanes_archive_download_token(
+    server_state: &rocket::State<ServerState>,
+    user: User,
+) -> APIResponse {
+    let download_item = misc_handler::DownloadItem::MemolanesArchive { uid: user.uid };
+    Ok((
+        Status::Ok,
+        json!({
+            "token": misc_handler::generate_download_token(server_state,download_item)
+        }),
+    ))
+}
+
 #[get("/<snapshot_id>/download_token")]
-async fn get_download_token(
+async fn get_snapshot_download_token(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
     user: User,
     snapshot_id: i64,
 ) -> APIResponse {
-    if snapshot_id > 0 {
-        let db = conn.into_inner();
-
-        if snapshot::Entity::find()
-            .filter(snapshot::Column::UserId.eq(user.uid))
-            .filter(snapshot::Column::Id.eq(snapshot_id))
-            .count(db)
-            .await?
-            == 1
-        {
-            Ok((
-                Status::Ok,
-                json!({
-                    "token": misc_handler::generate_snapshot_download_token(server_state, snapshot_id)
-                }),
-            ))
-        } else {
-            Ok((Status::NotFound, json!({})))
-        }
-    } else {
+    let download_item = misc_handler::DownloadItem::Snapshot { snapshot_id };
+    let db = conn.into_inner();
+    if snapshot::Entity::find()
+        .filter(snapshot::Column::UserId.eq(user.uid))
+        .filter(snapshot::Column::Id.eq(snapshot_id))
+        .count(db)
+        .await?
+        == 1
+    {
         Ok((
             Status::Ok,
             json!({
-                "token": misc_handler::generate_snapshot_download_token(server_state, 0)
+                "token": misc_handler::generate_download_token(server_state,download_item)
             }),
         ))
+    } else {
+        Ok((Status::NotFound, json!({})))
     }
 }
 
@@ -344,7 +349,7 @@ async fn get_editor_view(
                     "prev": prev,
                     "next": next,
                     "download_token":
-                        misc_handler::generate_snapshot_download_token(server_state, snapshot_id),
+                        misc_handler::generate_download_token(server_state, misc_handler::DownloadItem::Snapshot { snapshot_id }),
                 }),
             ))
         }
@@ -357,7 +362,8 @@ pub fn routes() -> Vec<rocket::Route> {
         create,
         delete,
         update,
-        get_download_token,
+        get_snapshot_download_token,
+        get_memoleanes_archive_download_token,
         get_editor_view
     ]
 }

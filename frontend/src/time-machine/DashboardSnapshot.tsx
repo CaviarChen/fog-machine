@@ -270,7 +270,7 @@ const SnapshotListPanel: React.FC<{
                             const token = await Api.getSnapshotDownloadToken(
                               snapshot.id
                             );
-                            if (token.ok) {
+                            if (token.ok) {                                                                                  
                               window.open(
                                 Api.backendUrl +
                                   "misc/download?token=" +
@@ -462,14 +462,10 @@ function DashboardSnapshot() {
               {t("snapshot-list-upload")}
             </IconButton>
             <IconButton
-              icon={<FileDownloadIcon />}
-              // onClick={() => {
-              //   console.log("导出Achive Zip.");
-              //   window.open(Api.backendUrl + "misc/export_all", "_blank");
-              // }}
+              icon={<FileDownloadIcon />}             
               onClick={async () => {
-                const token = await Api.getSnapshotDownloadToken(0);
-                if (token.ok) {
+                const token = await Api.getMemoleanesArchiveDownloadToken();
+                if (token.ok) {                  
                   window.open(
                     Api.backendUrl +
                       "misc/download?token=" +
