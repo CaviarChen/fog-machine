@@ -29,8 +29,8 @@ struct SnapshotJson {
 async fn list_snapshots(
     conn: Connection<'_, Db>,
     user: User,
-    page: Option<usize>,
-    page_size: Option<usize>,
+    page: Option<u64>,
+    page_size: Option<u64>,
 ) -> APIResponse {
     let db = conn.into_inner();
 

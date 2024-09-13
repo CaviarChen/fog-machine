@@ -91,7 +91,7 @@ async fn download<'r>(
                     };
                     let mut buf = Vec::new();
                     let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
-                    let options = zip::write::FileOptions::default()
+                    let options = zip::write::SimpleFileOptions::default()
                         .compression_method(zip::CompressionMethod::Stored);
                     zip.add_directory("Sync/", options)?;
 
@@ -104,7 +104,6 @@ async fn download<'r>(
                         std::io::copy(&mut file, &mut zip)?;
                     }
                     zip.finish()?;
-                    drop(zip);
 
                     Ok(FileResponse::Ok {
                         filename: String::from("Sync.zip"),
