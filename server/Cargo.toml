@@ -36,3 +36,4 @@ zip = "2.2.0"
 endorphin = "0.1.9"
 log = "0.4"
 sea-orm-rocket = "0.5.4"
+openssl = { version = "0.10.66", features = ["vendored"] }
