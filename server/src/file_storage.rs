@@ -9,8 +9,8 @@ use tempfile::TempDir;
 // TODO: unit tests
 
 pub fn byte_unit_to_string_hum(bytes: u64) -> String {
-    byte_unit::Byte::from_bytes(bytes.into())
-        .get_appropriate_unit(true)
+    byte_unit::Byte::from_u64(bytes)
+        .get_appropriate_unit(byte_unit::UnitType::Decimal)
         .to_string()
 }
 

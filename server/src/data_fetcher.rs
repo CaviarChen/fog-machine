@@ -2,6 +2,7 @@ use crate::file_storage;
 use crate::limit;
 use crate::user_handler::User;
 use anyhow::Error;
+use base64::Engine;
 use chrono::prelude::*;
 use chrono::Duration;
 use entity::snapshot::SyncFiles;
@@ -102,7 +103,7 @@ pub enum ValidationError {
 fn onedrive_api_of_link(url: &str) -> String {
     format!(
         "https://api.onedrive.com/v1.0/shares/u!{}",
-        base64::encode_config(url, base64::URL_SAFE_NO_PAD)
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(url)
     )
 }
 
