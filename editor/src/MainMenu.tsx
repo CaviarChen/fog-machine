@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import { MapController } from "./utils/MapController";
 import Import from "./Import";
 
-
 function MapTap(props: { mapController: MapController }): JSX.Element {
   const { t } = useTranslation();
   const mapController = props.mapController;
