@@ -5,7 +5,6 @@ import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { MapController } from "./utils/MapController";
 import Import from "./Import";
-import { generateGpxArchive } from "./utils/GpxExport";
 
 function MapTap(props: { mapController: MapController }): JSX.Element {
   const { t } = useTranslation();
@@ -194,26 +193,27 @@ export default function MainMenu(props: Props): JSX.Element {
             },
             icon: IconExport,
           },
-          {
-            name: t("export-gpx"),
-            description: t("export-description-gpx"),
-            action: async () => {
-              // TODO: generating the gpx archive for a whole fogMap doesn't feel
-              // like a common use case, we could do something like: ask user to
-              // select an area and only generate gpx archive for that area.
+          // TODO: This feature is not really ready, so let's disable it for now.
+          // {
+          //   name: t("export-gpx"),
+          //   description: t("export-description-gpx"),
+          //   action: async () => {
+          //     // TODO: generating the gpx archive for a whole fogMap doesn't feel
+          //     // like a common use case, we could do something like: ask user to
+          //     // select an area and only generate gpx archive for that area.
 
-              // TODO: `generateGpxArchive` is a blocking operation that takes a
-              // really long time, we should:
-              // 1. make it async by yielding from time to time.
-              // 2. show a progress bar.
-              const blob = await generateGpxArchive(mapController.fogMap);
-              if (blob) {
-                popDownload("Gpx.zip", blob);
-                props.msgboxShow("info", "export-done-message-gpx");
-              }
-            },
-            icon: IconExport,
-          },
+          //     // TODO: `generateGpxArchive` is a blocking operation that takes a
+          //     // really long time, we should:
+          //     // 1. make it async by yielding from time to time.
+          //     // 2. show a progress bar.
+          //     const blob = await generateGpxArchive(mapController.fogMap);
+          //     if (blob) {
+          //       popDownload("Gpx.zip", blob);
+          //       props.msgboxShow("info", "export-done-message-gpx");
+          //     }
+          //   },
+          //   icon: IconExport,
+          // },
         ];
 
   const languageTab = (
