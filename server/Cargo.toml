@@ -9,12 +9,12 @@ edition = "2021"
 members = [".", "entity", "migration"]
 
 [dependencies]
-tokio = { version = "1.19.2", features = ["full"] }
+tokio = { version = "1.40.0", features = ["full"] }
 serde = "1.0"
 serde_json = "1.0"
-reqwest = { version = "0.11", features = ["json"] }
-rocket = { version = "0.5.0", features = ["json"] }
-envconfig = "0.10"
+reqwest = { version = "0.12", features = ["json"] }
+rocket = { version = "0.5.1", features = ["json"] }
+envconfig = "0.11"
 dotenv = "0.15"
 anyhow = "1.0"
 entity = { path = "entity" }
@@ -25,16 +25,17 @@ hmac = "0.12"
 sha2 = "0.10"
 jwt = "0.16"
 rand = "0.8.5"
-email_address = "0.2.1"
+email_address = "0.2.9"
 # Change back to crates.io version when https://github.com/lawliet89/rocket_cors/pull/108 is published
 memolanes_core = { git = "https://github.com/MemoLanes/MemoLanes.git", rev = "cee5400" }
 rocket_cors = "0.6.0"
-base64 = "0.13.0"
-byte-unit = "4.0.14"
-tempfile = "3.3.0"
+base64 = "0.22.1"
+byte-unit = "5.1.4"
+tempfile = "3.12.0"
 md5 = "0.7.0"
-lazy_static = "1.4.0"
-zip = "0.6.6"
+lazy_static = "1.5.0"
+zip = "2.2.0"
 endorphin = "0.1.9"
 log = "0.4"
 sea-orm-rocket = "0.5.4"
+openssl = { version = "0.10.66", features = ["vendored"] }

@@ -1,7 +1,7 @@
 # NOTE: This is only for github action, and the main binary is built there,
 # so don't use this directly.
 
-FROM debian:buster-slim
+FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y libssl-dev ca-certificates
 
