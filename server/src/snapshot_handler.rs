@@ -246,22 +246,8 @@ async fn delete(conn: Connection<'_, Db>, user: User, snapshot_id: i64) -> APIRe
     }
 }
 
-#[get("/memoleanes_archive/download_token")]
-async fn get_memoleanes_archive_download_token(
-    server_state: &rocket::State<ServerState>,
-    user: User,
-) -> APIResponse {
-    let download_item = misc_handler::DownloadItem::MemolanesArchive { uid: user.uid };
-    Ok((
-        Status::Ok,
-        json!({
-            "token": misc_handler::generate_download_token(server_state,download_item)
-        }),
-    ))
-}
-
 #[get("/<snapshot_id>/download_token")]
-async fn get_snapshot_download_token(
+async fn get_download_token(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
     user: User,
@@ -279,7 +265,7 @@ async fn get_snapshot_download_token(
         Ok((
             Status::Ok,
             json!({
-                "token": misc_handler::generate_download_token(server_state,download_item)
+                "token": misc_handler::generate_download_token(server_state, download_item)
             }),
         ))
     } else {
@@ -362,8 +348,7 @@ pub fn routes() -> Vec<rocket::Route> {
         create,
         delete,
         update,
-        get_snapshot_download_token,
-        get_memoleanes_archive_download_token,
+        get_download_token,
         get_editor_view
     ]
 }

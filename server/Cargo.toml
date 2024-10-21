@@ -26,7 +26,6 @@ sha2 = "0.10"
 jwt = "0.16"
 rand = "0.8.5"
 email_address = "0.2.9"
-# Change back to crates.io version when https://github.com/lawliet89/rocket_cors/pull/108 is published
 memolanes_core = { git = "https://github.com/MemoLanes/MemoLanes.git", rev = "cee5400" }
 rocket_cors = "0.6.0"
 base64 = "0.22.1"
