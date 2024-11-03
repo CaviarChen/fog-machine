@@ -270,7 +270,7 @@ const SnapshotListPanel: React.FC<{
                             const token = await Api.getSnapshotDownloadToken(
                               snapshot.id
                             );
-                            if (token.ok) {                                                                                  
+                            if (token.ok) {
                               window.open(
                                 Api.backendUrl +
                                   "misc/download?token=" +
@@ -462,14 +462,12 @@ function DashboardSnapshot() {
               {t("snapshot-list-upload")}
             </IconButton>
             <IconButton
-              icon={<FileDownloadIcon />}             
+              icon={<FileDownloadIcon />}
               onClick={async () => {
                 const token = await Api.getMemoleanesArchiveDownloadToken();
-                if (token.ok) {                  
+                if (token.ok) {
                   window.open(
-                    Api.backendUrl +
-                      "misc/download?token=" +
-                      token.ok,
+                    Api.backendUrl + "misc/download?token=" + token.ok,
                     "_blank"
                   );
                 } else {
