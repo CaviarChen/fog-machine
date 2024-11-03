@@ -80,7 +80,7 @@ i18n
           "snapshot-list-source-sync": "Sync",
           "snapshot-list-source-upload": "Upload",
           "snapshot-list-download": "Download",
-          "snapshot-list-export": "Export",
+          "snapshot-list-export-mldx": "Export MemoLanes Archive",
           "snapshot-list-view": "View",
           "snapshot-list-note-edit": "Edit Note",
           "snapshot-list-note-edit-err-tolong":
@@ -155,7 +155,7 @@ i18n
           "snapshot-list-source-sync": "同步",
           "snapshot-list-source-upload": "上传",
           "snapshot-list-download": "下载",
-          "snapshot-list-export": "导出",
+          "snapshot-list-export-mldx": "导出迹忆归档",
           "snapshot-list-view": "查看",
           "snapshot-list-note-edit": "编辑备注",
           "snapshot-list-note-edit-err-tolong": "备注过长，请修改",

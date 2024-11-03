@@ -81,8 +81,6 @@ export default class Api {
   public static readonly backendUrl =
     process.env.REACT_APP_BACKEND_URL + "/api/v1/";
   private static readonly tokenKey = "user-token";
-  public static readonly singleUserMode =
-    process.env.REACT_APP_SINGLE_USER_MODE;
 
   private static getToken(): string | null {
     if (process.env.REACT_APP_SINGLE_USER_NO_AUTH_MODE == "true") {
@@ -139,7 +137,7 @@ export default class Api {
 
   public static async getUserInfo(): Promise<UserInfo | null> {
     // short circuit
-    if (!this.getToken() && !this.singleUserMode) {
+    if (!this.getToken()) {
       return null;
     }
 
@@ -348,7 +346,7 @@ export default class Api {
     Result<string>
   > {
     const result = await this.requestApi(
-      "snapshot/memoleanes_archive/download_token",
+      "memolanes_archive/download_token",
       "get",
       true
     );
