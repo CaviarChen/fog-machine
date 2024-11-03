@@ -158,6 +158,8 @@ async fn download_memolanes_archive(
 
         let journey_data = memolanes_core::journey_data::JourneyData::Bitmap(journey_bitmap.0);
 
+        // TODO: postprocess bitmap (e.g. compute delta)
+
         // TODO: generate these details
         main_db.with_txn(|txn| {
             txn.create_and_insert_journey(
