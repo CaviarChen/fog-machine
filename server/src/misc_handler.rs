@@ -17,7 +17,7 @@ use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
 use serde_json::json;
 use std::fs;
-use std::io::Cursor;
+use std::io::{Cursor, Seek, Write};
 use std::time::Duration;
 use tempfile::TempDir;
 
@@ -75,6 +75,29 @@ fn get_download_item(
     download_times.get(token).cloned()
 }
 
+async fn generate_sync_zip_from_snapshot<W: Write + Seek>(
+    server_state: &rocket::State<ServerState>,
+    writer: &mut W,
+    snapshot: entity::snapshot::Model,
+    user: &User,
+) -> Result<(), InternalError> {
+    let mut zip = zip::ZipWriter::new(writer);
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    zip.add_directory("Sync/", options)?;
+
+    let entity::snapshot::SyncFiles(sync_files) = snapshot.sync_files;
+    for (file_id, sha256) in &sync_files {
+        let sync_file = data_fetcher::SyncFile::create_from_id(*file_id, sha256)?;
+        zip.start_file(format!("Sync/{}", sync_file.filename()), options)?;
+        let mut file = server_state.file_storage.open_file(user, sha256)?;
+        // TODO: async?
+        std::io::copy(&mut file, &mut zip)?;
+    }
+    zip.finish()?;
+    Ok(())
+}
+
 async fn download_snapshot(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
@@ -92,21 +115,13 @@ async fn download_snapshot(
                 uid: snapshot.user_id,
             };
             let mut buf = Vec::new();
-            let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
-            let options = zip::write::SimpleFileOptions::default()
-                .compression_method(zip::CompressionMethod::Stored);
-            zip.add_directory("Sync/", options)?;
-
-            let entity::snapshot::SyncFiles(sync_files) = snapshot.sync_files;
-            for (file_id, sha256) in &sync_files {
-                let sync_file = data_fetcher::SyncFile::create_from_id(*file_id, sha256)?;
-                zip.start_file(format!("Sync/{}", sync_file.filename()), options)?;
-                let mut file = server_state.file_storage.open_file(&user, sha256)?;
-                // TODO: async?
-                std::io::copy(&mut file, &mut zip)?;
-            }
-            zip.finish()?;
-
+            generate_sync_zip_from_snapshot(
+                server_state,
+                &mut std::io::Cursor::new(&mut buf),
+                snapshot,
+                &user,
+            )
+            .await?;
             Ok(FileResponse::Ok {
                 filename: String::from("Sync.zip"),
                 content: buf,
@@ -133,22 +148,14 @@ async fn download_memolanes_archive(
     for snapshot in snapshots {
         let zip_file_path = temp_dir.path().join("temp_sync.zip");
         let mut zip_file = fs::File::create(&zip_file_path)?;
-        let mut zip = zip::ZipWriter::new(&mut zip_file);
-        let options = zip::write::SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Stored);
-        zip.add_directory("Sync/", options)?;
-
-        let entity::snapshot::SyncFiles(sync_files) = snapshot.sync_files;
-        for (file_id, sha256) in &sync_files {
-            let sync_file = data_fetcher::SyncFile::create_from_id(*file_id, sha256)?;
-            zip.start_file(format!("Sync/{}", sync_file.filename()), options)?;
-            let mut file = server_state.file_storage.open_file(&user, sha256)?;
-            std::io::copy(&mut file, &mut zip)?;
-        }
-        zip.finish()?;
+        generate_sync_zip_from_snapshot(server_state, &mut zip_file, snapshot, &user).await?;
+        drop(zip_file);
 
         let journey_bitmap =
             memolanes_core::import_data::load_fow_sync_data(zip_file_path.to_str().unwrap())?;
+
+        fs::remove_file(&zip_file_path)?;
+
         let journey_data = memolanes_core::journey_data::JourneyData::Bitmap(journey_bitmap.0);
 
         // TODO: generate these details
