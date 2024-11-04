@@ -22,6 +22,7 @@ use std::sync::Mutex;
 mod data_fetcher;
 mod file_storage;
 mod limit;
+mod memolanes_archive_handler;
 mod misc_handler;
 mod pool;
 mod snapshot_handler;
@@ -179,5 +180,9 @@ fn rocket() -> _ {
         .mount("/api/v1/snapshot_task", snapshot_task_handler::routes())
         .mount("/api/v1/snapshot_log", snapshot_log_handler::routes())
         .mount("/api/v1/snapshot", snapshot_handler::routes())
+        .mount(
+            "/api/v1/memolanes_archive",
+            memolanes_archive_handler::routes(),
+        )
         .mount("/api/v1/misc", misc_handler::routes())
 }

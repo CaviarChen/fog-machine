@@ -1,11 +1,13 @@
-use crate::data_fetcher;
+use crate::data_fetcher::{self};
 use crate::pool::Db;
 use crate::user_handler::User;
 use crate::utils;
 use crate::{APIResponse, InternalError, ServerState};
 use anyhow::Result;
+use chrono::NaiveDate;
 use entity::sea_orm;
 use entity::snapshot;
+use memolanes_core::journey_header::JourneyKind;
 use rocket::data::{Data, ToByteUnit};
 use rocket::http::ContentType;
 use rocket::http::Status;
@@ -14,19 +16,23 @@ use rocket::response::{self, Responder, Response};
 use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
 use serde_json::json;
+use std::fs;
+use std::io::{Cursor, Seek, Write};
 use std::time::Duration;
+use tempfile::TempDir;
 
 #[derive(Clone)]
 pub enum DownloadItem {
     Snapshot { snapshot_id: i64 },
+    MemolanesArchive { uid: i64 },
 }
 
-pub fn generate_snapshot_download_token(server_state: &ServerState, snapshot_id: i64) -> String {
+pub fn generate_download_token(server_state: &ServerState, download_item: DownloadItem) -> String {
     let mut download_items = server_state.download_items.lock().unwrap();
     let download_token = utils::random_token(|token| !download_items.contains_key(token));
     download_items.insert(
         download_token.clone(),
-        DownloadItem::Snapshot { snapshot_id },
+        download_item,
         Duration::from_secs(10 * 60),
     );
     download_token
@@ -69,6 +75,115 @@ fn get_download_item(
     download_times.get(token).cloned()
 }
 
+async fn generate_sync_zip_from_snapshot<W: Write + Seek>(
+    server_state: &rocket::State<ServerState>,
+    writer: &mut W,
+    snapshot: entity::snapshot::Model,
+    user: &User,
+) -> Result<(), InternalError> {
+    let mut zip = zip::ZipWriter::new(writer);
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    zip.add_directory("Sync/", options)?;
+
+    let entity::snapshot::SyncFiles(sync_files) = snapshot.sync_files;
+    for (file_id, sha256) in &sync_files {
+        let sync_file = data_fetcher::SyncFile::create_from_id(*file_id, sha256)?;
+        zip.start_file(format!("Sync/{}", sync_file.filename()), options)?;
+        let mut file = server_state.file_storage.open_file(user, sha256)?;
+        // TODO: async?
+        std::io::copy(&mut file, &mut zip)?;
+    }
+    zip.finish()?;
+    Ok(())
+}
+
+async fn download_snapshot(
+    conn: Connection<'_, Db>,
+    server_state: &rocket::State<ServerState>,
+    snapshot_id: i64,
+) -> Result<FileResponse, InternalError> {
+    let db = conn.into_inner();
+    let snapshot = snapshot::Entity::find()
+        .filter(snapshot::Column::Id.eq(snapshot_id))
+        .one(db)
+        .await?;
+    match snapshot {
+        None => Ok(FileResponse::Forbidden),
+        Some(snapshot) => {
+            let user = User {
+                uid: snapshot.user_id,
+            };
+            let mut buf = Vec::new();
+            generate_sync_zip_from_snapshot(
+                server_state,
+                &mut std::io::Cursor::new(&mut buf),
+                snapshot,
+                &user,
+            )
+            .await?;
+            Ok(FileResponse::Ok {
+                filename: String::from("Sync.zip"),
+                content: buf,
+            })
+        }
+    }
+}
+
+async fn download_memolanes_archive(
+    conn: Connection<'_, Db>,
+    server_state: &rocket::State<ServerState>,
+    uid: i64,
+) -> Result<FileResponse, InternalError> {
+    let db = conn.into_inner();
+    let snapshots = snapshot::Entity::find()
+        .filter(snapshot::Column::UserId.eq(uid))
+        .order_by_desc(snapshot::Column::Timestamp)
+        .all(db)
+        .await?;
+
+    let user = User { uid };
+    let temp_dir = TempDir::new()?;
+    let mut main_db = memolanes_core::main_db::MainDb::open(temp_dir.path().to_str().unwrap());
+    for snapshot in snapshots {
+        let zip_file_path = temp_dir.path().join("temp_sync.zip");
+        let mut zip_file = fs::File::create(&zip_file_path)?;
+        generate_sync_zip_from_snapshot(server_state, &mut zip_file, snapshot, &user).await?;
+        drop(zip_file);
+
+        let journey_bitmap =
+            memolanes_core::import_data::load_fow_sync_data(zip_file_path.to_str().unwrap())?;
+
+        fs::remove_file(&zip_file_path)?;
+
+        let journey_data = memolanes_core::journey_data::JourneyData::Bitmap(journey_bitmap.0);
+
+        // TODO: postprocess bitmap (e.g. compute delta)
+
+        // TODO: generate these details
+        main_db.with_txn(|txn| {
+            txn.create_and_insert_journey(
+                NaiveDate::default(),
+                None,
+                None,
+                None,
+                JourneyKind::DefaultKind,
+                None,
+                journey_data,
+            )
+        })?;
+    }
+
+    let mut buf = Vec::new();
+    let mut writer = Cursor::new(&mut buf);
+    memolanes_core::archive::archive_all_as_zip(&mut main_db, &mut writer)?;
+
+    Ok(FileResponse::Ok {
+        filename: String::from("export.mldx"),
+        content: buf,
+    })
+}
+
 #[get("/download?<token>")]
 async fn download<'r>(
     conn: Connection<'_, Db>,
@@ -78,39 +193,10 @@ async fn download<'r>(
     match get_download_item(server_state, token) {
         None => Ok(FileResponse::Forbidden),
         Some(DownloadItem::Snapshot { snapshot_id }) => {
-            let db = conn.into_inner();
-            let snapshot = snapshot::Entity::find()
-                .filter(snapshot::Column::Id.eq(snapshot_id))
-                .one(db)
-                .await?;
-            match snapshot {
-                None => Ok(FileResponse::Forbidden),
-                Some(snapshot) => {
-                    let user = User {
-                        uid: snapshot.user_id,
-                    };
-                    let mut buf = Vec::new();
-                    let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
-                    let options = zip::write::SimpleFileOptions::default()
-                        .compression_method(zip::CompressionMethod::Stored);
-                    zip.add_directory("Sync/", options)?;
-
-                    let entity::snapshot::SyncFiles(sync_files) = snapshot.sync_files;
-                    for (file_id, sha256) in &sync_files {
-                        let sync_file = data_fetcher::SyncFile::create_from_id(*file_id, sha256)?;
-                        zip.start_file(format!("Sync/{}", sync_file.filename()), options)?;
-                        let mut file = server_state.file_storage.open_file(&user, sha256)?;
-                        // TODO: async?
-                        std::io::copy(&mut file, &mut zip)?;
-                    }
-                    zip.finish()?;
-
-                    Ok(FileResponse::Ok {
-                        filename: String::from("Sync.zip"),
-                        content: buf,
-                    })
-                }
-            }
+            download_snapshot(conn, server_state, snapshot_id).await
+        }
+        Some(DownloadItem::MemolanesArchive { uid }) => {
+            download_memolanes_archive(conn, server_state, uid).await
         }
     }
 }

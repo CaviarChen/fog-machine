@@ -341,4 +341,18 @@ export default class Api {
     }
     return result;
   }
+
+  public static async getMemoleanesArchiveDownloadToken(): Promise<
+    Result<string>
+  > {
+    const result = await this.requestApi(
+      "memolanes_archive/download_token",
+      "get",
+      true
+    );
+    if (result.ok) {
+      result.ok = result.ok.token;
+    }
+    return result;
+  }
 }

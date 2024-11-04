@@ -253,8 +253,8 @@ async fn get_download_token(
     user: User,
     snapshot_id: i64,
 ) -> APIResponse {
+    let download_item = misc_handler::DownloadItem::Snapshot { snapshot_id };
     let db = conn.into_inner();
-
     if snapshot::Entity::find()
         .filter(snapshot::Column::UserId.eq(user.uid))
         .filter(snapshot::Column::Id.eq(snapshot_id))
@@ -265,7 +265,7 @@ async fn get_download_token(
         Ok((
             Status::Ok,
             json!({
-                "token": misc_handler::generate_snapshot_download_token(server_state, snapshot_id)
+                "token": misc_handler::generate_download_token(server_state, download_item)
             }),
         ))
     } else {
@@ -335,7 +335,7 @@ async fn get_editor_view(
                     "prev": prev,
                     "next": next,
                     "download_token":
-                        misc_handler::generate_snapshot_download_token(server_state, snapshot_id),
+                        misc_handler::generate_download_token(server_state, misc_handler::DownloadItem::Snapshot { snapshot_id }),
                 }),
             ))
         }

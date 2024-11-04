@@ -285,6 +285,7 @@ const SnapshotListPanel: React.FC<{
                           <FileDownloadIcon />
                         </Button>
                       </Whisper>
+
                       <Whisper
                         placement="bottom"
                         controlId="control-id-hover"
@@ -448,18 +449,38 @@ function DashboardSnapshot() {
         header={
           <Stack justifyContent="space-between">
             <span>{t("snapshot-list-title")}</span>
-            <IconButton
-              icon={<PlusIcon />}
-              onClick={() => {
-                setUploadDialogState({
-                  uploadDate: null,
-                  uploadNote: null,
-                  uploadState: "empty",
-                });
-              }}
-            >
-              {t("snapshot-list-upload")}
-            </IconButton>
+            <Stack justifyContent="flex-end">
+              <IconButton
+                icon={<PlusIcon />}
+                onClick={() => {
+                  setUploadDialogState({
+                    uploadDate: null,
+                    uploadNote: null,
+                    uploadState: "empty",
+                  });
+                }}
+              >
+                {t("snapshot-list-upload")}
+              </IconButton>
+              {/* TODO: This feature is not ready. */}
+              {/* <IconButton
+                style={{ marginLeft: "10px" }}
+                icon={<FileDownloadIcon />}
+                onClick={async () => {
+                  const token = await Api.getMemoleanesArchiveDownloadToken();
+                  if (token.ok) {
+                    window.open(
+                      Api.backendUrl + "misc/download?token=" + token.ok,
+                      "_blank"
+                    );
+                  } else {
+                    //TODO: error handling
+                  }
+                }}
+              >
+                {t("snapshot-list-export-mldx")}
+              </IconButton> */}
+            </Stack>
           </Stack>
         }
       >

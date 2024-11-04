@@ -26,6 +26,7 @@ sha2 = "0.10"
 jwt = "0.16"
 rand = "0.8.5"
 email_address = "0.2.9"
+memolanes_core = { git = "https://github.com/MemoLanes/MemoLanes.git", rev = "cee5400" }
 rocket_cors = "0.6.0"
 base64 = "0.22.1"
 byte-unit = "5.1.4"
