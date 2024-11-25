@@ -462,8 +462,7 @@ function DashboardSnapshot() {
               >
                 {t("snapshot-list-upload")}
               </IconButton>
-              {/* TODO: This feature is not ready. */}
-              {/* <IconButton
+              <IconButton
                 style={{ marginLeft: "10px" }}
                 icon={<FileDownloadIcon />}
                 onClick={async () => {
@@ -479,7 +478,7 @@ function DashboardSnapshot() {
                 }}
               >
                 {t("snapshot-list-export-mldx")}
-              </IconButton> */}
+              </IconButton>
             </Stack>
           </Stack>
         }

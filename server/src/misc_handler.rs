@@ -20,6 +20,7 @@ use std::fs;
 use std::io::{Cursor, Seek, Write};
 use std::time::Duration;
 use tempfile::TempDir;
+use tokio::time::Instant;
 
 #[derive(Clone)]
 pub enum DownloadItem {
@@ -75,10 +76,10 @@ fn get_download_item(
     download_times.get(token).cloned()
 }
 
-async fn generate_sync_zip_from_snapshot<W: Write + Seek>(
+async fn internal_generate_sync_zip_from_sync_files<W: Write + Seek>(
     server_state: &rocket::State<ServerState>,
     writer: &mut W,
-    snapshot: entity::snapshot::Model,
+    sync_files: &entity::snapshot::SyncFiles,
     user: &User,
 ) -> Result<(), InternalError> {
     let mut zip = zip::ZipWriter::new(writer);
@@ -86,8 +87,7 @@ async fn generate_sync_zip_from_snapshot<W: Write + Seek>(
         zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
     zip.add_directory("Sync/", options)?;
 
-    let entity::snapshot::SyncFiles(sync_files) = snapshot.sync_files;
-    for (file_id, sha256) in &sync_files {
+    for (file_id, sha256) in &sync_files.0 {
         let sync_file = data_fetcher::SyncFile::create_from_id(*file_id, sha256)?;
         zip.start_file(format!("Sync/{}", sync_file.filename()), options)?;
         let mut file = server_state.file_storage.open_file(user, sha256)?;
@@ -96,6 +96,16 @@ async fn generate_sync_zip_from_snapshot<W: Write + Seek>(
     }
     zip.finish()?;
     Ok(())
+}
+
+async fn generate_sync_zip_from_snapshot<W: Write + Seek>(
+    server_state: &rocket::State<ServerState>,
+    writer: &mut W,
+    snapshot: &entity::snapshot::Model,
+    user: &User,
+) -> Result<(), InternalError> {
+    internal_generate_sync_zip_from_sync_files(server_state, writer, &snapshot.sync_files, user)
+        .await
 }
 
 async fn download_snapshot(
@@ -118,7 +128,7 @@ async fn download_snapshot(
             generate_sync_zip_from_snapshot(
                 server_state,
                 &mut std::io::Cursor::new(&mut buf),
-                snapshot,
+                &snapshot,
                 &user,
             )
             .await?;
@@ -135,30 +145,84 @@ async fn download_memolanes_archive(
     server_state: &rocket::State<ServerState>,
     uid: i64,
 ) -> Result<FileResponse, InternalError> {
+    let start_time = Instant::now();
+
     let db = conn.into_inner();
     let snapshots = snapshot::Entity::find()
         .filter(snapshot::Column::UserId.eq(uid))
-        .order_by_desc(snapshot::Column::Timestamp)
+        .order_by_asc(snapshot::Column::Timestamp)
         .all(db)
         .await?;
 
     let user = User { uid };
     let temp_dir = TempDir::new()?;
     let mut main_db = memolanes_core::main_db::MainDb::open(temp_dir.path().to_str().unwrap());
-    for snapshot in snapshots {
+
+    let final_bitmap = match snapshots.last() {
+        None => None,
+        Some(snapshot) => {
+            let zip_file_path = temp_dir.path().join("temp_sync.zip");
+            let mut zip_file = fs::File::create(&zip_file_path)?;
+            generate_sync_zip_from_snapshot(server_state, &mut zip_file, snapshot, &user).await?;
+            drop(zip_file);
+            Some(
+                memolanes_core::import_data::load_fow_sync_data(zip_file_path.to_str().unwrap())?.0,
+            )
+        }
+    };
+    let mut prev_full_bitmap = None;
+
+    for (i, snapshot) in snapshots.iter().enumerate() {
+        let mut sync_files = snapshot.sync_files.clone();
+        if i > 0 {
+            // an optimization, we only care about files that are new
+            let last_sync_files = &snapshots[i - 1].sync_files;
+            sync_files
+                .0
+                .retain(|file_id, hash| last_sync_files.0.get(file_id) != Some(hash));
+        };
+
+        if sync_files.0.is_empty() {
+            continue;
+        }
+
         let zip_file_path = temp_dir.path().join("temp_sync.zip");
         let mut zip_file = fs::File::create(&zip_file_path)?;
-        generate_sync_zip_from_snapshot(server_state, &mut zip_file, snapshot, &user).await?;
+        internal_generate_sync_zip_from_sync_files(server_state, &mut zip_file, &sync_files, &user)
+            .await?;
         drop(zip_file);
 
-        let journey_bitmap =
-            memolanes_core::import_data::load_fow_sync_data(zip_file_path.to_str().unwrap())?;
+        let full_journey_bitmap =
+            memolanes_core::import_data::load_fow_sync_data(zip_file_path.to_str().unwrap())?.0;
 
         fs::remove_file(&zip_file_path)?;
 
-        let journey_data = memolanes_core::journey_data::JourneyData::Bitmap(journey_bitmap.0);
+        let mut journey_bitmap = full_journey_bitmap.clone();
 
-        // TODO: postprocess bitmap (e.g. compute delta)
+        // compute a better diff
+        // the current one minus the previous one
+        match prev_full_bitmap.take() {
+            None => (),
+            Some(prev_full_bitmap) => {
+                journey_bitmap.difference(prev_full_bitmap);
+                journey_bitmap.intersection(full_journey_bitmap.clone());
+            }
+        };
+        prev_full_bitmap = Some(full_journey_bitmap);
+
+        // only keep things that are in the final bitmap
+        match &final_bitmap {
+            None => (),
+            Some(final_bitmap) => {
+                journey_bitmap.intersection(final_bitmap.clone());
+            }
+        }
+
+        if journey_bitmap.tiles.is_empty() {
+            continue;
+        }
+
+        let journey_data = memolanes_core::journey_data::JourneyData::Bitmap(journey_bitmap);
 
         // TODO: generate these details
         main_db.with_txn(|txn| {
@@ -176,7 +240,19 @@ async fn download_memolanes_archive(
 
     let mut buf = Vec::new();
     let mut writer = Cursor::new(&mut buf);
-    memolanes_core::archive::archive_all_as_zip(&mut main_db, &mut writer)?;
+    main_db.with_txn(|txn| {
+        memolanes_core::archive::export_as_mldx(
+            &memolanes_core::archive::WhatToExport::All,
+            txn,
+            &mut writer,
+        )
+    })?;
+
+    println!(
+        "Finsih generating memolanes archive, user = {}, time_used = {:?}",
+        user.uid,
+        start_time.elapsed()
+    );
 
     Ok(FileResponse::Ok {
         filename: String::from("export.mldx"),
