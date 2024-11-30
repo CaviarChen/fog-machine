@@ -1474,7 +1474,6 @@ dependencies = [
  "memolanes_core",
  "migration",
  "openssl",
- "peak_alloc",
  "rand",
  "reqwest",
  "rocket",
@@ -2894,12 +2893,6 @@ dependencies = [
  "digest",
  "hmac",
 ]
-
-[[package]]
-name = "peak_alloc"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29c4e8e2dd832fd76346468f822e4e600d30ba4e5aa545a128abf12cfae7ea3e"
 
 [[package]]
 name = "pear"
