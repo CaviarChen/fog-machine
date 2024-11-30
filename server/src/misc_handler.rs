@@ -211,7 +211,7 @@ async fn internal_memolanes_archive_process_snapshot(
         return Ok(None);
     }
 
-    // skipping super small snapshots 
+    // skipping super small snapshots
     if internal_count_bitmap_blocks(&journey_bitmap) <= 4 {
         return Ok(None);
     }
