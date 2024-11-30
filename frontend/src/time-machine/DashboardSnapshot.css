@@ -8,3 +8,7 @@
   text-align: left;
   height: 18px;
 }
+
+.rs-notification-content {
+  max-width: 600px !important;
+}
