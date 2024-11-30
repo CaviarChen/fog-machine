@@ -145,6 +145,14 @@ struct InternalProcessSnapshotOutput {
     state: (SyncFiles, JourneyBitmap),
 }
 
+fn internal_count_bitmap_blocks(bitmap: &JourneyBitmap) -> u64 {
+    let mut blocks: u64 = 0;
+    bitmap.tiles.iter().for_each(|(_, tiles)| {
+        blocks += tiles.blocks.len() as u64;
+    });
+    blocks
+}
+
 async fn internal_memolanes_archive_process_snapshot(
     server_state: &rocket::State<ServerState>,
     temp_dir: &TempDir,
@@ -200,6 +208,11 @@ async fn internal_memolanes_archive_process_snapshot(
     }
 
     if journey_bitmap.tiles.is_empty() {
+        return Ok(None);
+    }
+
+    // skipping super small snapshots 
+    if internal_count_bitmap_blocks(&journey_bitmap) <= 4 {
         return Ok(None);
     }
 
