@@ -4,7 +4,7 @@ use crate::user_handler::User;
 use crate::utils;
 use crate::{APIResponse, InternalError, ServerState};
 use anyhow::Result;
-use chrono::NaiveDate;
+use chrono::Duration;
 use entity::sea_orm;
 use entity::snapshot::{self, SyncFiles};
 use memolanes_core::journey_header::JourneyKind;
@@ -19,7 +19,6 @@ use sea_orm_rocket::Connection;
 use serde_json::json;
 use std::fs;
 use std::io::{Cursor, Seek, Write};
-use std::time::Duration;
 use tempfile::TempDir;
 use tokio::time::Instant;
 
@@ -35,7 +34,7 @@ pub fn generate_download_token(server_state: &ServerState, download_item: Downlo
     download_items.insert(
         download_token.clone(),
         download_item,
-        Duration::from_secs(10 * 60),
+        std::time::Duration::from_secs(10 * 60),
     );
     download_token
 }
@@ -216,7 +215,7 @@ async fn download_memolanes_archive(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
     uid: i64,
-    _timezone: chrono_tz::Tz,
+    timezone: chrono_tz::Tz,
 ) -> Result<FileResponse, InternalError> {
     let start_time = Instant::now();
 
@@ -264,15 +263,21 @@ async fn download_memolanes_archive(
 
                 let journey_data = memolanes_core::journey_data::JourneyData::Bitmap(bitmap_diff);
 
+                // Compute the date based on user's timezone. The 6 hours diff is to account for the sync delay.
+                // This is a best effort thing.
+                let journey_date = (snapshot.timestamp - Duration::hours(6))
+                    .with_timezone(&timezone)
+                    .date_naive();
+
                 // TODO: generate these details
                 main_db.with_txn(|txn| {
                     txn.create_and_insert_journey(
-                        NaiveDate::default(),
+                        journey_date,
                         None,
-                        None,
+                        Some(snapshot.timestamp),
                         None,
                         JourneyKind::DefaultKind,
-                        None,
+                        snapshot.note,
                         journey_data,
                     )
                 })?;
@@ -342,7 +347,11 @@ async fn upload<'r>(
 
     let mut uploaded_items = server_state.uploaded_items.lock().unwrap();
     let upload_token = utils::random_token(|token| !uploaded_items.contains_key(token));
-    uploaded_items.insert(upload_token.clone(), bytes, Duration::from_secs(60));
+    uploaded_items.insert(
+        upload_token.clone(),
+        bytes,
+        std::time::Duration::from_secs(60),
+    );
 
     Ok((Status::Ok, json!({ "upload_token": upload_token })))
 }
