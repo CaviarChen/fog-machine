@@ -81,6 +81,9 @@ i18n
           "snapshot-list-source-upload": "Upload",
           "snapshot-list-download": "Download",
           "snapshot-list-export-mldx": "Export MemoLanes Archive",
+          "snapshot-list-export-mldx-prompt":
+            "This feature will read all snapshots stored in your Fog Machine, then convert and optimize them one by one. After that, they will be merged into an archive file that can be read by MemoLanes (mldx).\nSpecifically:\n1. All snapshots will be processed in the order of snapshot time and converted into journeys in MemoLanes.\n2. Each journey's date is based on the snapshot time and your current time zone.\n3. We subtract the previous snapshot from each snapshot, so each journey will only contain the diff.\n4. Area that exists in a snapshot but not in the final snapshot will be removed. If you've used the eraser, ensure the final snapshot doesn't contain areas you don't want.\n5. Snapshots that are too small will be ignored.",
+          "snapshot-list-export-mldx-confirm": "Export",
           "snapshot-list-view": "View",
           "snapshot-list-note-edit": "Edit Note",
           "snapshot-list-note-edit-err-tolong":
@@ -156,6 +159,9 @@ i18n
           "snapshot-list-source-upload": "上传",
           "snapshot-list-download": "下载",
           "snapshot-list-export-mldx": "导出迹忆归档",
+          "snapshot-list-export-mldx-prompt":
+            "此功能将读取你在 迷雾机器 中的所有快照并逐一转换、优化并合并成为可供 迹忆 导入的归档文件（mldx）。\n其中：\n1. 所有快照会按时间顺序逐一处理，转换成 迹忆 的旅程。\n2. 每个旅程的日期基于快照时间以及你当前的时区。\n3. 每个快照会减去上一个快照中的数据，使得每个旅程之包含差异数据。\n4. 每个快照中不存在于最后一个快照的数据将被去除。如果你使用过橡皮擦，只需要保证最后的快照中不包含你不需要的数据即可。\n5. 过小的快照将会被忽略。",
+          "snapshot-list-export-mldx-confirm": "导出",
           "snapshot-list-view": "查看",
           "snapshot-list-note-edit": "编辑备注",
           "snapshot-list-note-edit-err-tolong": "备注过长，请修改",

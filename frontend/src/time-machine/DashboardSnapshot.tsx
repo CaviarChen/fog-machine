@@ -432,6 +432,50 @@ function DashboardSnapshot() {
     });
   };
 
+  const openMemolanesExportConfirmation = () => {
+    // TODO: It is a bit wierd to use `Notifaction` as a modal. Maybe we shoudln't do this, but it works okish for now.
+    // e.g. when `Notifaction` is open, user can still click other things on the page.
+    //      no easy way to close the current one other than using `clear` which close all things.
+    //      We *SHOULDN'T* allow user to open multiple confirmation, that's really confusing.
+
+    const message = (
+      <Notification
+        type="info"
+        header={t("snapshot-list-export-mldx")}
+        closable
+      >
+        <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
+          {t("snapshot-list-export-mldx-prompt")}
+        </pre>
+        <hr />
+        <ButtonToolbar style={{ padding: 10 }}>
+          <Button
+            appearance="primary"
+            onClick={async () => {
+              notificationToaster.clear();
+
+              const token = await Api.getMemoleanesArchiveDownloadToken();
+              if (token.ok) {
+                window.open(
+                  Api.backendUrl + "misc/download?token=" + token.ok,
+                  "_blank"
+                );
+              } else {
+                //TODO: error handling
+              }
+            }}
+          >
+            {t("snapshot-list-export-mldx-confirm")}
+          </Button>
+        </ButtonToolbar>
+      </Notification>
+    );
+    notificationToaster.push(message, {
+      placement: "topCenter",
+      duration: 0,
+    });
+  };
+
   const fileUploadUrl = Api.backendUrl + "misc/upload";
   const headers = Api.tokenHeaders();
 
@@ -462,24 +506,15 @@ function DashboardSnapshot() {
               >
                 {t("snapshot-list-upload")}
               </IconButton>
-              {/* TODO: This feature is not ready. */}
-              {/* <IconButton
+              <IconButton
                 style={{ marginLeft: "10px" }}
                 icon={<FileDownloadIcon />}
                 onClick={async () => {
-                  const token = await Api.getMemoleanesArchiveDownloadToken();
-                  if (token.ok) {
-                    window.open(
-                      Api.backendUrl + "misc/download?token=" + token.ok,
-                      "_blank"
-                    );
-                  } else {
-                    //TODO: error handling
-                  }
+                  openMemolanesExportConfirmation();
                 }}
               >
                 {t("snapshot-list-export-mldx")}
-              </IconButton> */}
+              </IconButton>
             </Stack>
           </Stack>
         }
