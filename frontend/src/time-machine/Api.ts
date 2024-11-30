@@ -345,10 +345,11 @@ export default class Api {
   public static async getMemoleanesArchiveDownloadToken(): Promise<
     Result<string>
   > {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const result = await this.requestApi(
-      "memolanes_archive/download_token",
+      "memolanes_archive/download_token?timezone=" + encodeURIComponent(timezone),
       "get",
-      true
+      true,
     );
     if (result.ok) {
       result.ok = result.ok.token;

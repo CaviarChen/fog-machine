@@ -6,8 +6,9 @@ use crate::{APIResponse, InternalError, ServerState};
 use anyhow::Result;
 use chrono::NaiveDate;
 use entity::sea_orm;
-use entity::snapshot;
+use entity::snapshot::{self, SyncFiles};
 use memolanes_core::journey_header::JourneyKind;
+use memolanes_core::journey_kernel::JourneyBitmap;
 use rocket::data::{Data, ToByteUnit};
 use rocket::http::ContentType;
 use rocket::http::Status;
@@ -25,7 +26,7 @@ use tokio::time::Instant;
 #[derive(Clone)]
 pub enum DownloadItem {
     Snapshot { snapshot_id: i64 },
-    MemolanesArchive { uid: i64 },
+    MemolanesArchive { uid: i64, timezone: chrono_tz::Tz },
 }
 
 pub fn generate_download_token(server_state: &ServerState, download_item: DownloadItem) -> String {
@@ -140,10 +141,82 @@ async fn download_snapshot(
     }
 }
 
+struct InternalProcessSnapshotOutput {
+    bitmap_diff: JourneyBitmap,
+    state: (SyncFiles, JourneyBitmap),
+}
+
+async fn internal_memolanes_archive_process_snapshot(
+    server_state: &rocket::State<ServerState>,
+    temp_dir: &TempDir,
+    user: &User,
+    final_bitmap: &Option<JourneyBitmap>,
+    snapshot: &entity::snapshot::Model,
+    prev_state: &Option<(SyncFiles, JourneyBitmap)>,
+) -> Result<Option<InternalProcessSnapshotOutput>, InternalError> {
+    let mut sync_files = snapshot.sync_files.clone();
+    match prev_state {
+        None => (),
+        Some((prev_sync_files, _)) => {
+            // an optimization, we only care about files that are new
+            sync_files
+                .0
+                .retain(|file_id, hash| prev_sync_files.0.get(file_id) != Some(hash));
+        }
+    }
+
+    if sync_files.0.is_empty() {
+        return Ok(None);
+    }
+
+    let zip_file_path = temp_dir.path().join("temp_sync.zip");
+    let mut zip_file = fs::File::create(&zip_file_path)?;
+    internal_generate_sync_zip_from_sync_files(server_state, &mut zip_file, &sync_files, user)
+        .await?;
+    drop(zip_file);
+
+    let full_journey_bitmap =
+        memolanes_core::import_data::load_fow_sync_data(zip_file_path.to_str().unwrap())?.0;
+
+    fs::remove_file(&zip_file_path)?;
+
+    let mut journey_bitmap = full_journey_bitmap.clone();
+
+    // compute a better diff
+    // the current one minus the previous one
+    match prev_state {
+        None => (),
+        Some((_, prev_full_bitmap)) => {
+            journey_bitmap.difference(prev_full_bitmap);
+            journey_bitmap.intersection(&full_journey_bitmap);
+        }
+    }
+
+    // only keep things that are in the final bitmap
+    match final_bitmap {
+        None => (),
+        Some(final_bitmap) => {
+            journey_bitmap.intersection(final_bitmap);
+        }
+    }
+
+    if journey_bitmap.tiles.is_empty() {
+        return Ok(None);
+    }
+
+    // we are keeping this bitmap
+    Ok(Some(InternalProcessSnapshotOutput {
+        bitmap_diff: journey_bitmap,
+        // we need original value
+        state: (snapshot.sync_files.clone(), full_journey_bitmap),
+    }))
+}
+
 async fn download_memolanes_archive(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
     uid: i64,
+    _timezone: chrono_tz::Tz,
 ) -> Result<FileResponse, InternalError> {
     let start_time = Instant::now();
 
@@ -170,72 +243,41 @@ async fn download_memolanes_archive(
             )
         }
     };
-    let mut prev_full_bitmap = None;
 
-    for (i, snapshot) in snapshots.iter().enumerate() {
-        let mut sync_files = snapshot.sync_files.clone();
-        if i > 0 {
-            // an optimization, we only care about files that are new
-            let last_sync_files = &snapshots[i - 1].sync_files;
-            sync_files
-                .0
-                .retain(|file_id, hash| last_sync_files.0.get(file_id) != Some(hash));
-        };
+    let mut prev_state = None;
 
-        if sync_files.0.is_empty() {
-            continue;
-        }
+    for snapshot in snapshots {
+        let result = internal_memolanes_archive_process_snapshot(
+            server_state,
+            &temp_dir,
+            &user,
+            &final_bitmap,
+            &snapshot,
+            &prev_state,
+        )
+        .await?;
 
-        let zip_file_path = temp_dir.path().join("temp_sync.zip");
-        let mut zip_file = fs::File::create(&zip_file_path)?;
-        internal_generate_sync_zip_from_sync_files(server_state, &mut zip_file, &sync_files, &user)
-            .await?;
-        drop(zip_file);
+        match result {
+            None => (), // skipping this snapshot
+            Some(InternalProcessSnapshotOutput { bitmap_diff, state }) => {
+                prev_state = Some(state);
 
-        let full_journey_bitmap =
-            memolanes_core::import_data::load_fow_sync_data(zip_file_path.to_str().unwrap())?.0;
+                let journey_data = memolanes_core::journey_data::JourneyData::Bitmap(bitmap_diff);
 
-        fs::remove_file(&zip_file_path)?;
-
-        let mut journey_bitmap = full_journey_bitmap.clone();
-
-        // compute a better diff
-        // the current one minus the previous one
-        match prev_full_bitmap.take() {
-            None => (),
-            Some(prev_full_bitmap) => {
-                journey_bitmap.difference(prev_full_bitmap);
-                journey_bitmap.intersection(full_journey_bitmap.clone());
-            }
-        };
-        prev_full_bitmap = Some(full_journey_bitmap);
-
-        // only keep things that are in the final bitmap
-        match &final_bitmap {
-            None => (),
-            Some(final_bitmap) => {
-                journey_bitmap.intersection(final_bitmap.clone());
+                // TODO: generate these details
+                main_db.with_txn(|txn| {
+                    txn.create_and_insert_journey(
+                        NaiveDate::default(),
+                        None,
+                        None,
+                        None,
+                        JourneyKind::DefaultKind,
+                        None,
+                        journey_data,
+                    )
+                })?;
             }
         }
-
-        if journey_bitmap.tiles.is_empty() {
-            continue;
-        }
-
-        let journey_data = memolanes_core::journey_data::JourneyData::Bitmap(journey_bitmap);
-
-        // TODO: generate these details
-        main_db.with_txn(|txn| {
-            txn.create_and_insert_journey(
-                NaiveDate::default(),
-                None,
-                None,
-                None,
-                JourneyKind::DefaultKind,
-                None,
-                journey_data,
-            )
-        })?;
     }
 
     let mut buf = Vec::new();
@@ -271,8 +313,8 @@ async fn download<'r>(
         Some(DownloadItem::Snapshot { snapshot_id }) => {
             download_snapshot(conn, server_state, snapshot_id).await
         }
-        Some(DownloadItem::MemolanesArchive { uid }) => {
-            download_memolanes_archive(conn, server_state, uid).await
+        Some(DownloadItem::MemolanesArchive { uid, timezone }) => {
+            download_memolanes_archive(conn, server_state, uid, timezone).await
         }
     }
 }

@@ -4,9 +4,17 @@ use crate::{APIResponse, ServerState};
 use rocket::http::Status;
 use serde_json::json;
 
-#[get("/download_token")]
-async fn get_download_token(server_state: &rocket::State<ServerState>, user: User) -> APIResponse {
-    let download_item = misc_handler::DownloadItem::MemolanesArchive { uid: user.uid };
+#[get("/download_token?<timezone>")]
+async fn get_download_token(
+    server_state: &rocket::State<ServerState>,
+    user: User,
+    timezone: String,
+) -> APIResponse {
+    let timezone: chrono_tz::Tz = timezone.parse()?;
+    let download_item = misc_handler::DownloadItem::MemolanesArchive {
+        uid: user.uid,
+        timezone,
+    };
     Ok((
         Status::Ok,
         json!({
