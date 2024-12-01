@@ -1,12 +1,14 @@
-use crate::data_fetcher::SyncFile;
+use crate::data_fetcher::{self, SyncFile};
 use crate::misc_handler;
+use crate::misc_handler::DownloadItem;
 use crate::pool::Db;
 use crate::user_handler::User;
 use crate::{APIResponse, ServerState};
+use anyhow::Result;
 use chrono::prelude::*;
 use entity::sea_orm;
 use entity::snapshot;
-use rocket::http::Status;
+use rocket::http::{ContentType, Status};
 use rocket::serde::json::Json;
 use sea_orm::{entity::*, query::*};
 use sea_orm_rocket::Connection;
@@ -14,8 +16,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
+use std::io::{Seek, Write};
 use std::path::Path;
 use std::{fs, io};
+use tempfile::NamedTempFile;
 
 #[derive(Serialize)]
 struct SnapshotJson {
@@ -246,6 +250,38 @@ async fn delete(conn: Connection<'_, Db>, user: User, snapshot_id: i64) -> APIRe
     }
 }
 
+pub async fn internal_generate_sync_zip_from_sync_files<W: Write + Seek>(
+    server_state: &rocket::State<ServerState>,
+    writer: &mut W,
+    sync_files: &entity::snapshot::SyncFiles,
+    user: &User,
+) -> Result<()> {
+    let mut zip = zip::ZipWriter::new(writer);
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    zip.add_directory("Sync/", options)?;
+
+    for (file_id, sha256) in &sync_files.0 {
+        let sync_file = data_fetcher::SyncFile::create_from_id(*file_id, sha256)?;
+        zip.start_file(format!("Sync/{}", sync_file.filename()), options)?;
+        let mut file = server_state.file_storage.open_file(user, sha256)?;
+        // TODO: async?
+        std::io::copy(&mut file, &mut zip)?;
+    }
+    zip.finish()?;
+    Ok(())
+}
+
+pub async fn internal_generate_sync_zip_from_snapshot<W: Write + Seek>(
+    server_state: &rocket::State<ServerState>,
+    writer: &mut W,
+    snapshot: &entity::snapshot::Model,
+    user: &User,
+) -> Result<()> {
+    internal_generate_sync_zip_from_sync_files(server_state, writer, &snapshot.sync_files, user)
+        .await
+}
+
 #[get("/<snapshot_id>/download_token")]
 async fn get_download_token(
     conn: Connection<'_, Db>,
@@ -253,33 +289,36 @@ async fn get_download_token(
     user: User,
     snapshot_id: i64,
 ) -> APIResponse {
-    let download_item = misc_handler::DownloadItem::Snapshot { snapshot_id };
     let db = conn.into_inner();
-    if snapshot::Entity::find()
+    let snapshot = snapshot::Entity::find()
         .filter(snapshot::Column::UserId.eq(user.uid))
         .filter(snapshot::Column::Id.eq(snapshot_id))
-        .count(db)
-        .await?
-        == 1
-    {
-        Ok((
-            Status::Ok,
-            json!({
-                "token": misc_handler::generate_download_token(server_state, download_item)
-            }),
-        ))
-    } else {
-        Ok((Status::NotFound, json!({})))
+        .one(db)
+        .await?;
+
+    match snapshot {
+        None => Ok((Status::NotFound, json!({}))),
+        Some(snapshot) => {
+            let user = User {
+                uid: snapshot.user_id,
+            };
+
+            let mut file = NamedTempFile::new()?;
+            internal_generate_sync_zip_from_snapshot(server_state, &mut file, &snapshot, &user)
+                .await?;
+
+            Ok((
+                Status::Ok,
+                json!({
+                    "token": misc_handler::generate_download_token(server_state, DownloadItem{content_type: ContentType::ZIP, filename: String::from("Sync.zip"), file})
+                }),
+            ))
+        }
     }
 }
 
 #[get("/<snapshot_id>/editor_view")]
-async fn get_editor_view(
-    conn: Connection<'_, Db>,
-    server_state: &rocket::State<ServerState>,
-    user: User,
-    snapshot_id: i64,
-) -> APIResponse {
+async fn get_editor_view(conn: Connection<'_, Db>, user: User, snapshot_id: i64) -> APIResponse {
     let db = conn.into_inner();
     let txn = db.begin().await?;
 
@@ -334,8 +373,9 @@ async fn get_editor_view(
                     "timestamp": this_snapshot.timestamp,
                     "prev": prev,
                     "next": next,
-                    "download_token":
-                        misc_handler::generate_download_token(server_state, misc_handler::DownloadItem::Snapshot { snapshot_id }),
+                    // XXX
+                    // "download_token":
+                    //     misc_handler::generate_download_token(server_state, misc_handler::DownloadItem::Snapshot { snapshot_id }),
                 }),
             ))
         }
