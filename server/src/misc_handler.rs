@@ -68,14 +68,6 @@ impl<'r> Responder<'r, 'static> for FileResponse {
     }
 }
 
-fn get_download_item(
-    server_state: &rocket::State<ServerState>,
-    token: &str,
-) -> Option<DownloadItem> {
-    let download_times = server_state.download_items.lock().unwrap();
-    download_times.get(token).cloned()
-}
-
 async fn internal_generate_sync_zip_from_sync_files<W: Write + Seek>(
     server_state: &rocket::State<ServerState>,
     writer: &mut W,
@@ -326,7 +318,12 @@ async fn download<'r>(
     server_state: &rocket::State<ServerState>,
     token: &str,
 ) -> Result<FileResponse, InternalError> {
-    match get_download_item(server_state, token) {
+    let download_item = {
+        let mut download_items = server_state.download_items.lock().unwrap();
+        download_items.remove(token)
+    };
+
+    match download_item {
         None => Ok(FileResponse::Forbidden),
         Some(DownloadItem::Snapshot { snapshot_id }) => {
             download_snapshot(conn, server_state, snapshot_id).await
