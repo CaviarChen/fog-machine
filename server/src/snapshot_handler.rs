@@ -1,6 +1,5 @@
 use crate::data_fetcher::{self, SyncFile};
-use crate::misc_handler;
-use crate::misc_handler::DownloadItem;
+use crate::misc_handler::{self, DownloadRequest, GeneratedDownloadItem};
 use crate::pool::Db;
 use crate::user_handler::User;
 use crate::{APIResponse, ServerState};
@@ -282,38 +281,56 @@ pub async fn internal_generate_sync_zip_from_snapshot<W: Write + Seek>(
         .await
 }
 
+pub async fn generate_sync_zip(
+    server_state: &rocket::State<ServerState>,
+    conn: Connection<'_, Db>,
+    snapshot_id: i64,
+) -> Result<GeneratedDownloadItem> {
+    let db = conn.into_inner();
+    let snapshot = snapshot::Entity::find()
+        .filter(snapshot::Column::Id.eq(snapshot_id))
+        .one(db)
+        .await?
+        .ok_or_else(|| {
+            anyhow!("snapshot become missing while generating sync zip, snapshot id: {snapshot_id}")
+        })?;
+
+    let user = User {
+        uid: snapshot.user_id,
+    };
+
+    let mut file = NamedTempFile::new()?;
+    internal_generate_sync_zip_from_snapshot(server_state, &mut file, &snapshot, &user).await?;
+
+    Ok(GeneratedDownloadItem {
+        content_type: ContentType::ZIP,
+        filename: String::from("Sync.zip"),
+        file,
+    })
+}
+
 #[get("/<snapshot_id>/download_token")]
 async fn get_download_token(
-    conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
+    conn: Connection<'_, Db>,
     user: User,
     snapshot_id: i64,
 ) -> APIResponse {
     let db = conn.into_inner();
-    let snapshot = snapshot::Entity::find()
+    let count = snapshot::Entity::find()
         .filter(snapshot::Column::UserId.eq(user.uid))
         .filter(snapshot::Column::Id.eq(snapshot_id))
-        .one(db)
+        .count(db)
         .await?;
 
-    match snapshot {
-        None => Ok((Status::NotFound, json!({}))),
-        Some(snapshot) => {
-            let user = User {
-                uid: snapshot.user_id,
-            };
-
-            let mut file = NamedTempFile::new()?;
-            internal_generate_sync_zip_from_snapshot(server_state, &mut file, &snapshot, &user)
-                .await?;
-
-            Ok((
-                Status::Ok,
-                json!({
-                    "token": misc_handler::generate_download_token(server_state, DownloadItem{content_type: ContentType::ZIP, filename: String::from("Sync.zip"), file})
-                }),
-            ))
-        }
+    if count > 0 {
+        let token = misc_handler::generate_download_token(
+            server_state,
+            DownloadRequest::Snapshot { snapshot_id },
+        );
+        Ok((Status::Ok, json!({ "token": token })))
+    } else {
+        Ok((Status::NotFound, json!({})))
     }
 }
 

@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::misc_handler::DownloadItem;
+use crate::misc_handler::{DownloadRequest, GeneratedDownloadItem};
 use crate::pool::Db;
 use crate::user_handler::User;
 use crate::{misc_handler, snapshot_handler};
@@ -107,12 +107,12 @@ async fn internal_memolanes_archive_process_snapshot(
     }))
 }
 
-async fn generate_memolanes_archive(
+pub async fn generate_memolanes_archive(
     conn: Connection<'_, Db>,
     server_state: &rocket::State<ServerState>,
     uid: i64,
     timezone: chrono_tz::Tz,
-) -> Result<DownloadItem> {
+) -> Result<GeneratedDownloadItem> {
     let start_time = Instant::now();
 
     let db = conn.into_inner();
@@ -202,7 +202,7 @@ async fn generate_memolanes_archive(
         start_time.elapsed()
     );
 
-    Ok(DownloadItem {
+    Ok(GeneratedDownloadItem {
         content_type: (ContentType::Binary),
         filename: String::from("export.mldx"),
         file,
@@ -212,18 +212,18 @@ async fn generate_memolanes_archive(
 #[get("/download_token?<timezone>")]
 async fn get_download_token(
     server_state: &rocket::State<ServerState>,
-    conn: Connection<'_, Db>,
     user: User,
     timezone: String,
 ) -> APIResponse {
     let timezone: chrono_tz::Tz = timezone.parse()?;
-    let download_item = generate_memolanes_archive(conn, server_state, user.uid, timezone).await?;
-    Ok((
-        Status::Ok,
-        json!({
-            "token": misc_handler::generate_download_token(server_state, download_item)
-        }),
-    ))
+    let token = misc_handler::generate_download_token(
+        server_state,
+        DownloadRequest::MemolanesArchive {
+            uid: user.uid,
+            timezone,
+        },
+    );
+    Ok((Status::Ok, json!({ "token": token })))
 }
 
 pub fn routes() -> Vec<rocket::Route> {

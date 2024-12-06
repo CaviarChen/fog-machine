@@ -1,29 +1,55 @@
+use crate::pool::Db;
 use crate::user_handler::User;
-use crate::utils;
+use crate::{memolanes_archive_handler, snapshot_handler, utils};
 use crate::{APIResponse, InternalError, ServerState};
-use anyhow::Result;
 use rocket::data::{Data, ToByteUnit};
 use rocket::http::ContentType;
 use rocket::http::Status;
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
+use sea_orm_rocket::Connection;
 use serde_json::json;
 use std::fs::File;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
 
-pub struct DownloadItem {
+pub enum DownloadRequest {
+    Snapshot { snapshot_id: i64 },
+    MemolanesArchive { uid: i64, timezone: chrono_tz::Tz },
+}
+
+pub struct GeneratedDownloadItem {
     pub content_type: ContentType,
     pub filename: String,
     pub file: NamedTempFile,
 }
 
-pub fn generate_download_token(server_state: &ServerState, download_item: DownloadItem) -> String {
+impl GeneratedDownloadItem {
+    fn to_file_response(&self) -> anyhow::Result<FileResponse> {
+        Ok(FileResponse::Ok {
+            content_type: Box::new(self.content_type.clone()),
+            filename: self.filename.clone(),
+            file: self.file.reopen()?,
+        })
+    }
+}
+
+pub enum DownloadItem {
+    Request(DownloadRequest),
+    Generated(GeneratedDownloadItem),
+}
+
+pub fn generate_download_token(
+    server_state: &ServerState,
+    download_request: DownloadRequest,
+) -> String {
     let mut download_items = server_state.download_items.lock().unwrap();
     let download_token = utils::random_token(|token| !download_items.contains_key(token));
     download_items.insert(
         download_token.clone(),
-        Arc::new(download_item),
+        Arc::new(tokio::sync::Mutex::new(DownloadItem::Request(
+            download_request,
+        ))),
         std::time::Duration::from_secs(10 * 60),
     );
     download_token
@@ -67,6 +93,7 @@ impl<'r> Responder<'r, 'static> for FileResponse {
 #[get("/download?<token>")]
 async fn download<'r>(
     server_state: &rocket::State<ServerState>,
+    conn: Connection<'_, Db>,
     token: &str,
 ) -> Result<FileResponse, InternalError> {
     let download_item = {
@@ -76,11 +103,37 @@ async fn download<'r>(
 
     match download_item {
         None => Ok(FileResponse::Forbidden),
-        Some(download_item) => Ok(FileResponse::Ok {
-            content_type: Box::new(download_item.content_type.clone()),
-            filename: download_item.filename.clone(),
-            file: download_item.file.reopen()?,
-        }),
+        Some(download_item) => {
+            let mut download_item = download_item.lock().await;
+
+            let file_response = match &*download_item {
+                DownloadItem::Request(request) => {
+                    let generated = match request {
+                        DownloadRequest::Snapshot { snapshot_id } => {
+                            snapshot_handler::generate_sync_zip(server_state, conn, *snapshot_id)
+                                .await?
+                        }
+                        DownloadRequest::MemolanesArchive { uid, timezone } => {
+                            memolanes_archive_handler::generate_memolanes_archive(
+                                conn,
+                                server_state,
+                                *uid,
+                                *timezone,
+                            )
+                            .await?
+                        }
+                    };
+
+                    let file_response = generated.to_file_response();
+                    *download_item = DownloadItem::Generated(generated);
+                    file_response?
+                }
+                DownloadItem::Generated(generated) => generated.to_file_response()?,
+            };
+
+            drop(download_item);
+            Ok(file_response)
+        }
     }
 }
 

@@ -67,7 +67,11 @@ pub struct ServerState {
         endorphin::HashMap<String, user_handler::PendingRegistration, endorphin::policy::TTLPolicy>,
     >,
     pub download_items: Mutex<
-        endorphin::HashMap<String, Arc<misc_handler::DownloadItem>, endorphin::policy::TTLPolicy>,
+        endorphin::HashMap<
+            String,
+            Arc<tokio::sync::Mutex<misc_handler::DownloadItem>>,
+            endorphin::policy::TTLPolicy,
+        >,
     >,
     pub uploaded_items: Mutex<endorphin::HashMap<String, Vec<u8>, endorphin::policy::TTLPolicy>>,
 }
