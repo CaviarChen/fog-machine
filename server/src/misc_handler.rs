@@ -34,6 +34,7 @@ impl GeneratedDownloadItem {
     }
 }
 
+// NOTE: https://www.zijun.dev/en/posts/download-feature-on-website-can-be-complicated/
 pub enum DownloadItem {
     Request(DownloadRequest),
     Generated(GeneratedDownloadItem),
