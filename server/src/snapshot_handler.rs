@@ -335,7 +335,12 @@ async fn get_download_token(
 }
 
 #[get("/<snapshot_id>/editor_view")]
-async fn get_editor_view(conn: Connection<'_, Db>, user: User, snapshot_id: i64) -> APIResponse {
+async fn get_editor_view(
+    server_state: &rocket::State<ServerState>,
+    conn: Connection<'_, Db>,
+    user: User,
+    snapshot_id: i64,
+) -> APIResponse {
     let db = conn.into_inner();
     let txn = db.begin().await?;
 
@@ -381,6 +386,10 @@ async fn get_editor_view(conn: Connection<'_, Db>, user: User, snapshot_id: i64)
                     "timestamp":  s.timestamp,
                 })
             });
+            let download_token = misc_handler::generate_download_token(
+                server_state,
+                DownloadRequest::Snapshot { snapshot_id },
+            );
 
             Ok((
                 Status::Ok,
@@ -390,9 +399,7 @@ async fn get_editor_view(conn: Connection<'_, Db>, user: User, snapshot_id: i64)
                     "timestamp": this_snapshot.timestamp,
                     "prev": prev,
                     "next": next,
-                    // XXX
-                    // "download_token":
-                    //     misc_handler::generate_download_token(server_state, misc_handler::DownloadItem::Snapshot { snapshot_id }),
+                    "download_token": download_token,
                 }),
             ))
         }
