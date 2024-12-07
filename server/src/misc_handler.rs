@@ -37,7 +37,7 @@ impl GeneratedDownloadItem {
 // NOTE: https://www.zijun.dev/en/posts/download-feature-on-website-can-be-complicated/
 pub enum DownloadItem {
     Request(DownloadRequest),
-    Generated(GeneratedDownloadItem),
+    Generated(Box<GeneratedDownloadItem>),
 }
 
 pub fn generate_download_token(
@@ -126,7 +126,7 @@ async fn download<'r>(
                     };
 
                     let file_response = generated.to_file_response();
-                    *download_item = DownloadItem::Generated(generated);
+                    *download_item = DownloadItem::Generated(Box::new(generated));
                     file_response?
                 }
                 DownloadItem::Generated(generated) => generated.to_file_response()?,
