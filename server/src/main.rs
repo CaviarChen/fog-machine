@@ -17,7 +17,7 @@ use rocket_cors::AllowedOrigins;
 use sea_orm_rocket::Database;
 use sha2::Sha256;
 use std::io::Cursor;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 mod data_fetcher;
 mod file_storage;
@@ -66,8 +66,13 @@ pub struct ServerState {
     pub pending_registrations: Mutex<
         endorphin::HashMap<String, user_handler::PendingRegistration, endorphin::policy::TTLPolicy>,
     >,
-    pub download_items:
-        Mutex<endorphin::HashMap<String, misc_handler::DownloadItem, endorphin::policy::TTLPolicy>>,
+    pub download_items: Mutex<
+        endorphin::HashMap<
+            String,
+            Arc<tokio::sync::Mutex<misc_handler::DownloadItem>>,
+            endorphin::policy::TTLPolicy,
+        >,
+    >,
     pub uploaded_items: Mutex<endorphin::HashMap<String, Vec<u8>, endorphin::policy::TTLPolicy>>,
 }
 impl ServerState {
