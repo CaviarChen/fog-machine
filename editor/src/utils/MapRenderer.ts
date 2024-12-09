@@ -423,18 +423,18 @@ export class MapRenderer {
       this.mainCanvas.height = 512 * (bottom - top + 1);
       this.renderOnce();
       const tileBounds = new mapboxgl.LngLatBounds(
-        tileXYToLngLat([left, top], zoom),
-        tileXYToLngLat([right + 1, bottom + 1], zoom)
+        tileXYToLngLat([left, bottom + 1], zoom),
+        tileXYToLngLat([right + 1, top], zoom)
       );
 
       const mainCanvasSource = this.mapboxMap.getSource(
         "main-canvas-source"
       ) as mapboxgl.CanvasSource | undefined;
       mainCanvasSource?.setCoordinates([
-        tileBounds.getSouthWest().toArray(),
-        tileBounds.getSouthEast().toArray(),
-        tileBounds.getNorthEast().toArray(),
         tileBounds.getNorthWest().toArray(),
+        tileBounds.getNorthEast().toArray(),
+        tileBounds.getSouthEast().toArray(),
+        tileBounds.getSouthWest().toArray(),
       ]);
     }
 
