@@ -230,7 +230,7 @@ class Internal {
 
         const block =
           fogMap.tiles[FogMap.FogMap.makeKeyXY(fowTileX, fowTileY)]?.blocks[
-          FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
+            FogMap.FogMap.makeKeyXY(fowBlockX, fowBlockY)
           ];
 
         if (block) {
