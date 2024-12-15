@@ -20,7 +20,7 @@ use tokio::time::Instant;
 
 struct InternalProcessSnapshotOutput {
     bitmap_diff: JourneyBitmap,
-    state: (SyncFiles, JourneyBitmap),
+    prev_sync_files: SyncFiles,
 }
 
 fn internal_count_bitmap_blocks(bitmap: &JourneyBitmap) -> u64 {
@@ -37,10 +37,10 @@ async fn internal_memolanes_archive_process_snapshot(
     user: &User,
     final_bitmap: &Option<JourneyBitmap>,
     snapshot: &entity::snapshot::Model,
-    prev_state: &Option<(SyncFiles, JourneyBitmap)>,
+    state: &Option<(SyncFiles, JourneyBitmap)>,
 ) -> Result<Option<InternalProcessSnapshotOutput>> {
     let mut sync_files = snapshot.sync_files.clone();
-    match prev_state {
+    match state {
         None => (),
         Some((prev_sync_files, _)) => {
             // an optimization, we only care about files that are new
@@ -74,11 +74,10 @@ async fn internal_memolanes_archive_process_snapshot(
 
     // compute a better diff
     // the current one minus the previous one
-    match prev_state {
+    match state {
         None => (),
-        Some((_, prev_full_bitmap)) => {
-            journey_bitmap.difference(prev_full_bitmap);
-            journey_bitmap.intersection(&full_journey_bitmap);
+        Some((_, full_bitmap)) => {
+            journey_bitmap.difference(full_bitmap);
         }
     }
 
@@ -103,7 +102,7 @@ async fn internal_memolanes_archive_process_snapshot(
     Ok(Some(InternalProcessSnapshotOutput {
         bitmap_diff: journey_bitmap,
         // we need original value
-        state: (snapshot.sync_files.clone(), full_journey_bitmap),
+        prev_sync_files: snapshot.sync_files.clone(),
     }))
 }
 
@@ -145,7 +144,7 @@ pub async fn generate_memolanes_archive(
         }
     };
 
-    let mut prev_state = None;
+    let mut state = None;
 
     for snapshot in snapshots {
         let result = internal_memolanes_archive_process_snapshot(
@@ -154,14 +153,22 @@ pub async fn generate_memolanes_archive(
             &user,
             &final_bitmap,
             &snapshot,
-            &prev_state,
+            &state,
         )
         .await?;
 
         match result {
             None => (), // skipping this snapshot
-            Some(InternalProcessSnapshotOutput { bitmap_diff, state }) => {
-                prev_state = Some(state);
+            Some(InternalProcessSnapshotOutput { bitmap_diff, prev_sync_files}) => {
+                let current_full_bitmap = 
+                match state {
+                    None =>  bitmap_diff.clone(),
+                    Some((_, mut current_full_bitmap)) => {
+                        current_full_bitmap.merge(bitmap_diff.clone());
+                        current_full_bitmap
+                    }
+                };
+                state = Some((prev_sync_files, current_full_bitmap));
 
                 let journey_data = memolanes_core::journey_data::JourneyData::Bitmap(bitmap_diff);
 
@@ -171,7 +178,6 @@ pub async fn generate_memolanes_archive(
                     .with_timezone(&timezone)
                     .date_naive();
 
-                // TODO: generate these details
                 main_db.with_txn(|txn| {
                     txn.create_and_insert_journey(
                         journey_date,
