@@ -159,10 +159,12 @@ pub async fn generate_memolanes_archive(
 
         match result {
             None => (), // skipping this snapshot
-            Some(InternalProcessSnapshotOutput { bitmap_diff, prev_sync_files}) => {
-                let current_full_bitmap = 
-                match state {
-                    None =>  bitmap_diff.clone(),
+            Some(InternalProcessSnapshotOutput {
+                bitmap_diff,
+                prev_sync_files,
+            }) => {
+                let current_full_bitmap = match state {
+                    None => bitmap_diff.clone(),
                     Some((_, mut current_full_bitmap)) => {
                         current_full_bitmap.merge(bitmap_diff.clone());
                         current_full_bitmap
