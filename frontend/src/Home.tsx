@@ -13,7 +13,6 @@ import {
 } from "rsuite";
 import EditIcon from "@rsuite/icons/Edit";
 import HistoryIcon from "@rsuite/icons/History";
-import RelatedMapIcon from "@rsuite/icons/RelatedMap";
 import { IconProps } from "@rsuite/icons/lib/Icon";
 import { Icon } from "@rsuite/icons";
 import { useTranslation } from "react-i18next";
