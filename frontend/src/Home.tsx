@@ -13,7 +13,7 @@ import {
 } from "rsuite";
 import EditIcon from "@rsuite/icons/Edit";
 import HistoryIcon from "@rsuite/icons/History";
-import RelatedMapIcon from '@rsuite/icons/RelatedMap';
+import RelatedMapIcon from "@rsuite/icons/RelatedMap";
 import { IconProps } from "@rsuite/icons/lib/Icon";
 import { Icon } from "@rsuite/icons";
 import { useTranslation } from "react-i18next";
@@ -120,9 +120,15 @@ function Home(props: {
             </Stack>
           </div>
 
-          {Item(t("home-editor-title"), EditIcon, t("home-editor-desc"),"home-item", () => {
-            location.href = "/editor";
-          })}
+          {Item(
+            t("home-editor-title"),
+            EditIcon,
+            t("home-editor-desc"),
+            "home-item",
+            () => {
+              location.href = "/editor";
+            }
+          )}
           {Item(
             t("home-time-machine-title"),
             HistoryIcon,
@@ -132,13 +138,18 @@ function Home(props: {
               navigate("/time-machine", { replace: false });
             }
           )}
-          <Divider style={{ marginTop: "2vh",marginBottom: "2vh" }} />
+          <Divider style={{ marginTop: "2vh", marginBottom: "2vh" }} />
           <Badge color="blue" content="AD" style={{ width: "100%" }}>
-          {Item(t("home-memolanes-title"), memolanesLogo, t("home-memolanes-desc"),"home-ad-item", () => {
-            location.href = "https://app.memolanes.com/";
-          })}
-    </Badge>
-          
+            {Item(
+              t("home-memolanes-title"),
+              memolanesLogo,
+              t("home-memolanes-desc"),
+              "home-ad-item",
+              () => {
+                location.href = "https://app.memolanes.com/";
+              }
+            )}
+          </Badge>
         </div>
       </Content>
     </Container>
