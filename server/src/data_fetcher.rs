@@ -93,6 +93,20 @@ mod tests {
         let error = SyncFile::create_from_filename(filename, "");
         assert!(error.is_err());
     }
+
+    #[tokio::test]
+    async fn foo() {
+        let sync_file_storage = file_storage::SyncFileStorage::init("test_data").unwrap();
+        let result = snapshot(
+            &Source::OneDrive {
+                share_url: "HERE".to_string(),
+            },
+            &User { uid: 1 },
+            &sync_file_storage,
+        )
+        .await;
+        println!("{:?}", result);
+    }
 }
 
 pub enum ValidationError {
