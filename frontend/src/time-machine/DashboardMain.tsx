@@ -403,6 +403,20 @@ function DashboardMain() {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          <Message showIcon type="error">
+            <a
+              href="https://github.com/CaviarChen/fog-machine/issues/118"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "inherit",
+                textDecoration: "none",
+                display: "block",
+              }}
+            >
+              {t("data-share-link-ondrive")}
+            </a>
+          </Message>
           <Form
             fluid
             onSubmit={handleSubmit}
