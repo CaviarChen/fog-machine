@@ -414,7 +414,7 @@ function DashboardMain() {
                 display: "block",
               }}
             >
-              {t("data-share-link-ondrive")}
+              {t("data-share-link-ondrive-not-working")}
             </a>
           </Message>
           <Form
