@@ -39,6 +39,8 @@ i18n
           "data-source-title": "Data source",
           "data-share-link": "Share link",
           "data-share-link-help": "How to get share link",
+          "data-share-link-ondrive-not-working":
+            "OneDrive share link doesn't work right now",
           "data-sync-interval": "Sync interval",
           "data-share-link-every": "every",
           "data-upload-title": "Upload Data",
@@ -120,6 +122,7 @@ i18n
           "data-source-title": "数据源",
           "data-share-link": "共享链接",
           "data-share-link-help": "如何获取共享链接",
+          "data-share-link-ondrive-not-working": "OneDrive共享链接暂不可用",
           "data-sync-interval": "定时同步",
           "data-share-link-every": "每隔",
           "data-upload-title": "上传",
