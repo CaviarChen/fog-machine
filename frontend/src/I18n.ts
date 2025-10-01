@@ -33,7 +33,7 @@ i18n
             "A service for snapshotting and preserving history of Fog of World data",
           "home-memolanes-title": "MemoLanes",
           "home-memolanes-desc":
-            "MemoLanes is an open-source travel visualization app designed to help users better organize their travel memories.",
+            "MemoLanes is our latest open source project, it is a route tracking application designed to conveniently record and securely store your travel footprints while providing rich visualization.",
           "home-help-title": "Help",
           "home-theme-dark": "Dark",
           "home-theme-light": "Light",
@@ -117,7 +117,7 @@ i18n
           "home-time-machine-desc": "世界迷雾数据快照及历史数据管理服务。",
           "home-memolanes-title": "MemoLanes",
           "home-memolanes-desc":
-            "MemoLanes（迹忆）是一款开源的旅行可视化记录应用，旨在帮助用户更好的整理旅行记忆。",
+            "迹忆（MemoLanes）是我们最新的开源项目，这是一款轨迹记录软件，不仅能便捷记录、安全储存你的足迹，更能以丰富的形式可视化旅途数据。",
           "home-help-title": "帮助",
           "home-theme-dark": "夜间模式",
           "home-theme-light": "日间模式",
