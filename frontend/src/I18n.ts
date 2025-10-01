@@ -31,6 +31,9 @@ i18n
           "home-time-machine-title": "Time Machine (beta)",
           "home-time-machine-desc":
             "A service for snapshotting and preserving history of Fog of World data",
+          "home-memolanes-title": "MemoLanes",
+          "home-memolanes-desc":
+            "MemoLanes is our latest open source project, it is a route tracking application designed to conveniently record and securely store your travel footprints while providing rich visualization.",
           "home-help-title": "Help",
           "home-theme-dark": "Dark",
           "home-theme-light": "Light",
@@ -114,6 +117,9 @@ i18n
           "home-editor-desc": "世界迷雾数据的可视化编辑工具。",
           "home-time-machine-title": "时光机 (beta)",
           "home-time-machine-desc": "世界迷雾数据快照及历史数据管理服务。",
+          "home-memolanes-title": "MemoLanes",
+          "home-memolanes-desc":
+            "迹忆（MemoLanes）是我们最新的开源项目，这是一款轨迹记录软件，不仅能便捷记录、安全储存你的足迹，更能以丰富的形式可视化旅途数据。",
           "home-help-title": "帮助",
           "home-theme-dark": "夜间模式",
           "home-theme-light": "日间模式",

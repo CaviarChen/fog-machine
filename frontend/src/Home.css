@@ -38,3 +38,10 @@
   cursor: pointer;
   margin-top: 2vh;
 }
+
+.home-ad-item {
+  display: inline-block;
+  width: 100%;
+  cursor: pointer;
+  margin-top: 0vh;
+}
