@@ -222,11 +222,14 @@ const iconLine = (
 
 const iconScribble = (
   <svg
-    width="800px"
-    height="800px"
-    viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
     fill="none"
+    data-icon="pen-scribble"
+    role="img"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    className="w-full h-full"
   >
     {/* License: MIT. Made by halfmage: https://github.com/halfmage/majesticons */}
     <path
