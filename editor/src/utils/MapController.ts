@@ -437,4 +437,19 @@ export class MapController {
     }
     this.controlMode = mode;
   }
+
+  getCenter(): { lng: number; lat: number } | null {
+    const center = this.map?.getCenter();
+    if (center) {
+      return { lng: center.lng, lat: center.lat };
+    }
+    return null;
+  }
+
+  flyTo(lng: number, lat: number): void {
+    this.map?.flyTo({
+      center: [lng, lat],
+      essential: true,
+    });
+  }
 }

@@ -2,6 +2,7 @@ import { ControlMode, MapController } from "./utils/MapController";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
+import MoveMapDialog from "./MoveMapDialog";
 
 type Props = {
   setLoaded(isLoaded: boolean): void;
@@ -20,6 +21,8 @@ function Editor(props: Props): JSX.Element {
     canRedo: false,
     canUndo: false,
   });
+
+  const [isMoveMapDialogOpen, setIsMoveMapDialogOpen] = useState(false);
 
   useEffect(() => {
     mapController.registerOnChangeCallback("editor", () => {
@@ -59,6 +62,15 @@ function Editor(props: Props): JSX.Element {
       enabled: false,
       onClick: () => {
         mapController.redo();
+      },
+    },
+    {
+      key: "move-map",
+      icon: iconMove,
+      clickable: true,
+      enabled: false,
+      onClick: () => {
+        setIsMoveMapDialogOpen(true);
       },
     },
     null,
@@ -109,6 +121,12 @@ function Editor(props: Props): JSX.Element {
         mapController={mapController}
         msgboxShow={props.msgboxShow}
         mode="editor"
+      />
+
+      <MoveMapDialog
+        mapController={mapController}
+        isOpen={isMoveMapDialogOpen}
+        setIsOpen={setIsMoveMapDialogOpen}
       />
 
       <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
@@ -245,5 +263,23 @@ const iconScribble = (
       strokeWidth="2"
       d="M6 14H5a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h14a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-4"
     />
+  </svg>
+);
+
+const iconMove = (
+  <svg
+    aria-hidden="true"
+    focusable="false"
+    data-prefix="fas"
+    data-icon="arrows-alt"
+    role="img"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 512 512"
+    className="w-full h-full"
+  >
+    <path
+      fill="currentColor"
+      d="M352.201 425.775l-79.196 79.196c-9.373 9.373-24.568 9.373-33.941 0l-79.196-79.196c-15.119-15.119-4.411-40.971 16.971-40.971H240v-105.71h-105.71v63.196c0 21.382-25.851 32.09-40.971 16.971L14.125 279.164c-9.373-9.373-9.373-24.569 0-33.941l79.196-79.196c15.119-15.119 40.971-4.411 40.971 16.971V246.29h105.71V140.58h-63.196c-21.382 0-32.09-25.851-16.971-40.971l79.196-79.196c9.373-9.373 24.568-9.373 33.941 0l79.196 79.196c15.119 15.119 4.411 40.971-16.971 40.971h-63.196v105.71h105.71v-63.196c0-21.382 25.851-32.09 40.971-16.971l79.196 79.196c9.373 9.373 9.373 24.569 0 33.941l-79.196 79.196c-15.119 15.119-40.971 4.411-40.971-16.971v-63.196h-105.71v105.71h63.196c21.382 0 32.09 25.851 16.971 40.971z"
+    ></path>
   </svg>
 );
