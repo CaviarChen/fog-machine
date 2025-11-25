@@ -438,18 +438,23 @@ export class MapController {
     this.controlMode = mode;
   }
 
-  getCenter(): { lng: number; lat: number } | null {
+  getCenter(): { lng: number; lat: number; zoom: number } | null {
     const center = this.map?.getCenter();
-    if (center) {
-      return { lng: center.lng, lat: center.lat };
+    const zoom = this.map?.getZoom();
+    if (center && zoom !== undefined) {
+      return { lng: center.lng, lat: center.lat, zoom };
     }
     return null;
   }
 
-  flyTo(lng: number, lat: number): void {
-    this.map?.flyTo({
+  flyTo(lng: number, lat: number, zoom?: number): void {
+    const options: mapboxgl.FlyToOptions = {
       center: [lng, lat],
       essential: true,
-    });
+    };
+    if (zoom !== undefined) {
+      options.zoom = zoom;
+    }
+    this.map?.flyTo(options);
   }
 }
