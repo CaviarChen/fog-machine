@@ -158,7 +158,7 @@ export default function MoveMapDialog(props: Props): JSX.Element {
                                     as="h3"
                                     className="text-lg font-medium leading-6 text-gray-900"
                                 >
-                                    Move Map
+                                    Fly to
                                 </Dialog.Title>
                                 <div className="mt-4">
                                     <label className="block text-sm font-medium text-gray-700">
@@ -183,7 +183,7 @@ export default function MoveMapDialog(props: Props): JSX.Element {
                                         className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
                                         onClick={() => setIsUrlParserOpen(true)}
                                     >
-                                        URL Parser (Beta)
+                                        URL Parser
                                     </button>
                                     <div className="flex space-x-3">
                                         <button
@@ -248,11 +248,11 @@ export default function MoveMapDialog(props: Props): JSX.Element {
                                     as="h3"
                                     className="text-lg font-medium leading-6 text-gray-900"
                                 >
-                                    URL Parser (Beta)
+                                    URL Parser
                                 </Dialog.Title>
                                 <div className="mt-4">
                                     <label className="block text-sm font-medium text-gray-700">
-                                        Paste Map URL
+                                        Paste URL
                                     </label>
                                     <input
                                         type="text"
@@ -262,7 +262,7 @@ export default function MoveMapDialog(props: Props): JSX.Element {
                                         placeholder="https://..."
                                     />
                                     <p className="mt-2 text-xs text-gray-500">
-                                        Supports Google, Apple, OpenStreetMap, Bing URLs.
+                                        Supports Google Maps, Apple Maps, OpenStreetMap, Bing Maps.
                                     </p>
                                     {parsedResult && (
                                         <div className="mt-2 text-sm text-green-600">
