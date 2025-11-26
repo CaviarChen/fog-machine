@@ -9,7 +9,7 @@ type Props = {
     setIsOpen(isOpen: boolean): void;
 };
 
-export default function MoveMapDialog(props: Props): JSX.Element {
+export default function FlyToDialog(props: Props): JSX.Element {
     const { isOpen, setIsOpen, mapController } = props;
     const [coordinates, setCoordinatesState] = useState("");
     const [coordError, setCoordError] = useState("");

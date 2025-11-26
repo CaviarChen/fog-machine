@@ -2,7 +2,7 @@ import { ControlMode, MapController } from "./utils/MapController";
 import { useEffect, useState } from "react";
 import Mousetrap from "mousetrap";
 import MainMenu from "./MainMenu";
-import MoveMapDialog from "./MoveMapDialog";
+import FlyToDialog from "./FlyToDialog";
 
 type Props = {
   setLoaded(isLoaded: boolean): void;
@@ -22,7 +22,7 @@ function Editor(props: Props): JSX.Element {
     canUndo: false,
   });
 
-  const [isMoveMapDialogOpen, setIsMoveMapDialogOpen] = useState(false);
+  const [isFlyToDialogOpen, setIsFlyToDialogOpen] = useState(false);
 
   useEffect(() => {
     mapController.registerOnChangeCallback("editor", () => {
@@ -70,7 +70,7 @@ function Editor(props: Props): JSX.Element {
       clickable: true,
       enabled: false,
       onClick: () => {
-        setIsMoveMapDialogOpen(true);
+        setIsFlyToDialogOpen(true);
       },
     },
     null,
@@ -123,10 +123,10 @@ function Editor(props: Props): JSX.Element {
         mode="editor"
       />
 
-      <MoveMapDialog
+      <FlyToDialog
         mapController={mapController}
-        isOpen={isMoveMapDialogOpen}
-        setIsOpen={setIsMoveMapDialogOpen}
+        isOpen={isFlyToDialogOpen}
+        setIsOpen={setIsFlyToDialogOpen}
       />
 
       <div className="absolute bottom-0 pb-4 z-10 pointer-events-none flex justify-center w-full">
