@@ -1,7 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState, useEffect } from "react";
 import { MapController } from "./utils/MapController";
-import { useTranslation } from "react-i18next";
 import { parseMapUrl } from "./utils/MapUrlUtils";
 
 type Props = {
@@ -11,7 +10,6 @@ type Props = {
 };
 
 export default function MoveMapDialog(props: Props): JSX.Element {
-    const { t } = useTranslation();
     const { isOpen, setIsOpen, mapController } = props;
     const [coordinates, setCoordinatesState] = useState("");
     const [coordError, setCoordError] = useState("");
