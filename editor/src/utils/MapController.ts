@@ -220,7 +220,11 @@ export class MapController {
     }
   }
 
-  private updateFogMap(newMap: fogMap.FogMap, areaChanged: Bbox | "all", skipHistory = false): void {
+  private updateFogMap(
+    newMap: fogMap.FogMap,
+    areaChanged: Bbox | "all",
+    skipHistory = false
+  ): void {
     if (this.fogMap !== newMap) {
       if (!skipHistory) {
         this.historyManager.append(newMap, areaChanged);
@@ -326,7 +330,10 @@ export class MapController {
           ],
         },
       });
-    } else if (this.controlMode === ControlMode.DrawScribble && this.scribbleLastPos) {
+    } else if (
+      this.controlMode === ControlMode.DrawScribble &&
+      this.scribbleLastPos
+    ) {
       const currentPos = e.lngLat;
       const newMap = this.fogMap.addLine(
         this.scribbleLastPos.lng,
@@ -375,7 +382,10 @@ export class MapController {
       this.updateFogMap(newMap, bbox);
 
       this.eraserArea = null;
-    } else if (this.controlMode === ControlMode.DrawScribble && this.scribbleLastPos) {
+    } else if (
+      this.controlMode === ControlMode.DrawScribble &&
+      this.scribbleLastPos
+    ) {
       if (this.scribbleStrokeBbox) {
         this.historyManager.append(this.fogMap, this.scribbleStrokeBbox);
       }
