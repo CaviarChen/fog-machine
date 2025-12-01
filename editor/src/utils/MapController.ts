@@ -14,6 +14,7 @@ export enum ControlMode {
   View,
   Eraser,
   DrawLine,
+  DrawScribble,
 }
 
 export class MapController {
@@ -24,6 +25,8 @@ export class MapController {
   public historyManager: HistoryManager;
   private controlMode: ControlMode;
   private eraserArea: [mapboxgl.LngLat, mapboxgl.GeoJSONSource] | null;
+  private scribbleLastPos: mapboxgl.LngLat | null;
+  private scribbleStrokeBbox: Bbox | null;
   private mapDraw: MapDraw | null;
   private onChangeCallback: { [key: string]: () => void };
   private mapStyle: MapStyle;
@@ -36,6 +39,8 @@ export class MapController {
     this.fogMap = fogMap.FogMap.empty;
     this.controlMode = ControlMode.View;
     this.eraserArea = null;
+    this.scribbleLastPos = null;
+    this.scribbleStrokeBbox = null;
     this.historyManager = new HistoryManager(this.fogMap);
     this.onChangeCallback = {};
     this.mapStyle = "standard";
@@ -215,9 +220,15 @@ export class MapController {
     }
   }
 
-  private updateFogMap(newMap: fogMap.FogMap, areaChanged: Bbox | "all"): void {
+  private updateFogMap(
+    newMap: fogMap.FogMap,
+    areaChanged: Bbox | "all",
+    skipHistory = false
+  ): void {
     if (this.fogMap !== newMap) {
-      this.historyManager.append(newMap, areaChanged);
+      if (!skipHistory) {
+        this.historyManager.append(newMap, areaChanged);
+      }
       this.applyFogMapUpdate(newMap, areaChanged);
     }
   }
@@ -283,6 +294,15 @@ export class MapController {
           this.eraserArea = [startPoint, eraserSource];
         }
       }
+    } else if (this.controlMode === ControlMode.DrawScribble) {
+      this.map?.dragPan.disable();
+      this.scribbleLastPos = e.lngLat;
+      this.scribbleStrokeBbox = new Bbox(
+        e.lngLat.lng,
+        e.lngLat.lat,
+        e.lngLat.lng,
+        e.lngLat.lat
+      );
     }
   }
 
@@ -310,6 +330,38 @@ export class MapController {
           ],
         },
       });
+    } else if (
+      this.controlMode === ControlMode.DrawScribble &&
+      this.scribbleLastPos
+    ) {
+      const currentPos = e.lngLat;
+      const newMap = this.fogMap.addLine(
+        this.scribbleLastPos.lng,
+        this.scribbleLastPos.lat,
+        currentPos.lng,
+        currentPos.lat
+      );
+
+      // TODO: the computation below cannot handle anti-meridian crossing correctly.
+      // It is tricky and most people don't need it.
+      const segmentBbox = new Bbox(
+        Math.min(this.scribbleLastPos.lng, currentPos.lng),
+        Math.min(this.scribbleLastPos.lat, currentPos.lat),
+        Math.max(this.scribbleLastPos.lng, currentPos.lng),
+        Math.max(this.scribbleLastPos.lat, currentPos.lat)
+      );
+
+      if (this.scribbleStrokeBbox) {
+        this.scribbleStrokeBbox = new Bbox(
+          Math.min(this.scribbleStrokeBbox.west, segmentBbox.west),
+          Math.min(this.scribbleStrokeBbox.south, segmentBbox.south),
+          Math.max(this.scribbleStrokeBbox.east, segmentBbox.east),
+          Math.max(this.scribbleStrokeBbox.north, segmentBbox.north)
+        );
+      }
+
+      this.updateFogMap(newMap, segmentBbox, true);
+      this.scribbleLastPos = currentPos;
     }
   }
 
@@ -332,6 +384,16 @@ export class MapController {
       this.updateFogMap(newMap, bbox);
 
       this.eraserArea = null;
+    } else if (
+      this.controlMode === ControlMode.DrawScribble &&
+      this.scribbleLastPos
+    ) {
+      if (this.scribbleStrokeBbox) {
+        this.historyManager.append(this.fogMap, this.scribbleStrokeBbox);
+      }
+      this.scribbleLastPos = null;
+      this.scribbleStrokeBbox = null;
+      this.map?.dragPan.enable();
     }
   }
 
@@ -360,6 +422,11 @@ export class MapController {
         this.map?.dragPan.enable();
         this.mapDraw?.deactivate();
         break;
+      case ControlMode.DrawScribble:
+        mapboxCanvas.style.cursor = "";
+        this.map?.dragPan.enable();
+        this.scribbleLastPos = null;
+        break;
     }
 
     // enable the new mode
@@ -374,6 +441,10 @@ export class MapController {
         mapboxCanvas.style.cursor = "crosshair";
         this.map?.dragPan.disable();
         this.mapDraw?.activate();
+        break;
+      case ControlMode.DrawScribble:
+        mapboxCanvas.style.cursor = "crosshair";
+        this.map?.dragPan.disable();
         break;
     }
     this.controlMode = mode;

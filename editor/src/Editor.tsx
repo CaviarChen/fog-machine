@@ -88,6 +88,19 @@ function Editor(props: Props): JSX.Element {
         }
       },
     },
+    {
+      key: "scribble",
+      icon: iconScribble,
+      clickable: true,
+      enabled: controlMode === ControlMode.DrawScribble,
+      onClick: () => {
+        if (controlMode === ControlMode.DrawScribble) {
+          setControlMode(ControlMode.View);
+        } else {
+          setControlMode(ControlMode.DrawScribble);
+        }
+      },
+    },
   ];
 
   return (
@@ -194,7 +207,7 @@ const iconLine = (
     aria-hidden="true"
     focusable="false"
     data-prefix="fas"
-    data-icon="redo"
+    data-icon="pen-polyline"
     role="img"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
@@ -203,6 +216,34 @@ const iconLine = (
     <path
       fill="currentColor"
       d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"
+    />
+  </svg>
+);
+
+const iconScribble = (
+  <svg
+    aria-hidden="true"
+    focusable="false"
+    fill="none"
+    data-icon="pen-scribble"
+    role="img"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    className="w-full h-full"
+  >
+    {/* License: MIT. Made by halfmage: https://github.com/halfmage/majesticons */}
+    <path
+      fill="currentColor"
+      fillRule="evenodd"
+      d="M17.586 2a2 2 0 0 1 2.828 0L22 3.586a2 2 0 0 1 0 2.828L20.414 8 16 3.586 17.586 2zm-3 3-5 5A2 2 0 0 0 9 11.414V13a2 2 0 0 0 2 2h1.586A2 2 0 0 0 14 14.414l5-5L14.586 5z"
+      clipRule="evenodd"
+    />
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M6 14H5a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h14a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-4"
     />
   </svg>
 );
