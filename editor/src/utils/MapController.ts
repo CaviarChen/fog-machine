@@ -342,6 +342,8 @@ export class MapController {
         currentPos.lat
       );
 
+      // TODO: the computation below cannot handle anti-meridian crossing correctly.
+      // It is tricky and most people don't need it.
       const segmentBbox = new Bbox(
         Math.min(this.scribbleLastPos.lng, currentPos.lng),
         Math.min(this.scribbleLastPos.lat, currentPos.lat),
