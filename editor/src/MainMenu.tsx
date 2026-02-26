@@ -4,6 +4,7 @@ import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/solid";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { MapController } from "./utils/MapController";
+import { generateSimpleCsvArchive, generateYishenFootprintArchive } from "./utils/GpxExport";
 import Import from "./Import";
 
 function MapTap(props: { mapController: MapController }): JSX.Element {
@@ -193,27 +194,50 @@ export default function MainMenu(props: Props): JSX.Element {
             },
             icon: IconExport,
           },
-          // TODO: This feature is not really ready, so let's disable it for now.
-          // {
-          //   name: t("export-gpx"),
-          //   description: t("export-description-gpx"),
-          //   action: async () => {
-          //     // TODO: generating the gpx archive for a whole fogMap doesn't feel
-          //     // like a common use case, we could do something like: ask user to
-          //     // select an area and only generate gpx archive for that area.
+          {
+            name: t("export-csv"),
+            description: t("export-csv-description"),
+            action: async () => {
+              const blob = await generateYishenFootprintArchive(mapController.fogMap);
+              if (blob) {
+                popDownload("Points.csv", blob);
+                props.msgboxShow("info", "export-csv-done-message");
+              }
+            },
+            icon: IconExport,
+          },
+          /* {
+            name: t("export-gpx"),
+            description: t("export-description-gpx"),
+            action: async () => {
+              // TODO: generating the gpx archive for a whole fogMap doesn't feel
+              // like a common use case, we could do something like: ask user to
+              // select an area and only generate gpx archive for that area.
 
-          //     // TODO: `generateGpxArchive` is a blocking operation that takes a
-          //     // really long time, we should:
-          //     // 1. make it async by yielding from time to time.
-          //     // 2. show a progress bar.
-          //     const blob = await generateGpxArchive(mapController.fogMap);
-          //     if (blob) {
-          //       popDownload("Gpx.zip", blob);
-          //       props.msgboxShow("info", "export-done-message-gpx");
-          //     }
-          //   },
-          //   icon: IconExport,
-          // },
+              // TODO: `generateGpxArchive` is a blocking operation that takes a
+              // really long time, we should:
+              // 1. make it async by yielding from time to time.
+              // 2. show a progress bar.
+              const blob = await generateGpxArchive(mapController.fogMap);
+              if (blob) {
+                popDownload("Gpx.zip", blob);
+                props.msgboxShow("info", "export-done-message-gpx");
+              }
+            },
+            icon: IconExport,
+          }, */
+          {
+            name: t("export-simple-csv"),
+            description: t("export-simple-csv-description"),
+            action: async () => {
+              const blob = await generateSimpleCsvArchive(mapController.fogMap);
+              if (blob) {
+                popDownload("Points.csv", blob);
+                props.msgboxShow("info", "export-simple-csv-done-message");
+              }
+            },
+            icon: IconExport,
+          },
         ];
 
   const languageTab = (

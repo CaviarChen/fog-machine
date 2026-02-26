@@ -146,3 +146,95 @@ export async function generateGpxArchive(fogMap: FogMap): Promise<Blob> {
   });
   return syncZip.generateAsync({ type: "blob" });
 }
+
+// Export all visited points as CSV (longitude, latitude only)
+export function exportToCsv(lngLatList: number[][]): Blob {
+  const header = "longitude,latitude";
+  const csvContent = header + "\n" +
+    lngLatList
+      .map((lngLat) => `${lngLat[0]},${lngLat[1]}`)
+      .join("\n");
+
+  return new Blob([csvContent], {
+    type: "text/csv;charset=utf-8",
+  });
+}
+
+// Export all visited points as simple CSV (longitude, latitude only)
+export async function generateSimpleCsvArchive(fogMap: FogMap): Promise<Blob> {
+  const header = "longitude,latitude";
+
+  const parts: string[] = [header];
+
+  Object.values(fogMap.tiles).forEach((tile) => {
+    const n = BITMAP_WIDTH * TILE_WIDTH;
+    const [left, up] = Tile.XYToLngLat(tile.x, tile.y);
+    const right = Tile.XYToLngLat(tile.x + 1, tile.y)[0];
+    const bottom = Tile.XYToLngLat(tile.x, tile.y + 1)[1];
+    const dx = (right - left) / n;
+    const dy = (bottom - up) / n;
+
+    Object.values(tile.blocks).forEach((block) => {
+      for (let x = 0; x < BITMAP_WIDTH; x++) {
+        for (let y = 0; y < BITMAP_WIDTH; y++) {
+          if (block.isVisited(x, y)) {
+            const globalX = block.x * BITMAP_WIDTH + x;
+            const globalY = block.y * BITMAP_WIDTH + y;
+            const lng = left + dx * globalX;
+            const lat = up + dy * globalY;
+            parts.push(`${lng},${lat}`);
+          }
+        }
+      }
+    });
+  });
+
+  return new Blob([parts.join("\n")], {
+    type: "text/csv;charset=utf-8",
+  });
+}
+
+// Export all visited points as 一生足迹 format
+export async function generateYishenFootprintArchive(fogMap: FogMap): Promise<Blob> {
+  // Merge all tiles data into one CSV
+  const header = "dataTime,locType,longitude,latitude,heading,accuracy,speed,distance,isBackForeground,stepType,altitude";
+  // 2025-01-01 00:00:00 UTC
+  const startTime = 1735689600;
+  // Sample every 8 points
+  const sampleRate = 8;
+
+  const parts: string[] = [header];
+
+  let index = 0;
+  let sampleIndex = 0;
+  Object.values(fogMap.tiles).forEach((tile) => {
+    const n = BITMAP_WIDTH * TILE_WIDTH;
+    const [left, up] = Tile.XYToLngLat(tile.x, tile.y);
+    const right = Tile.XYToLngLat(tile.x + 1, tile.y)[0];
+    const bottom = Tile.XYToLngLat(tile.x, tile.y + 1)[1];
+    const dx = (right - left) / n;
+    const dy = (bottom - up) / n;
+
+    Object.values(tile.blocks).forEach((block) => {
+      for (let x = 0; x < BITMAP_WIDTH; x++) {
+        for (let y = 0; y < BITMAP_WIDTH; y++) {
+          if (block.isVisited(x, y)) {
+            if (index % sampleRate === 0) {
+              const globalX = block.x * BITMAP_WIDTH + x;
+              const globalY = block.y * BITMAP_WIDTH + y;
+              const lng = left + dx * globalX;
+              const lat = up + dy * globalY;
+              parts.push(`${startTime + sampleIndex},0,${lng},${lat},0,15,0,0,0,0,0`);
+              sampleIndex++;
+            }
+            index++;
+          }
+        }
+      }
+    });
+  });
+
+  return new Blob([parts.join("\n")], {
+    type: "text/csv;charset=utf-8",
+  });
+}
