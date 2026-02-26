@@ -19,9 +19,15 @@ i18n
           "import-description": "Import data from [Fog of World]",
           export: "Export",
           "export-gpx": "Export Gpx",
+          "export-simple-csv": "Export CSV",
+          "export-simple-csv-description":
+            "Export visited points as CSV (longitude, latitude)",
+          "export-csv": "Export Footprint",
           "export-description": "Export data in [Fog of World] format",
           "export-description-gpx":
             "Export data in [GPX] format. [Experimental]",
+          "export-csv-description":
+            "Export visited points as 一生足迹 format",
           language: "Language",
           error: "Error",
           "error-already-imported":
@@ -37,6 +43,8 @@ i18n
           "export-done-message":
             'Exported successfully.\n\nPlease use the "Sync" folder in the exported zip archive to replace the original folder. You also need to reset the [Fog of World] app to remove the existing data.',
           "export-done-message-gpx": "Exported successfully.",
+          "export-simple-csv-done-message": "Exported successfully. CSV files contain longitude and latitude of each visited point.",
+          "export-csv-done-message": "Exported successfully. Footprint files contain visited points.",
           "map-type": "Map type",
           "map-type-standard": "Standard",
           "map-type-satellite": "Satellite",
@@ -64,8 +72,12 @@ i18n
           "import-description": "从 [世界迷雾] 中导入数据。",
           export: "导出",
           "export-gpx": "导出 GPX",
+          "export-simple-csv": "导出 CSV",
+          "export-simple-csv-description": "以 CSV 格式导出已访问点（经度，纬度）",
+          "export-csv": "导出足迹",
           "export-description": "以 [世界迷雾] 的格式导出数据。",
           "export-description-gpx": "以 [GPX] 的格式导出数据。[实验性功能]",
+          "export-csv-description": "以一生足迹格式导出已访问点",
           language: "语言",
           error: "错误",
           "error-already-imported":
@@ -80,6 +92,8 @@ i18n
           "export-done-message":
             '导出成功。\n\n请使用导出的 zip 压缩包中的 "Sync" 文件夹替换原有文件夹，并重置 [世界迷雾] app 以清除已有数据。',
           "export-done-message-gpx": "导出成功。",
+          "export-simple-csv-done-message": "导出成功。CSV 文件包含每个访问点的经度和纬度。",
+          "export-csv-done-message": "导出成功。足迹文件包含已访问点。",
           "map-type": "地图模式",
           "map-type-standard": "标准",
           "map-type-satellite": "卫星",
