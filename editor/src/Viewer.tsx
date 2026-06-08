@@ -1,6 +1,6 @@
 import { MapController } from "./utils/MapController";
 import { useEffect, useState } from "react";
-import { createMapFromZip } from "./Import";
+import { importFowSyncZip } from "./utils/FowSyncArchive";
 import TimeMachineApi, { SnapshotInfo } from "./utils/TimeMachineApi";
 import moment from "moment";
 import MainMenu from "./MainMenu";
@@ -50,7 +50,7 @@ function Viewer(props: Props): JSX.Element {
       snapshot = snapshotRes.ok;
       gloablSnapshotCache[snapshotInfo.id] = snapshot;
     }
-    const map = await createMapFromZip(snapshot);
+    const map = await importFowSyncZip(snapshot);
     mapController.replaceFogMap(map);
     setSnapshotInfo(snapshotInfo);
     props.setLoaded(true);

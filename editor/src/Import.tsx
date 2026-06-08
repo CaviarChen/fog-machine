@@ -1,11 +1,11 @@
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
 import { readFileAsync } from "./Utils";
 import { MapController } from "./utils/MapController";
 import { useDropzone } from "react-dropzone";
-import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
 import { FogMap } from "./utils/FogMap";
+import { importFowSyncZip } from "./utils/FowSyncArchive";
+import { importFwss } from "./utils/FwssArchive";
+import DialogFrame from "./DialogFrame";
 
 type Props = {
   mapController: MapController;
@@ -15,29 +15,9 @@ type Props = {
 };
 
 function getFileExtension(filename: string): string {
-  return filename.slice(
-    (Math.max(0, filename.lastIndexOf(".")) || Infinity) + 1
-  );
-}
-
-export async function createMapFromZip(data: ArrayBuffer): Promise<FogMap> {
-  const zip = await new JSZip().loadAsync(data);
-  const tileFiles = await Promise.all(
-    Object.entries(zip.files)
-      .map(([filename, file]) => {
-        filename = filename.replace(/^.*[\\/]/, "");
-        return [filename, file] as [string, JSZip.JSZipObject];
-      })
-      .filter(([filename, _file]) => {
-        return filename != "";
-      })
-      .map(async ([filename, file]) => {
-        const data = await file.async("arraybuffer");
-        return [filename, data] as [string, ArrayBuffer];
-      })
-  );
-  const map = FogMap.createFromFiles(tileFiles);
-  return map;
+  return filename
+    .slice((Math.max(0, filename.lastIndexOf(".")) || Infinity) + 1)
+    .toLowerCase();
 }
 
 export default function MyModal(props: Props): JSX.Element {
@@ -73,7 +53,17 @@ export default function MyModal(props: Props): JSX.Element {
       if (files.length === 1 && getFileExtension(files[0].name) === "zip") {
         const data = await readFileAsync(files[0]);
         if (data instanceof ArrayBuffer) {
-          const map = await createMapFromZip(data);
+          const map = await importFowSyncZip(data);
+          mapController.replaceFogMap(map);
+        }
+        done = true;
+      } else if (
+        files.length === 1 &&
+        getFileExtension(files[0].name) === "fwss"
+      ) {
+        const data = await readFileAsync(files[0]);
+        if (data instanceof ArrayBuffer) {
+          const map = await importFwss(data);
           mapController.replaceFogMap(map);
         }
         done = true;
@@ -99,81 +89,31 @@ export default function MyModal(props: Props): JSX.Element {
   }
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog
-        as="div"
-        className="fixed inset-0 z-40 overflow-y-auto"
-        onClose={closeModal}
-      >
-        <div className="min-h-screen px-4 text-center">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <Dialog.Overlay className="fixed inset-0" />
-          </Transition.Child>
-
-          {/* This element is to trick the browser into centering the modal contents. */}
-          <span
-            className="inline-block h-screen align-middle"
-            aria-hidden="true"
-          >
-            &#8203;
-          </span>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0 scale-95"
-            enterTo="opacity-100 scale-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100 scale-100"
-            leaveTo="opacity-0 scale-95"
-          >
-            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
-              <Dialog.Title
-                as="h3"
-                className="text-lg font-medium leading-6 text-gray-900"
-              >
-                {t("import")}
-              </Dialog.Title>
-              <div className="mt-2">
-                <p
-                  className="text-sm text-gray-500"
-                  style={{ whiteSpace: "pre-wrap" }}
-                >
-                  {t("import-dialog-description")}
-                </p>
-              </div>
-              <div className="pt-4">
-                <div className="border-2 border-dashed border-gray-300 border-opacity-100 rounded-lg">
-                  <div {...getRootProps({ className: "dropzone" })}>
-                    <input {...getInputProps()} />
-                    <div className="py-4 w-min mx-auto">
-                      <div className="mb-4 whitespace-nowrap">
-                        {t("import-dialog-drag-and-drop")}
-                      </div>
-                      <div className="w-min mx-auto">
-                        <button
-                          type="button"
-                          className="whitespace-nowrap px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-                          onClick={openFileSelector}
-                        >
-                          {t("import-dialog-select")}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+    <DialogFrame
+      isOpen={isOpen}
+      onClose={closeModal}
+      title={t("import")}
+      description={t("import-dialog-description")}
+    >
+      <div className="border-2 border-dashed border-gray-300 border-opacity-100 rounded-lg">
+        <div {...getRootProps({ className: "dropzone" })}>
+          <input {...getInputProps()} />
+          <div className="py-4 w-min mx-auto">
+            <div className="mb-4 whitespace-nowrap">
+              {t("import-dialog-drag-and-drop")}
             </div>
-          </Transition.Child>
+            <div className="w-min mx-auto">
+              <button
+                type="button"
+                className="whitespace-nowrap px-4 py-2 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                onClick={openFileSelector}
+              >
+                {t("import-dialog-select")}
+              </button>
+            </div>
+          </div>
         </div>
-      </Dialog>
-    </Transition>
+      </div>
+    </DialogFrame>
   );
 }

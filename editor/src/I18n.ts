@@ -18,8 +18,14 @@ i18n
           import: "Import",
           "import-description": "Import data from [Fog of World]",
           export: "Export",
+          "export-sync": "Export as Sync.zip",
+          "export-fwss": "Export as *.fwss",
           "export-gpx": "Export Gpx",
           "export-description": "Export data in [Fog of World] format",
+          "export-description-sync":
+            "Export data in [Fog of World] Sync.zip format",
+          "export-description-fwss":
+            "Export data in [Fog of World] FWSS format",
           "export-description-gpx":
             "Export data in [GPX] format. [Experimental]",
           language: "Language",
@@ -29,14 +35,16 @@ i18n
           "error-invalid-format": "Invalid format.",
           "error-failed-to-load-snapshot": "Failed to load snapshot.",
           "import-dialog-description":
-            'All your data will be handled locally.\n\nAccept data format:\n- The "Sync" folder.\n- Files in the "Sync" folder.\n- A zip archive contains the "Sync" folder.\n\n',
+            'All your data will be handled locally.\n\nAccept data format:\n- The "Sync" folder.\n- Files in the "Sync" folder.\n- A zip archive contains the "Sync" folder.\n- *.fwss file.\n\n',
+          "export-dialog-description":
+            "All your data will be handled locally.\n\nSelect export format:",
           "import-dialog-drag-and-drop":
             "drag and drop [Fog of World] sync data",
           "import-dialog-select": "Select manually",
           info: "Info",
-          "export-done-message":
+          "export-done-message": "Exported successfully.",
+          "export-done-message-sync":
             'Exported successfully.\n\nPlease use the "Sync" folder in the exported zip archive to replace the original folder. You also need to reset the [Fog of World] app to remove the existing data.',
-          "export-done-message-gpx": "Exported successfully.",
           "map-type": "Map type",
           "map-type-standard": "Standard",
           "map-type-satellite": "Satellite",
@@ -63,8 +71,12 @@ i18n
           import: "导入",
           "import-description": "从 [世界迷雾] 中导入数据。",
           export: "导出",
+          "export-sync": "导出为 Sync.zip",
+          "export-fwss": "导出为 *.fwss",
           "export-gpx": "导出 GPX",
           "export-description": "以 [世界迷雾] 的格式导出数据。",
+          "export-description-sync": "以 [世界迷雾] Sync.zip 格式导出数据。",
+          "export-description-fwss": "以 [世界迷雾] FWSS 格式导出数据。",
           "export-description-gpx": "以 [GPX] 的格式导出数据。[实验性功能]",
           language: "语言",
           error: "错误",
@@ -73,13 +85,15 @@ i18n
           "error-invalid-format": "无效文件格式。",
           "error-failed-to-load-snapshot": "载入快照失败。",
           "import-dialog-description":
-            '你的数据将完全在本地处理。\n\n接受的数据格式:\n- "Sync" 文件夹\n-  "Sync" 文件夹中的全部文件\n- 包含 "Sync" 文件夹的 zip 压缩包\n\n',
+            '你的数据将完全在本地处理。\n\n接受的数据格式:\n- "Sync" 文件夹\n- "Sync" 文件夹中的全部文件\n- 包含 "Sync" 文件夹的 zip 压缩包\n- *.fwss 文件\n\n',
+          "export-dialog-description":
+            "你的数据将完全在本地处理。\n\n选择导出格式:",
           "import-dialog-drag-and-drop": "拖入 [世界迷雾] 同步数据",
           "import-dialog-select": "手动选择",
           info: "提示",
-          "export-done-message":
+          "export-done-message": "导出成功。",
+          "export-done-message-sync":
             '导出成功。\n\n请使用导出的 zip 压缩包中的 "Sync" 文件夹替换原有文件夹，并重置 [世界迷雾] app 以清除已有数据。',
-          "export-done-message-gpx": "导出成功。",
           "map-type": "地图模式",
           "map-type-standard": "标准",
           "map-type-satellite": "卫星",

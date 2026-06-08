@@ -12,8 +12,8 @@ test("fogMap", async () => {
   const data1 = await fs.readFile("./src/__tests__/data/23e4lltkkoke");
   const data2 = await fs.readFile("./src/__tests__/data/cd36lltksiwo");
   let fogMapData = fogMap.FogMap.empty;
-  timeit("fogMap.Map.addFile", () => {
-    fogMapData = fogMapData.addFiles([
+  timeit("fogMap.Map.createFromFiles", () => {
+    fogMapData = fogMap.FogMap.createFromFiles([
       ["23e4lltkkoke", data1],
       ["cd36lltksiwo", data2],
     ]);

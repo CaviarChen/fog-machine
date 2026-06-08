@@ -3,8 +3,12 @@ import { Popover, Tab, Transition } from "@headlessui/react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/solid";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
+import moment from "moment";
 import { MapController } from "./utils/MapController";
 import Import from "./Import";
+import { exportFowSync } from "./utils/FowSyncArchive";
+import { exportFwss } from "./utils/FwssArchive";
+import DialogFrame from "./DialogFrame";
 
 function MapTap(props: { mapController: MapController }): JSX.Element {
   const { t } = useTranslation();
@@ -161,11 +165,88 @@ function popDownload(filename: string, blob: Blob) {
   document.body.removeChild(link);
 }
 
+type ExportDialogProps = {
+  mapController: MapController;
+  isOpen: boolean;
+  setIsOpen(isOpen: boolean): void;
+  msgboxShow(title: string, msg: string): void;
+};
+
+function ExportDialog(props: ExportDialogProps): JSX.Element {
+  const { t } = useTranslation();
+
+  function closeModal() {
+    props.setIsOpen(false);
+  }
+
+  async function exportSync() {
+    closeModal();
+    const blob = await exportFowSync(props.mapController.fogMap);
+    if (blob) {
+      popDownload("Sync.zip", blob);
+      props.msgboxShow("info", "export-done-message-sync");
+    }
+  }
+
+  async function exportFwssFile() {
+    closeModal();
+    const blob = await exportFwss(props.mapController.fogMap);
+    if (blob) {
+      popDownload(
+        `Snapshot-${moment().format("YYYYMMDDTHHmmssZZ")}.fwss`,
+        blob
+      );
+      props.msgboxShow("info", "export-done-message");
+    }
+  }
+
+  const exportOptions = [
+    {
+      name: t("export-sync"),
+      description: t("export-description-sync"),
+      action: exportSync,
+    },
+    {
+      name: t("export-fwss"),
+      description: t("export-description-fwss"),
+      action: exportFwssFile,
+    },
+  ];
+
+  return (
+    <DialogFrame
+      isOpen={props.isOpen}
+      onClose={closeModal}
+      title={t("export")}
+      description={t("export-dialog-description")}
+    >
+      <div className="border-2 border-dashed border-gray-300 border-opacity-100 rounded-lg">
+        <div className="p-4 space-y-3">
+          {exportOptions.map((option) => (
+            <button
+              key={option.name}
+              type="button"
+              className="block w-full text-left px-4 py-3 text-sm font-medium text-blue-900 bg-blue-100 border border-transparent rounded-md hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+              onClick={option.action}
+            >
+              <span className="block">{option.name}</span>
+              <span className="block pt-1 text-xs font-normal text-blue-700">
+                {option.description}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </DialogFrame>
+  );
+}
+
 export default function MainMenu(props: Props): JSX.Element {
   const { t, i18n } = useTranslation();
   const mapController = props.mapController;
 
   const [importDialog, setImportDialog] = useState(false);
+  const [exportDialog, setExportDialog] = useState(false);
 
   const menuItems =
     props.mode == "viewer"
@@ -183,13 +264,8 @@ export default function MainMenu(props: Props): JSX.Element {
           {
             name: t("export"),
             description: t("export-description"),
-            action: async () => {
-              // TODO: seems pretty fast, but we should consider handle this async properly
-              const blob = await mapController.fogMap.exportArchive();
-              if (blob) {
-                popDownload("Sync.zip", blob);
-                props.msgboxShow("info", "export-done-message");
-              }
+            action: () => {
+              setExportDialog(true);
             },
             icon: IconExport,
           },
@@ -209,7 +285,7 @@ export default function MainMenu(props: Props): JSX.Element {
           //     const blob = await generateGpxArchive(mapController.fogMap);
           //     if (blob) {
           //       popDownload("Gpx.zip", blob);
-          //       props.msgboxShow("info", "export-done-message-gpx");
+          //       props.msgboxShow("info", "export-done-message");
           //     }
           //   },
           //   icon: IconExport,
@@ -253,6 +329,12 @@ export default function MainMenu(props: Props): JSX.Element {
         mapController={mapController}
         isOpen={importDialog}
         setIsOpen={setImportDialog}
+        msgboxShow={props.msgboxShow}
+      />
+      <ExportDialog
+        mapController={mapController}
+        isOpen={exportDialog}
+        setIsOpen={setExportDialog}
         msgboxShow={props.msgboxShow}
       />
       <div className="absolute z-40 top-4 left-4">
